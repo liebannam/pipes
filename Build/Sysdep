@@ -1,0 +1,23 @@
+cc     = gcc
+CC     = g++
+NVCC   = nvcc
+MPICC  = mpic++
+
+#CFAST  = -O3 -Wall -fopenmp -DUSEOMP
+CFAST  = -O3 -Wall -g -DUSEOMP 
+cFLAGS = $(CFAST)
+CFLAGS = $(CFAST)
+CFLAGSD = -g -Wall
+#if on Orinoco
+ROOT   = /Users/lieba
+#if on Macbook Air
+ROOT   = /Users/anna
+
+INC    = -I$(ROOT)/include  -I/opt/local/include
+
+LA     = -llapack -lblas  -lcblas
+
+#LIBS   = -L. -L/opt/local/lib -L$(ROOT)/lib -lcla $(LA) -lqd -lfftw3 -lm
+#LIBS   = -L. -L/opt/local/lib -L//usr/lib $(LA) -lqd -lfftw3 -lm
+#LIBS   = -L. -L//usr/lib $(LA) -lqd -lfftw3 -lm
+LIBS   = -L. -L$(ROOT)/lib -lcla $(LA) -lqd -lfftw3 -lm
