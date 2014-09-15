@@ -47,11 +47,11 @@ using std::min;
 //typedef double(*drdA_t )(double Am, double A, double Ap, int j, double w, double dx, int N);
 
 
-inline double gettheta(double A, double D);
-inline double powphi(double t, double D);
- double ePhi  (double A, double D, double At, double Ts, bool P);
- double eCgrav(double A, double D, double At, double Ts, bool P);
- double eEta  (double A, double D, double At, double Ts, bool P);
+inline double getTheta(double A, double D);
+inline double powPhi(double t, double D);
+double Phi  (double A, double D, double At, double Ts, bool P);
+double Cgrav(double A, double D, double At, double Ts, bool P);
+double Eta  (double A, double D, double At, double Ts, bool P);
 
 /////
 ///Class for channel data 
@@ -76,45 +76,53 @@ class Channel
 		const int M;				   // number of time steps (each channel instance must specify!)
 		int n;					   // what time step we're at...		
 		double dx;                                 // grid spacing
-		double At, Af, a, Ts;				   //Preissman parameters (won't get initialized or used for uniform cross section
+		double At, Af, a, Ts;		           // Preissman parameters (won't get initialized or used for uniform cross section)
 /**** slope and friction terms*/
 		double S0;                                 // bed slope (-dz/dx)
 		double Mr;                                 // Manning Roughness coefficient
-		double cmax;				   //maximum wave speed
-/****dynamic variables and boundary info */
-		double *q0, *q, *qhat;                     // initial and final states q0 and q = [q(0,0), q(0,1)...,q(0,N-1), q(1,0),....q(1,N-1)] where q(0,:) is area A and q(1,:) is discharge Q
-		double *q_hist;             		   // history of states q0; laid out as [q(t=0), q(t=dt), ....q(t=dt*(M-1))] and each q is a row vector arranged as above.
-		vector<bool> P;   			   //if P =[P[0], P[1], ...P[N+1]], P[0] and P[N+1] are ghost cell values; if P(i) = 1, cell i is pressurized--details in Bourdarias 2007, pg 122
-		bool Pnow; 				   // this is a hilariously bad idea!
-		int idx(int i_in, int j_in){return (N*i_in+j_in);}//indexing function to access q(i,j)  where i =0,1 and j= 0,1...N-1
-		int idx_t(int i_in, int j_in, int n_in){return (2*(N+2)*n_in+(N+2)*i_in+j_in);}//indexing function to accessq^n(i,j)with i,j as above and n = 0,...M-1 (n*dt = t at which this slice is taken)
-		int pj(int i){return i+1;} 		    //indexing for pressurization states vector
+		double cmax;				   // maximum wave speed
+/****dynamic variables and boundary info
+* initial and final states q0 and q = [q(0,0), q(0,1)...,q(0,N-1), q(1,0),....q(1,N-1)] where q(0,:) is area A andq(1,:) is discharge Q
+* history of states is q_hist laid out as [q(t=0), q(t=dt), ....q(t=dt*(M-1))] and each q is a row vector arranged as above.
+* associated indexing functions so you don't have to recall how this is laid out
+*** idx: //indexing function to access q(i,j)  where i =0,1 and j= 0,1...N-1
+*** idx_t: indexing function to accessq^n(i,j)with i,j as above and n = 0,...M-1 (n*dt = t at which this slice is taken)
+* pressurization states of each cell are in vector P 
+*if P =[P[0], P[1], ...P[N+1]], P[0] and P[N+1] are ghost cell values; if P(i) = 1, cell i is pressurized--details in Bourdarias 2007, pg 122
+*associate indexing function pj keeps track of this shift*/
+
+		double *q0, *q, *qhat;                     // previous, current, and temporary dynamical variables	
+		double *q_hist;           		   // history of dynamical variables	  		  			
+		vector<bool> P;   			   // pressurization states
+		bool Pnow; 				   // ''current pressurization'' at cell under consideration-- this is a hilariously bad idea!
+		//indexing functions		
+		int idx(int i_in, int j_in){return (N*i_in+j_in);}
+		int idx_t(int i_in, int j_in, int n_in){return (2*(N+2)*n_in+(N+2)*i_in+j_in);} 
+		int pj(int i){return i+1;} 		    // indexing for pressurization states vector
 		double bfluxleft[2], bfluxright[2];         // left and right boundary fluxes
 /*****Methods*/
 		Channel (int Nin, double win, double Lin, int Min); // constructor
 		~Channel();
-		void showVals(int Iwantq);                 //show values of q		
-		virtual void showGeom() =0;		   //show geometry paramters	
+		void showVals(int Iwantq);                 // show values of q		
+		virtual void showGeom() =0;		   // show geometry paramters	
 		
 		void setq0(double A0, double Q0);          // set q0 to (A0,Q0)  = const
 		void setq(double A0, double Q0);           // set q0 to (A0,Q0)  = const
 		void setq0(double *A0, double *Q0);	   // set q to nonconst value	
 		void setq(vector<double>A0, vector<double>Q0);	   // set q and q0 to nonconst value	
 		
-		void stepEuler(double dt);          // Take an Euler step
-	//	numFlux_t numFlux;
-	//	speeds_t speeds;
-		void numFluxHLL(double q1m, double q1p, double q2m, double q2p, double *flux, bool Pm, bool Pp);      //HLL Flux (need to define speed as Roe or other)
-		void numFluxExact(double q1m, double q1p, double q2m, double q2p, double *flux, bool Pm, bool Pp);    //Exact RS flux for Preissman slot-not working at present
+		void stepEuler(double dt);                          // Take an Euler step
+		void numFluxHLL(double q1m, double q1p, double q2m, double q2p, double *flux, bool Pm, bool Pp);      //HLL Flux (need to define speeds)
+		void numFluxExact(double q1m, double q1p, double q2m, double q2p, double *flux, bool Pm, bool Pp);    //Exact RS flux for Preis. slot (presently dodgy at best)
 		
 
 		void physFlux(double q1, double q2, double *flux, bool P);
 		virtual void speedsHLL(double q1m, double q1p, double q2m, double q2p, double *s, bool Pm, bool Pp)=0;
 		virtual void speedsRoe(double q1m, double q1p, double q2m, double q2p, double *s, bool Pm, bool Pp)=0;
 		virtual void updateExactRS(double q1m, double q1p, double q2m, double q2p, double *qnew, bool Pl, bool Pr, bool Px)=0;
-//Specify geometry of specific cross section in a derived class:
+/**Specify geometry of specific cross section in a derived class:*/
 		virtual void showp()=0;
-		virtual double pbar(double A, bool P) = 0;		  		 //pbar = average hydrostatic pressure term 
+		virtual double pbar(double A, bool P) = 0;		         // pbar = average hydrostatic pressure term 
 		virtual double hofA(double A)=0;		 	 	 //height as a function of cross sectional area
 		virtual double fakehofA(double A, bool P)=0;		 	 //for ``negative Preissman'' model, height as a function of cross sectional area
 		virtual double fakeAofh(double h, bool P) =0;
@@ -129,11 +137,11 @@ class Channel
 //source terms
 		void stepSourceTerms(double dt);
 		double getSourceTerms(double A, double Q); // evaluate source terms for given A and Q
-		
+/** Other quantities of interest*/		
 		double getTheGoddamnVolume();
 		double getAveGradH(int i);  //returns int_0^L(dh/dx) dx at time ti (probably not accurate enough...) 
 
-//file write
+/**Write stuff to file*/
 		int writeqToFile(int Mi, double dt);
 		int writeRItofile(double dt, int sign);	
 };
@@ -172,7 +180,7 @@ class Cpreiss: public Channel{
 	public:
 		
 		double D, yt, tt;  //Preissman parameters
-		void setGeom();
+		void setGeom(double a_=1200.);
 	    		
 		Cpreiss(int Nin, double win, double Lin, int Min):Channel(Nin, win, Lin, Min)
 		{
@@ -250,7 +258,7 @@ class Junction3///time for excitement...
 	public:
 		Channel &ch0, &ch1, &ch2;
 		Junction2 j2_01, j2_12, j2_21, j2_20;
-		int Ns[3], whichend[3];                                                    // number of cells and which end connects to junction, for each pipe respectively
+		int Ns[3], whichend[3];               // number of cells and which end connects to junction, for each pipe respectively
 		Junction3(Channel &ch0_, Channel &ch1_, Channel &ch2_, int which1, int which2, int which3);
 				  
 		//offsets = [off01, off12, off20] is offsets between each pair. there should be some compatibility here or it will be whack.
@@ -263,11 +271,9 @@ class Junction3///time for excitement...
 
 //for writing data to binary file 
 //int binaryWrite(std::vector<double> x, int n, char* filename);
-
-//Function prototypes for available numerical fluxes (only HLL at the moment)
-void fluxHLLuniformxc(double q1m, double q1p, double q2m, double q2p, double *flux, double w);
-void fluxRoe(double q1m, double q1p, double q2m, double q2p, double *flux, double w);
-class fRI   //function we need to find zero of to deal with Riemman Invariants at boundaries
+//
+/**function we need to find zero of to deal with uniform cross section Riemman invariants at boundaries*/
+class fRI   
 {
 	public:
 		double c1,c2,c3;
@@ -276,7 +282,6 @@ class fRI   //function we need to find zero of to deal with Riemman Invariants a
 			c1 = a_c1;
 			c2 = a_c2;
 			c3 = a_c3;
-		//	printf("solving %f- %f/x-%f *sqrt(x) =0\n", c1,c3,c2);
 		}
 		
 		double operator()(double x) 
@@ -288,8 +293,9 @@ class fRI   //function we need to find zero of to deal with Riemman Invariants a
 		}		
 };
 
+/**derivative of fRI (for Newton sovler)*/
 
-class dfRI  //derivative for Newton sovler
+class dfRI  
 {
 	public:
 		double c2,c3;
@@ -304,8 +310,9 @@ class dfRI  //derivative for Newton sovler
 
 
 
-//function for setting up geometry info for Preissman slot
-class ftheta {
+/**function for setting up geometry info for Preissman slot*/
+class ftheta 
+{
 public:
 	double A, D;
 	ftheta(double a_,double D_) {
@@ -317,8 +324,9 @@ public:
 	double operator()(double x) { return D*D/8.*(x-sin(x))-A; }
 };
 
-//for refining theta estimates with a few steps of Newton
-class dftheta {
+/**for refining theta estimates with a few steps of Newton*/
+class dftheta 
+{
 public:
 	double D;
 	dftheta(double D_) {
@@ -329,8 +337,8 @@ public:
 	double operator()(double x) { return D*D/8.*(1-cos(x)); }
 };
 
-
-class fphimlhs {       //evaluate phi(x)-lhs 
+/**evaluate phi(x)-lhs */
+class fphimlhs {      
 public:
 	double D, At, Ts, lhs;
 	fphimlhs(double D_,double At_,double Ts_, double lhs_):D(D_), At(At_),Ts(Ts_), lhs(lhs_)
@@ -346,26 +354,25 @@ public:
 		if(x<0){return lhs;}
 		else if (x<=At)
 		{
-			t = gettheta(x,D);
-			Phi = powphi(t,D);
+			t = getTheta(x,D);
+			Phi = powPhi(t,D);
 		}
 		else
 		{
-			t  = gettheta(At,D);
-			Phi = powphi(t,D);		
+			t  = getTheta(At,D);
+			Phi = powPhi(t,D);		
 			Phi += 2*sqrt(x/Ts)-2*sqrt(At/Ts);
 		}
-
-		//cout<<"x = "<<x<<"phi = "<<Phi<<endl;
 		return -Phi+lhs;
 	}
-
-
 };
 
 
 
-
+/** piece of exact Riemann sovler function as described in Kerger 2011 
+ *  fk(x) =     {   phi(x)-phi(Ak)				x<=Ak
+ * 		{   sqrt((eta(x)-eta(Ak)*(x-Ak))/(x*ak))	else
+ **/
 class flr{
 public:
 	double D, Ts, At, Ak;
@@ -380,49 +387,41 @@ public:
 	{
 		if(x<=Ak)
 		{
-		//	cout<<"Ak="<<Ak<<"c(Ak) = "<<eCgrav(Ak,D, At, Ts, Px)<<endl;
-			return ePhi(x,D,At,Ts,Px)-ePhi(Ak,D,At,Ts,Pk);
+			return Phi(x,D,At,Ts,Px)-Phi(Ak,D,At,Ts,Pk);
 		}
 		else
 		{
-		//	printf("Ak = %.15f\nx =  %.15f, D = %f, At = %f, Ts = %f\n", Ak,x,D, At, Ts);
-		//	printf("Etak= %.15f\n",eEta(Ak,D,At,Ts,Pk));
-		//	printf("Etax= %.15f\n",eEta(x,D,At,Ts,Px));
-		//	printf("Ak-x= %.15f\n",(Ak-x));
 
 			if(Ak==0){return 0.;}
 			else if(x<=Ak+eps)//if Ak-x is super small, the usual routine will fuck up
 			{//so use Ak-eps small and taylor expand to evaluate Eta(Ak)-Eta(x) ~ dEta/dA(x)(x-Ak)
 			//this is easy since c^2 = GdEta/dA, lol. 
-				double c = eCgrav((x+Ak)/2.,D, At, Ts, Px);
+				double c = Cgrav((x+Ak)/2.,D, At, Ts, Px);
 				return c*(x-Ak)*sqrt(1/(x*Ak)); 
 			//	printf("c = %f\n", c);	
 			}
 			else{
-				return sqrt((eEta(Ak,D,At,Ts,Pk)-eEta(x,D,At,Ts,Px))*(Ak-x)/(Ak*x));
+				return sqrt((Eta(Ak,D,At,Ts,Pk)-Eta(x,D,At,Ts,Px))*(Ak-x)/(Ak*x));
 			}
 		}
 	}
 };
 
+/**routine for exact solver evaluation, returns fl+fr-ur-ul*/
 class f_exactRS{
-
 public:
 	double D, At, Ts, ul, ur;
 	flr fl, fr;
 	f_exactRS(flr fl_, flr fr_, double ul_, double ur_):fl(fl_),fr(fr_),ul(ul_), ur(ur_)
 	{
 	}
-
 	~f_exactRS(){
 	}
 	double operator() (double x)
 	{
-	//	cout<<"ul-ur="<<ul-ur<<endl;
 		double f1,f2;
 		f1 = fl(x);
 		f2 = fr(x);
-	//	cout<<"x= "<<x<<" fl+fr="<<f1+f2<<endl;
 		return f1+f2+ur-ul;
 	}
 	
@@ -441,7 +440,10 @@ class fshock{
 }
 */
 
-class fallpurpose{       //evaluate lhs - (cq*Qext/x +sign*phi(x)+cc*c(x))  c is wavespeed 
+/**all purpose function to evaluate things that have zeros of Riemann invariants
+ *
+ * evaluate lhs - (cq*Qext/x +sign*phi(x)+cc*c(x))  c is wavespeed */
+class fallpurpose{       
 public:
 	double D, At, Ts, lhs, Q, cq, cc;
 	bool P;
@@ -455,86 +457,10 @@ public:
 
 	double operator()(double x) 
 	{
-		/*
-		double Phi,t,cgrav;
-	//	cout<<"x = "<<x<<endl;
-	//	if(x<=1e-8){return lhs;}
-		if (x<=At &&(!P))
-		{
-			t = gettheta(x,D);
-			Phi = powphi(t,D);
-			cgrav = sqrt(G*x/(D*sin(t/2.)));	
-		}
-		else
-		{
-			t  = gettheta(At,D);
-			//cout<<"At = "<<At<<"Ts = "<<Ts<<endl;
-			Phi = powphi(t,D);		
-			Phi += 2*sqrt(x/Ts)-2*sqrt(At/Ts);
-			cgrav = sqrt(G*(x-At)/Ts);
-
-		}
-		*/
-		//cout<<"x = "<<x<<"phi = "<<Phi<<"ans = "<<lhs-(Q/x+sign*Phi)<<endl;
-		//cout<<"lhs = "<<lhs<<" cgrav = "<<cgrav<<"  Phi = "<<Phi<<" x ="<<x<<" ans ="<<cc*cgrav+sign*Phi<<endl;
-	//	cout<<"x "<<x<<" return value "<<lhs-((x>0?cq*Q/x:0)+sign*Phi+cc*cgrav)<<endl;
-	// the following line is wrong but what I had before (noted on 6/23)
-	//return lhs-((x>0?cq*Q/x:0)+sign*Phi+cc*cgrav);
-		return x*lhs-(cq*Q+x*(sign*ePhi(x,D,At,Ts,P)+cc*eCgrav(x,D,At,Ts,P)));
+		return x*lhs-(cq*Q+x*(sign*Phi(x,D,At,Ts,P)+cc*Cgrav(x,D,At,Ts,P)));
 	}
 
 
 };
-/*
-class fcplusphi {       //evaluate lhs - (-c(x) +/- phi(x)) 
-public:
-	double D, At, Ts, lhs;
-	int sign;
-	fcplusphi(double D_,double At_,double Ts_, double lhs_, int sign_):D(D_), At(At_),Ts(Ts_), lhs(lhs_), sign(sign_)
-	{
-	}
-	~fcplusphi(){
-	}
-	double gettheta(double A)
-	{
-		int count;
-		ftheta th(A,D);
-		//double theta =::ridders(th, -.1, 2*PI+1, &count,1e-10, 1e-12);
-		double theta = Ptheta(A/(D*D));
-		//cout<<theta<<" "<<A<<endl;
-		theta = (A>0.)? (theta -(theta-sin(theta)- 8.*A/(D*D))/(1.-cos(theta))):0.;
-		theta = (A>0.)? (theta -(theta-sin(theta)- 8.*A/(D*D))/(1.-cos(theta))):0.;	
-		//cout<<theta<<endl;
-		return theta;
-	}
-
-	double operator()(double x) 
-	{
-		double Phi,c;	
-		double t;
-	//	cout<<"x = "<<x<<endl;
-		if(x<0){return lhs;}
-		else if (x<=At)
-		{
-			t = gettheta(x);
-			Phi = sqrt(G*3.*D/8.)*(t-1/80.*pow(t,3)+19./448000.*pow(t,5)+1./10035200.*pow(t,7)+491./(27.*70647808000.)*pow(t,9));
-			c = (x>0)? sqrt(G*x/(D*sin(t/2.))):0.;		}
-		else
-		{
-			t  = gettheta(At);
-			//cout<<"At = "<<At<<"Ts = "<<Ts<<endl;
-			Phi = sqrt(G*3.*D/8.)*(t-1/80.*pow(t,3)+19./448000.*pow(t,5)+1./10035200.*pow(t,7)+491./(27.*70647808000.)*pow(t,9));
-			Phi += 2*sqrt(x/Ts)-2*sqrt(At/Ts);
-		//	cout<<"theta = "<<t<<" Phi = "<<Phi<<endl;
-			c = sqrt(G*(x-At)/Ts);
-		}
-		
-	//	cout<<"c = "<<c<<"phi = "<<Phi<<"ans = "<<lhs-sign*(c+Phi)<<endl;
-		return (lhs-sign*(c+Phi));
-	}
-
-
-};
-*/
 
 #endif

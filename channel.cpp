@@ -6,7 +6,7 @@
 *************************************/
 #include "channel.h"
 #include <cstdio>
-
+/*
 ////
 double Ptheta(double A){
 	//This polynomial interpolates [0, 0.95*Af]:
@@ -20,56 +20,64 @@ double Ptheta(double A){
 	+169.9339821843*A*A*A +-20.2421601712*A*A +2.8514566220*A +3.6440131732;
 	return theta*pow(A,1./3.);
 }
+*/
+/** retrun theta as a function of A, where A = D^2/8(theta-sin(theta))*/
 
-inline double gettheta(double A, double D)
+inline double getTheta(double A, double D)
 {
 	int count;
 	ftheta th(A,D);
-//	cout<<"A = "<<A<<endl;
 	double theta =::ridders(th, -.1, 2*PI+1, &count,1e-15, 1e-15);
 //	printf("errr in theta  is %e\n", fabs(A-D*D/8*(theta-sin(theta))));	
-	//this way is 3x as fast--but! lose a lot of accuracy near the top.
+
+//this way is 3x as fast--but! lose a lot of accuracy near the top.
 //	double theta = Ptheta(A/(D*D));
 //	for(int i=0;i<2; i++)
 //	{theta = (A>0.)? (theta -(theta-sin(theta)- 8.*A/(D*D))/(1.-cos(theta))):0.;}
 	return theta;
 }
 
-inline double powphi(double t, double D){
+/*unstable and possibly  terrible way to comput Phi in the circular part of the pipe*/
+
+inline double powPhi(double t, double D){
 	return sqrt(G*3.*D/8.)*(t-1/80.*t*t*t+19./448000.*t*t*t*t*t
 		+1./10035200.*t*t*t*t*t*t*t+491./(27.*70647808000.)*t*t*t*t*t*t*t*t*t);}
 
-//externally callable versions of things I compute all the bloody time
-//the 'e' stands for external...
 
-double ePhi(double A, double D, double At, double Ts, bool P)
+/**Phi = \int_0^A (c(z)/z)dz, where c(z) is the gravity wavespeed as a function of A
+ * A = area, D = diameter, At = transition area, Ts = slot width, P = true if pressurized, false otherwise
+ */
+
+double Phi(double A, double D, double At, double Ts, bool P)
 {
+	
 	double phi = 0.;
-	double t;
+	double t=0.;
 	if(A<At&& (!P))
 	{
-		t = gettheta(A,D);
-		phi = powphi(t,D);
+		t = getTheta(A,D);
+		phi = powPhi(t,D);
 	}
 	else
 	{
-		t = gettheta(At, D);
-		phi = powphi(t,D)+2*sqrt(A/Ts)-2*sqrt(At/Ts);
+		t = getTheta(At, D);
+		phi = powPhi(t,D)+2*sqrt(A/Ts)-2*sqrt(At/Ts);
 	}
 	return phi;
 }
 
+/** Cgrav = sqrt(g*A/l)  is the gravity wavespeed (l is the width of the free surface)
+ *this routine has some problems near the transition
+ * */
 
-double eCgrav(double A, double D, double At, double Ts, bool P)
+double Cgrav(double A, double D, double At, double Ts, bool P)
 {
 	double c;
 	double eps = 1e-6;
 	if(A<At &&(!P))
-//	if(A<=At)
 	{
-		double t = gettheta(A,D);
-	//	double tt =  2.*(PI-asin(D*PI*Ts/(4.*At)));
-		
+		double t = getTheta(A,D);
+	//	double tt =  2.*(PI-asin(D*PI*Ts/(4.*At)));	
 		//printf("theta = %.16f  A = %.16f\n", t, A);;
 		if(A<At-eps){
 			c = sqrt(G*A/(D*sin(t/2.)));
@@ -78,23 +86,38 @@ double eCgrav(double A, double D, double At, double Ts, bool P)
 			c = (sqrt(G*At/Ts)-sqrt(G*A/(D*sin(t/2.))))/eps*(A-At+eps)+sqrt(G*A/(D*sin(t/2.)));
 		}	
 	}
-	else{
-	//	c = sqrt(G*A/Ts);
-		c = sqrt(G*At/Ts);
+	//in slot assign pressure wavespeed a = sqrt(G*Af/Ts)
+	else   
+	{
+		double Af = PI*D*D/4.;
+		c = sqrt(G*Af/Ts);
 	}
 
 	return c;    
 }
 
 
+/**Eta = g*I(A) = g*int_0^h(A) (h-z)l(z) dz */
 
-double eEta(double A, double D, double At, double Ts, bool P)
+	/*double y = hofA(A);	
+		if (A<=At&& (!Pnow))
+		{
+			Eta = G/12.*((3.*D*D-4.*D*y+4.*y*y)*sqrt(y*(D-y))
+				-3.*D*D*(D-2.*y)*atan(sqrt(y)/sqrt(D-y)));
+		//	if(Pnow){Eta-=((A-At)*(A-At)/Ts)/2.;}//bahahahahahahahah this is bullshit...? (YES)
+					}
+		else 
+		{
+			Eta = (y-yt)*At+G/12.*(sqrt(yt*(D-yt))*(3.*D*D+2.*D*yt-6.*D*y-8.*yt*yt+12.*yt*y)
+				-3.*D*D*(D-2.*y)*atan(sqrt(yt/(D-yt))))+G*Ts*(y-yt)*(y-yt)/2.;
+		}*/
+
+double Eta(double A, double D, double At, double Ts, bool P)
 {
 	double Eta,t;
 	if (A<At &&(!P))
-//	if (A<=At)
 	{
-		t = gettheta(A,D);
+		t = getTheta(A,D);
 	//	double y = D/2.*(1.+cos(PI-t/2.));
 	//	Eta = G/12.*((3.*D*D-4.*D*y+4.*y*y)*sqrt(y*(D-y))
 	//		-3.*D*D*(D-2.*y)*atan(sqrt(y)/sqrt(D-y)));
@@ -102,6 +125,7 @@ double eEta(double A, double D, double At, double Ts, bool P)
 		Eta = 1./24.*(3*st-st*st*st-3*t/2*cos(t/2))*G*D*D*D;
 	//      printf("Eta_s -Eta_mine = %e\n", fabs(Eta2-Eta));	
 	}
+	//in slot use Sanders 2011 TPA approach
 	else 
 	{
 		/*old possibly terrible way
@@ -110,7 +134,6 @@ double eEta(double A, double D, double At, double Ts, bool P)
 		y = yt+(A-At)/Ts;
 		Eta = (y-yt)*At+G/12.*(sqrt(yt*(D-yt))*(3.*D*D+2.*D*yt-6.*D*y-8.*yt*yt+12.*yt*y)
 			-3.*D*D*(D-2.*y)*atan(sqrt(yt/(D-yt))))+G*Ts*(y-yt)*(y-yt)/2.;*/
-		//Sanders 2011 TPA approach
 		double H = (A-(PI*D*D/4.))/Ts;
 		H = (A-At)/Ts;
 		Eta = PI/4.*G*D*D*(H+D/2.);
@@ -191,9 +214,7 @@ void Cpreiss::showGeom()
 }
 
 
-//Display current cell values - argument is 0 for q0, 1 for q
-//
-//
+/**Display current cell values - argument is 0 for q0, 1 for q*/
 void Channel::showVals(int Iwantq)
 {
 
@@ -213,7 +234,7 @@ void Channel::showVals(int Iwantq)
 		}
 	}	
 }
-
+/**show pressure*/
 void Cuniform::showp()
 {
 
@@ -223,7 +244,7 @@ void Cuniform::showp()
 		printf("h[%d] = %f and Q0[%d] = %f\n", i,q[idx(0,i)]/w,i, q[idx(1,i)]); 
 	}
 }
-
+/**show pressure values*/
 void Cpreiss::showp()
 {
 
@@ -237,7 +258,7 @@ void Cpreiss::showp()
 }
 
 
-//Initialize q0 with constant data (A0,Q0)
+/**Initialize q0 with constant data (A0,Q0)*/
 void Channel::setq0(double A0, double Q0) 
 {
 	int i;
@@ -254,7 +275,7 @@ void Channel::setq0(double A0, double Q0)
 	q_hist[idx_t(1,0,0)] = Q0;
 	q_hist[idx_t(1,N+1,0)] = Q0;
 }
-//initialize with nonconstant data A0, Q0
+/**initialize with nonconstant data A0, Q0*/
 void Channel::setq0(double *A0, double *Q0)
 {
 	int i;
@@ -296,7 +317,7 @@ void Channel::setq(vector<double>A0, vector<double>Q0)
 	q_hist[idx_t(1,N+1,0)] = Q0[N-1];
 }
 
-//Initialize q with constant data (A0,Q0)
+/**Initialize q with constant data (A0,Q0)*/
 void Channel::setq(double A0, double Q0)
 {
 	int i;
@@ -308,76 +329,83 @@ void Channel::setq(double A0, double Q0)
 	}
 }		
 
-////
-//take M Euler steps of length dt to update conservation law for left state [q1(i), q2(i)] and right state [q1p(i+1), q2(i+1)],using numflux as numerical flux
+/////**take M Euler steps of length dt to update conservation law for left state [q1(i), q2(i)] and right state [q1p(i+1), q2(i+1)],using numflux as numerical flux*/
 void Channel::stepEuler(double dt)
 {
-//	FILE *runinfo = fopen("terminalcrap.txt", "w");
 	cmax = 0;
 	double fplus[2] ={0};
 	double fminus[2] ={0};
-	double nu = dt/dx;
-	double negtol = -dx/10.;
+	double nu = dt/dx;				
+	double negtol = -dx/10.;		//decide how negative A forces the code throws an error over negative area (vs. just printing a warning) 
 	int i,k;
-//	fprintf(runinfo, "time is %d\n", dt*(double)n);
-//	fprintf(runinfo, "bfluxleft = [%f, %f]\n", bfluxleft[0], bfluxleft[1]);
-	Pnow = P[pj(0)]; 							              //pressurization information
+	//update leftmost cell using externally assigned fluxes bfluxleft
+	//get pressurization information for this cell
+	Pnow = P[pj(0)]; 							              
 	numFlux(q0[idx(0,0)], q0[idx(0,1)], q0[idx(1,0)], q0[idx(1,1)],fplus,P[pj(0)], P[pj(1)]);
-//	cout<<"nu ="<<nu<<"  dt = "<<dt<<" dx = "<<dx<<endl;
-	q[idx(0,0)] = q0[idx(0,0)]-nu*(fplus[0]-bfluxleft[0]);                               // update leftmost cell using externally assigned fluxes bfluxleft
+	q[idx(0,0)] = q0[idx(0,0)]-nu*(fplus[0]-bfluxleft[0]);           
 	q[idx(1,0)] = q0[idx(1,0)]-nu*(fplus[1]-bfluxleft[1]);	
 	P[pj(0)] = (q[idx(0,0)]>At )||( P[pj(-1)]==true && P[pj(1)]==true); 
-//	fprintf(runinfo, "q(x=0) = [%f,%f] and P[0] = %s\n", q[idx(0,0)], q[idx(1,0)], P[1]?"true":"false");
 	for(i = 1; i<N-1; i++)
 	{
+ 		// - fluxes are the previous step's + fluxes
 		fminus[0] = fplus[0];
-		fminus[1] = fplus[1];                                                        // - fluxes are the previous step's + fluxes
+		fminus[1] = fplus[1];                                                       
 		Pnow = P[pj(i)];		
-		numFlux(q0[idx(0,i)], q0[idx(0,i+1)], q0[idx(1,i)], q0[idx(1,i+1)],fplus, P[pj(i)], P[pj(i+1)]);                    // get + fluxes
-		for(k=0; k<2; k++){q[idx(k,i)] = q0[idx(k,i)]-nu*(fplus[k]-fminus[k]);}                    // update conservation law
-		P[pj(i)] = (q[idx(0,i)]>At )||( P[pj(i-1)]==true && P[pj(i+1)]==true);//if A>At-> pressurized pipe; if A<At AND a neighbor is free surface, pipe is free surface
-	//	fprintf(runinfo, "q(%d) = [%f,%f] and P[%d] = %s\n",i, q[idx(0,i)], q[idx(1,i)],i, P[pj(i)]?"true":"false");
-	}
-	P[pj(N-1)] = (q[idx(0,N-1)]>At )||( P[pj(N-2)]==true && P[pj(N)]==true); 
-	q[idx(0, N-1)] = q0[idx(0,N-1)] - nu*(bfluxright[0]-fplus[0]);                       // update leftmost cell using externally assigned fluxes bfluxleft
-	q[idx(1,N-1)] = q0[idx(1,N-1)] - nu*(bfluxright[1] - fplus[1]);	
-//	fprintf(runinfo, "bfluxright = [%f, %f]\n", bfluxright[0], bfluxright[1]);
-
-//	printf("a(0) = %f, q(0) = %f\n\n", q[idx(0,0)], q[idx(1,0)]);
-	stepSourceTerms(dt);
-		for(i =0;i<N;i ++)
+		// + fluxes need to be computed afresh
+		numFlux(q0[idx(0,i)], q0[idx(0,i+1)], q0[idx(1,i)], q0[idx(1,i+1)],fplus, P[pj(i)], P[pj(i+1)]);                    
+		// update conservation law
+		for(k=0; k<2; k++)
 		{
-			for(k = 0; k<2; k++){q0[idx(k,i)] = q[idx(k,i)];}                                            // set q0 to updated value
-			if(q0[idx(0,i)]<0){printf("!!Negative area!!!\n with a[%d] = %f at time %f\n ", i, q0[i], dt*(double)n);}
-			if (q0[idx(0,i)]<negtol){
-				q0[idx(0,i)] = 0.0;
-				throw "Oh damn. Negative area!";
-			}
+			q[idx(k,i)] = q0[idx(k,i)]-nu*(fplus[k]-fminus[k]);
+		}                    
+		//update pressurization info: if A>At-> pressurized pipe; if A<At AND a neighbor is free surface, pipe is free surface
+		P[pj(i)] = (q[idx(0,i)]>At )||( P[pj(i-1)]==true && P[pj(i+1)]==true);
+	}
+	// update rightmost cell using externally assigned fluxes bfluxleft
+	P[pj(N-1)] = (q[idx(0,N-1)]>At )||( P[pj(N-2)]==true && P[pj(N)]==true); 
+	q[idx(0, N-1)] = q0[idx(0,N-1)] - nu*(bfluxright[0]-fplus[0]);                      
+	q[idx(1,N-1)] = q0[idx(1,N-1)] - nu*(bfluxright[1] - fplus[1]);	
+	//fold in source terms
+	stepSourceTerms(dt);
+	// set q0 to updated value
+	for(i =0;i<N;i ++)
+	{
+		for(k = 0; k<2; k++)
+		{
+			q0[idx(k,i)] = q[idx(k,i)];
+		}                                           
+		//check for negative areas --do I really need this?
+		if(q0[idx(0,i)]<0)
+		{
+			printf("!!Negative area!!!\n with a[%d] = %f at time %f\n ", i, q0[i], dt*(double)n);
 		}
-	//	printf("a(0) = %f, q(0) = %f\n\n", q[idx(0,0)], q[idx(1,0)]);
-//	fprintf(runinfo, "cmax =%f and CFL=%f",cmax, dt/dx*cmax);
+		if (q0[idx(0,i)]<negtol)
+		{
+			q0[idx(0,i)] = 0.0;
+			throw "Oh damn. Negative area!";
+		}
+	}
 	//printf("cmax =%f and CFL=%f",cmax, dt/dx*cmax);
 	cmax = 0.;  //reset CFL;
-//	fclose(runinfo);
 
 }
 
-
+/** specific physical flux for Preissman slot*/
 void physFluxBetter(double A, double Q, bool P, double D, double At, double Ts, double *flux)
 {
 	flux[0] = Q;
-	flux[1] = (A>0? Q*Q/A:0.) +eEta(A, D, At, Ts, P); 
+	flux[1] = (A>0? Q*Q/A:0.) +Eta(A, D, At, Ts, P); 
 }
-
-void Channel::numFluxExact(double q1m, double q1p, double q2m, double q2p, double *flux, bool Pl, bool Pr) // this is the exact Riemann flux. It also sucks!
+ // Exact Riemann flux, my best guess of implementation in Kerger 2011. Seems unstable for supercritical flow, not sure why.
+void Channel::numFluxExact(double q1m, double q1p, double q2m, double q2p, double *flux, bool Pl, bool Pr)
 {
 	double qnew[2];
 	bool Px=Pnow; //if and right are both pressurized, then so is Px; else it's not pressurized
 	updateExactRS(q1m, q1p, q2m, q2p, qnew, Pl, Pr, Px);//sample solution at dx/dt = 0 (along t-axis)
-//	printf("!!!!!qnew is [%f,%f]\n", qnew[0], qnew[1]);
 	physFluxBetter(qnew[0], qnew[1], Px, w, At, Ts, flux);
 }
 
+/**update the solution by samlping exact solution to Riemann problem with q(left) = [q1m, q2m] and q(right) = [q1p, q2p] */
 void Cpreiss::updateExactRS(double q1m, double q1p, double q2m, double q2p, double *qnew, bool Pl, bool Pr, bool Px){
 	/* * what's going on here:
 	 *     ?    :     ?                   ?  ?    :
@@ -388,20 +416,20 @@ void Cpreiss::updateExactRS(double q1m, double q1p, double q2m, double q2p, doub
 	 *          :                                 : 
 	 * ? denotes either shock or rarefaction
 	 * */
-
-	double up, um, Astar, Amax, Qstar, ustar;//Astar and Qstar are the values of (A,Q) in the "star" region in between qm and qp
+	//Astar and Qstar are the values of (A,Q) in the "star" region in between qm and qp
+	double up, um, Astar, Amax, Qstar, ustar;
 	um = (q1m>0.? q2m/q1m : 0.);
     	up = (q1p>0.? q2p/q1p : 0.);
 	int count;
-//compute u* = [Astar, Qstar]
-	Amax = fmax(fmax(q1p, q1m), 1.001*At/.95);//max of nearby values and 2*Af (for root bracketing)
+	//compute u* = [Astar, Qstar]
+	Amax = fmax(fmax(q1p, q1m), 1.001*At/.95);     //max of nearby values and 2*Af (for root bracketing)
 	flr fl(w, Ts, At, q1m, Pl, Px);
 	flr fr(w, Ts, At, q1p, Pr, Px);
 	f_exactRS ff(fl, fr, um, up);
 	printf("about to solve for Astar with qm = [%f, %f] and qp = [%f,%f] ul = %f, ur = %f\n", q1m, q2m, q1p, q2p, um, up);
 	Astar = ::ridders(ff, 0, Amax, &count,1e-10, 1e-12);
-	double cbar = (eCgrav(q1m, w, At, Ts, Pl) +eCgrav(q1p, w, At, Ts, Pr))/2.;
-	double Astar1 = (q1m+q1p)/2.*(1+(um-up)/(ePhi(q1p, w, At, Ts, Pl)+ePhi(q1m, w, At, Ts, Pr)));
+	double cbar = (Cgrav(q1m, w, At, Ts, Pl) +Cgrav(q1p, w, At, Ts, Pr))/2.;
+	double Astar1 = (q1m+q1p)/2.*(1+(um-up)/(Phi(q1p, w, At, Ts, Pl)+Phi(q1m, w, At, Ts, Pr)));
 	double Astar2 = (q1m+q1p)/2.*(1+( (cbar>1e-6)? (um-up)/(2.*cbar): 0));
 	Qstar = Astar/2.*(up+um)+Astar/2.*(-fl(Astar)+fr(Astar));
 	cout<<"Astar = "<<Astar<<"  f(A*) = "<<ff(Astar)<<" Aapprox = "<<Astar1<<" ff(Aapprox)="<<ff(Astar1)<<"Alin = "<<Astar2<<" f(Alin) = "<<(Astar2>0?ff(Astar2):42)<<endl;
@@ -410,14 +438,14 @@ void Cpreiss::updateExactRS(double q1m, double q1p, double q2m, double q2p, doub
 	printf("ql = [%f, %f], qr = [%f, %f], q* = [%f, %f]\n", q1m, q2m, q1p, q2p, Astar, Qstar);
 	double sl, sr;
 	//now evaluate speeds and sample solution at dx/dt = 0 (along t-axis) 
-//left side 
+	//left side 
 	if(Astar<q1m)//rarefaction
 	{
 		
 		printf("left rarefaction-- ");
 		double sl1, sl2; //bounding edges of rarefaction fan
-		sl1 = um - eCgrav(q1m,w, At, Ts, Pl);
-		sl2 = ustar - eCgrav(Astar,w, At, Ts, Px);
+		sl1 = um - Cgrav(q1m,w, At, Ts, Pl);
+		sl2 = ustar - Cgrav(Astar,w, At, Ts, Px);
 		double m1 = fmin(sl1,sl2);
 		double m2 = fmax(sl1, sl2);
 		if (m1<0 && m2>0)//omg we're in the rarefaction!!!
@@ -425,11 +453,11 @@ void Cpreiss::updateExactRS(double q1m, double q1p, double q2m, double q2p, doub
 			//assume u-c = x/t = 0 (evaluate on x-axis). Then assume u+phi(A) = ul+phi(Al) (Riemann invariant is const)
 			//so nonlinear solve here: c(x)+phi(x)-ul-phi(Al) = 0
 			double Ah;
-			double lhs = um +ePhi(q1m,w, At, Ts, Pl);
+			double lhs = um +Phi(q1m,w, At, Ts, Pl);
 			fallpurpose fri(w,At,Ts,lhs,0., 1, 0., 1.,Px);
 			Ah = ::ridders(fri,0, Amax, &count,1e-10, 1e-12);
 			qnew[0] = Ah;
-			qnew[1] = eCgrav(Ah,w, At, Ts, Px)*Ah;
+			qnew[1] = Cgrav(Ah,w, At, Ts, Px)*Ah;
 			printf("in rarefaction!");
 		}
 		else if (m2<=0)//whole rarefaction wave is tilted off to the left
@@ -473,8 +501,8 @@ void Cpreiss::updateExactRS(double q1m, double q1p, double q2m, double q2p, doub
 	{
 		printf("right rarefaction-- ");
 		double sr1, sr2;
-		sr1 = ustar + eCgrav(Astar,w, At, Ts, Px);
-		sr2 = up    + eCgrav(q1p  ,w, At, Ts, Pr);
+		sr1 = ustar + Cgrav(Astar,w, At, Ts, Px);
+		sr2 = up    + Cgrav(q1p  ,w, At, Ts, Pr);
 		double m1 = fmin(sr1,sr2);
 		double m2 = fmax(sr1,sr2);
 
@@ -484,11 +512,11 @@ void Cpreiss::updateExactRS(double q1m, double q1p, double q2m, double q2p, doub
 			//assume u+c = x/t = 0 (evaluate on x-axis). Then assume u-phi(A) = ur-phi(Ar) (Riemann invariant is const)
 			//so nonlinear solve here: -c(x)-phi(x)-ur+phi(Ar) = 0
 			double Ah;
-			double lhs = up -ePhi(q1p,w, At, Ts, Pr);
+			double lhs = up -Phi(q1p,w, At, Ts, Pr);
 			fallpurpose fri(w,At,Ts,lhs,0., -1, 0., -1.,Px);
 			Ah = ::ridders(fri, 0, Amax, &count,1e-10, 1e-12);
 			qnew[0] = Ah;
-			qnew[1] = -eCgrav(Ah,w, At, Ts, Px)*Ah;
+			qnew[1] = -Cgrav(Ah,w, At, Ts, Px)*Ah;
 			printf("in rarefaction!, A= %f, Q = %f", Ah, qnew[1]);
 		}
 		else if (m2<=0)//whole rarefaction wave is titled off to the left
@@ -526,51 +554,55 @@ void Cpreiss::updateExactRS(double q1m, double q1p, double q2m, double q2p, doub
 	}
 }
 
-
-void Channel::numFluxHLL(double q1m, double q1p, double q2m, double q2p, double *flux, bool Pm, bool Pp)                  //this is HLL flux. It sucks.
+ //this is HLL flux. It sucks.
+void Channel::numFluxHLL(double q1m, double q1p, double q2m, double q2p, double *flux, bool Pm, bool Pp)                
 {
     
-    double s[2]={0};
-    double slow = 1e-5;
-    speeds(q1m, q1p, q2m, q2p, s, Pm, Pp);
-    if (fabs(s[0])< slow && fabs(s[1])<slow){                                                        // check for near zero speeds
-        flux[0] = 0;
-        flux[1] = 0;
-    }
-
-     else{                                                                                           // Update with HLL flux
-        if(s[0]>=0){
-            physFlux(q1m,q2m,flux, Pp);
+	double s[2]={0};
+	double slow = 1e-5;
+	//estimate speeds (Roe or fancier)
+	speeds(q1m, q1p, q2m, q2p, s, Pm, Pp);
+	// check for near zero speeds
+	if (fabs(s[0])< slow && fabs(s[1])<slow){                                                       
+	flux[0] = 0;
+	flux[1] = 0;
 	}
-        else if(s[0]<0 && s[1]>0){
-            double Fl[2];
-            double Fr[2];
-            physFlux(q1m,q2m,Fl, Pm);
-            physFlux(q1p,q2p,Fr, Pp);
-            flux[0] = (s[1]*Fl[0]-s[0]*Fr[0]+s[0]*s[1]*(q1p-q1m))/(s[1]-s[0]);
-            flux[1] = (s[1]*Fl[1]-s[0]*Fr[1]+s[0]*s[1]*(q2p-q2m))/(s[1]-s[0]);
-	  //  cout<<"fluxes are "<<flux[0]<<" "<<flux[1]<<Fl[1]<<" "<<Fr[1]<<endl;
-        
+	// Update with HLL flux
+	else{                                                                                           
+        	if(s[0]>=0){
+		physFlux(q1m,q2m,flux, Pp);
+		}
+        else if(s[0]<0 && s[1]>0)
+	{
+		double Fl[2];
+		double Fr[2];
+		physFlux(q1m,q2m,Fl, Pm);
+		physFlux(q1p,q2p,Fr, Pp);
+		flux[0] = (s[1]*Fl[0]-s[0]*Fr[0]+s[0]*s[1]*(q1p-q1m))/(s[1]-s[0]);
+		flux[1] = (s[1]*Fl[1]-s[0]*Fr[1]+s[0]*s[1]*(q2p-q2m))/(s[1]-s[0]);
+		//cout<<"fluxes are "<<flux[0]<<" "<<flux[1]<<Fl[1]<<" "<<Fr[1]<<endl;
 	}
         else if(s[1]<=0)
-            physFlux(q1p, q2p, flux, Pp);
+        	physFlux(q1p, q2p, flux, Pp);
         else
-          printf("Error! Check your speeds. Something is wrong! s = [%f,%f]\n",s[0], s[1]);
+          	printf("Error! Check your speeds. Something is wrong! s = [%f,%f]\n",s[0], s[1]);
      }
     return;
 }
 
-
-void Channel::physFlux(double q1, double q2, double *flux, bool P)                   // St. Venant flux function (See Leon 2009)
+/**de St. Venant flux function (See Leon 2009)
+ *This is valid for either cuniform (uniform width) or cpreiss (Preissman slot) channel classes
+ * */
+void Channel::physFlux(double q1, double q2, double *flux, bool P)                  
 {
     flux[0] = q2;
     flux[1] = (q1>0? q2*q2/q1:0.) +pbar(q1,P);  
     //cout<<"P is "<<P<<"q1 is"<<q1<<"and pbar is"<<pbar(q1,P)<<endl; 
 }
 
-void Cuniform::speedsHLL(double q1m, double q1p, double q2m, double q2p, double *s, bool Pm, bool Pp)                            // HLL speeds
+/** HLL speeds--uniform channel*/
+void Cuniform::speedsHLL(double q1m, double q1p, double q2m, double q2p, double *s, bool Pm, bool Pp)                           
 {
-
     double um, up, hm, hp, uhat, hhat, smin, smax;
     int j;
     um = (q1m>0.? q2m/q1m : 0.);
@@ -597,7 +629,8 @@ void Cuniform::speedsHLL(double q1m, double q1p, double q2m, double q2p, double 
     }
 }
 
-double Channel::min3(double a, double b, double c)                       // because C89 is too ghetto to have a predefined min function*/
+/**because C89 is too ghetto to have a predefined min function*/
+double Channel::min3(double a, double b, double c)                       
 {
 	return min(min(a,b),c);
 }
@@ -606,19 +639,23 @@ double Channel::max3(double a, double b, double c)
 	return max(max(a,b),c);
 }
 
-
+/** Step source term S in u_t+F(u)_x = S as follows:
+ * q(t+dt) = q(t) +dt*S(q(t)+dt/2*S(q))
+ */
 void Channel::stepSourceTerms(double dt){
 	int i;
 	for (i=0; i<N; i++)
 	{
-//		printf("A = %f Q= %f\n i = %d\n", q[idx(0,i)],q[idx(1,i)],i);
 		q[idx(1,i)]= q[idx(1,i)] +dt*getSourceTerms(q[idx(0,i)], q[idx(1,i)] +dt/2.*getSourceTerms(q[idx(0,i)],q[idx(1,i)]));
 		q0[idx(1,i)] = q[idx(1,i)];
 	}
 	
 }
 
-//evaluate source terms - friction slope (Manning Eqn) and actual slope S0 = -dz/dx (S0 should be a non-negative constant)
+/**evaluate source term S - friction slope (Manning Eqn) and actual slope S0 = -dz/dx (S0 should be a non-negative constant)
+ *should I have another option for frictions slope?? Eg. Hazen Williams, Darcy-Weishback?
+ *in the past this has posed some issues for very small A...be careful...
+ * */
 double Channel::getSourceTerms(double A, double Q){
 	double Sf=0;
 	double tol = 1e-1;
@@ -627,14 +664,13 @@ double Channel::getSourceTerms(double A, double Q){
 		Sf = pow(Mr/kn,2)*Q*fabs(Q)/(A*A*pow(getHydRad(A),4./3.));
 	
 	}
-//	printf("S0 is %f, S is %.10f, hydraulic radius is %f\n", S0, Sf, getHydRad(A));
 	return (S0-Sf)*G*A;
 }
 
 
 
 
-//get the volume of water in the channel
+/**get the volume of water in the channel--just sum up cell values of A multiplied by cell width*/
 double Channel::getTheGoddamnVolume()
 {
 	double evol=0.;
@@ -645,12 +681,11 @@ double Channel::getTheGoddamnVolume()
 	return evol;
 }
 
+//get average spatial gradient at time t_i	
+// Simpson's rule... in theory...
 double Channel::getAveGradH(int i)
 {
-//get average spatial gradient at time ti	
-// Simpson's rule... in theory...
 	double I =0.5*pow((q_hist[idx_t(0,2,i)]-q_hist[idx_t(0,1,i)])/(dx*w),2);	
-//	cout<<q_hist[idx_t(0,2,i)]<<"   "<<q_hist[idx_t(0,1,i)]<<endl;
 	for(int k = 2; k<N-1; k++)
 	{
 		I += 2*pow(2.,k%2)*0.5*pow((q_hist[idx_t(0,k+1,i)]-q_hist[idx_t(0,k-1,i)])/(2.*dx*w),2);
@@ -661,8 +696,10 @@ double Channel::getAveGradH(int i)
 }
 
 
+/**write q information to M/Mi files 
+ * these are in theory readable by smartputittogether.py or maybe something else.py...(!???)
+ * */
 int Channel::writeqToFile(int Mi, double dt)
-//write q information to M/Mi files 
 {	
 	
 	for(int kk = 0; kk<M+1; kk+=Mi)
@@ -687,7 +724,8 @@ int Channel::writeqToFile(int Mi, double dt)
 	return 0;
 }
 
-int Channel::writeRItofile(double dt, int sign) //write characteristics Q/A+sign*phi(A) to file in format readable by gnuplot
+/**write characteristics Q/A+sign*phi(A) to file in format readable by gnuplot*/
+int Channel::writeRItofile(double dt, int sign) 
 {
 		char fname[100];
 		double t,x,Q,A,RI;
@@ -708,7 +746,7 @@ int Channel::writeRItofile(double dt, int sign) //write characteristics Q/A+sign
 				x = (jj-1)*dx;
 				A = q_hist[idx_t(0,jj,kk)];
 				Q = q_hist[idx_t(1,jj,kk)];
-				RI = Q/A +sign*powphi(gettheta(A,w),w);
+				RI = Q/A +sign*powPhi(getTheta(A,w),w);
 				if(sign==0){RI = A;}
 		        	fprintf(fp,"%.10f     %.10f     %.10f\n", x, t, RI);
 		        	//printf("%.10f     %.10f     %.10f\n", x, t, RI);
@@ -719,15 +757,17 @@ int Channel::writeRItofile(double dt, int sign) //write characteristics Q/A+sign
 	return 0;
 }
 
-void Cpreiss::setGeom() //Set Preissman parameters 
+ /**Set Preissman parameters 
+ * a is the pressure wave speed for this pipe -- defaults to 1200
+ */
+void Cpreiss::setGeom(double a_)
 {
+	a = a_;
 	int count;
 //	a = 1200;//desired pressure wave speed
         a = 9;
-//	Ts = D*0.0000025;// define Preissman slot width to be 0.1% of diameter
 	Af = PI*D*D/4.;
 	Ts = G*Af/(a*a);
-//	Ts = 0.01;
 //this bit fails epically	
 	//ftheta th(At,D);
 	//tt =::ridders(th, 0, 2*PI+1, &count,1e-10, 1e-12);
@@ -748,22 +788,7 @@ void Cpreiss::setGeom() //Set Preissman parameters
 
 double Cpreiss::pbar(double A, bool P)
 	{
-		
-		double Eta = eEta(A,w, At,Ts, P); 
-		/*double y = hofA(A);	
-		if (A<=At&& (!Pnow))
-		{
-			Eta = G/12.*((3.*D*D-4.*D*y+4.*y*y)*sqrt(y*(D-y))
-				-3.*D*D*(D-2.*y)*atan(sqrt(y)/sqrt(D-y)));
-		//	if(Pnow){Eta-=((A-At)*(A-At)/Ts)/2.;}//bahahahahahahahah this is bullshit...? (YES)
-					}
-		else 
-		{
-			Eta = (y-yt)*At+G/12.*(sqrt(yt*(D-yt))*(3.*D*D+2.*D*yt-6.*D*y-8.*yt*yt+12.*yt*y)
-				-3.*D*D*(D-2.*y)*atan(sqrt(yt/(D-yt))))+G*Ts*(y-yt)*(y-yt)/2.;
-		}*/
-		return Eta;
-
+		return Eta(A,w, At,Ts, P); 
 	}
 double Cpreiss::hofA(double A)
 	{
@@ -774,7 +799,7 @@ double Cpreiss::hofA(double A)
 			y = D/2.*(1.+cos(PI-theta/2.));
 		//	cout<<theta<<"= theta and y = "<<y<<endl;
 		}
-		else //in Preissman Slot
+		else      //in Preissman Slot
 		{
 			y = yt+(A-At)/Ts;
 		}
@@ -826,45 +851,23 @@ double Cpreiss::Aofh(double h)
 double Cpreiss::thetaofA(double A) //only works for A<polynomial approximation, then two Newton steps to clean
 	{
 		if(A<=PI*D*D/4.)
-		{return gettheta(A,D);
-		//	int count;
-		//	ftheta th(A,D);
-		//	cout<<"A = "<<A;
-		//	theta =::ridders(th, 0, 2*PI+1, &count,1e-10, 1e-12);
-		//	theta = (A>0.)? (theta -(theta-sin(theta)- 8.*A/(D*D))/(1.-cos(theta))):0.;
-		//	theta = (A>0.)? (theta -(theta-sin(theta)- 8.*A/(D*D))/(1.-cos(theta))):0.;
-	         //	cout<<" theta = "<<theta<<endl;
+		{
+		return getTheta(A,D);
 		}
-		else {cout<<"whoops! theta not defined for A>Af"<<endl;
-		 return 2*PI;}
+		else {
+		cout<<"whoops! theta not defined for A>Af"<<endl;
+		return 2*PI;}
 	}
 double Cpreiss::cgrav(double h)
 	{
 		double c;
 		double A = fakeAofh(h,Pnow);
 		
-		/*double theta  =  2.*acos(1.-2.*h/D);
-		if (A<1e-6*At){c=0.;}
-		else 
-		{
-			if (A<At)     //If partially full,  c = sqrt(G*A/T) where T is width of free surface
-			{
-				//double theta = thetaofA(A);
-				c = sqrt(G*A/(D*sin(theta/2)));
-			}
-		//	else if(A<At &&Pnow)
-		//	{	c = sqrt(G*A/Ts);}
-		//	else  //if pressurized use pressure wave speed
-			{
-				c = sqrt(G*D*D*PI/(4.*Ts));
-			//	c = sqrt(G*A/Ts);
-			//	c = sqrt(G*fabs(A-At)/Ts);
-			}
-		}
+		/*double theta  =  2.*acos(1.-2.*h/D)*/
 
-		return c;*/
-		return eCgrav(A, w, At, Ts, Pnow);	
-	}			
+		return Cgrav(A, w, At, Ts, Pnow);	
+	}	
+
 double Cpreiss::getHydRad(double A)
 	{	
 		double perim;
@@ -915,8 +918,8 @@ void Cpreiss::speedsHLL(double q1m, double q1p, double q2m, double q2p, double *
 	//double Astar1, Astar2;
 	ym = hofA(q1m);
 	yp = hofA(q1p);
-	cm = eCgrav(q1m, w, At, Ts, Pm);
-	cp = eCgrav(q1p, w, At, Ts, Pp);
+	cm = Cgrav(q1m, w, At, Ts, Pm);
+	cp = Cgrav(q1p, w, At, Ts, Pp);
 //	cout<<"[ym, yp]=["<<ym<<","<<yp<<"]\n";
 	//if no dry bed present
 	if(fmin(ym,yp)>=dry){
@@ -925,7 +928,7 @@ void Cpreiss::speedsHLL(double q1m, double q1p, double q2m, double q2p, double *
 		up = q2p/q1p;
 		//cout<<"um = "<<um<< "up = " <<up<<endl;
 		//if (max(q1p,q1m)<0.75*Af){
-			Astar = (q1m+q1p)/2.*(1+(um-up)/(ePhi(q1p, w, At, Ts, Pp)+ePhi(q1m, w, At, Ts, Pm))); //this verstion uses depth positivity condition
+			Astar = (q1m+q1p)/2.*(1+(um-up)/(Phi(q1p, w, At, Ts, Pp)+Phi(q1m, w, At, Ts, Pm))); //this verstion uses depth positivity condition
 		//	printf("Astar = %f um = %f, up = %f intphim = %f intphip = %f\n",Astar, um, up, intPhi(q1m), intPhi(q1p));
 			Astar = (q1m+q1p)/2.*(1+( (cbar>1e-6)? (um-up)/(2.*cbar): 0));  //this is linearized version
 			if(Astar<0){Astar = (q1p+q1m)/2;}
@@ -949,7 +952,7 @@ void Cpreiss::speedsHLL(double q1m, double q1p, double q2m, double q2p, double *
 		{
 			printf("left side dry\n");
 			up = q2p/q1p;
-			s[0] = up - ePhi(q1p, w, At, Ts, Pp);
+			s[0] = up - Phi(q1p, w, At, Ts, Pp);
 			s[1] = up + cp;	
 		}
 		else if(yp<dry) //right side dry
@@ -957,7 +960,7 @@ void Cpreiss::speedsHLL(double q1m, double q1p, double q2m, double q2p, double *
 			printf("right side dry\n");
 			um = q2m/q1m;
 			s[0] = um - cm;
-			s[1] = um + ePhi(q1m, w, At, Ts, Pm);
+			s[1] = um + Phi(q1m, w, At, Ts, Pm);
 		}
 		
 	}
@@ -992,18 +995,18 @@ double Cpreiss::findOmega(double Astar, double Ak, bool Ps, bool Pk)
         	if(Astar<=Ak+eps)//if Ak-x is super small, the usual routine will fuck up
 			{//so use Ak-eps small and taylor expand to evaluate Eta(Ak)-Eta(x) ~ dEta/dA(x)(x-Ak)
 			//this is easy since c^2 = GdEta/dA, lol. 
-				double c = eCgrav((Astar+Ak)/2.,D, At, Ts, Pk);
+				double c = Cgrav((Astar+Ak)/2.,D, At, Ts, Pk);
 				return c*sqrt(Astar/Ak); 
 		//		printf("c = %f\n", c);	
 			}
 		else{
-			omega = sqrt((eEta(Astar, w, At, Ts, Ps)-eEta(Ak, w, At, Ts, Pk))*Astar/(Ak*(Astar-Ak)));
+			omega = sqrt((Eta(Astar, w, At, Ts, Ps)-Eta(Ak, w, At, Ts, Pk))*Astar/(Ak*(Astar-Ak)));
 		}
 	} 
 	else
     	{
 		//double y = hofA(Ak);
-        	omega  = eCgrav(Ak, w, At, Ts, Ps);
+        	omega  = Cgrav(Ak, w, At, Ts, Ps);
     	}
 	//cout<<"omega = "<<omega<<endl;	
 	return omega;
@@ -1015,12 +1018,12 @@ double Cpreiss::intPhi(double A)
 	if (A<=At&&(!Pnow))
 	{
 		double t = thetaofA(A);
-		Phi = powphi(t,D);		
+		Phi = powPhi(t,D);		
 	}
 	else
 	{
 		double t= thetaofA(At);
-		Phi = powphi(t,D)+2*sqrt(A/Ts)-2*sqrt(At/Ts);
+		Phi = powPhi(t,D)+2*sqrt(A/Ts)-2*sqrt(At/Ts);
 	}
 	return Phi;
 }
@@ -1055,12 +1058,16 @@ Junction1::Junction1(Channel &a_ch0, int a_which, double a_bval, int a_bvaltype)
 	reflect = 0; //default is to use RI
 }
 
-//apply boundary conditions by following a characteristcic out of the domain to solve for unknown value, then updating boundary fluxes accordingly.
-//
-//
-
-///this whole stupid worthless thing is wrong, so don't bother reading any farther...
-//
+/**apply boundary conditions at the end of a single pipe. Several options.
+ * Computation controlled by these parameters:
+ **** reflect = +1, -1, 0  (see below for details)
+ **** whichend = 0, 1   (0 for left end, 1 for right--affects sign of things)  
+ **** bvaltype = 0, 1   (0 for A, 1 for Q)  
+ * Reflect: reflect all incoming waves (hard boundary), set reflect =1
+ * Extrapolate: let all incoming waves through (ghost cell has same values as last interior cell), set reflect = -1
+ * Specify: specify Q,A, or f(Q,A) = 0 (not implemented yet) 
+ * following a characteristcic out of the domain to solve for unknown value, then updating boundary fluxes accordingly.
+ * */
 void Junction1::boundaryFluxes()
 {
 	double Ain, Qin, Aext, Qext;
@@ -1068,99 +1075,86 @@ void Junction1::boundaryFluxes()
 	int pass = 0;
 	double ctol = 0;//tolerance for trying to solve for characteristic solns
 	double sign = pow(-1.,whichend+1);  //gives the sign in u (plus or minus) phi
-	
-	if (whichend)    ///if we're on the right side of pipe
+	///if we're on the right side of pipe
+	if (whichend)    
 	{
 		Ain = ch0.q[ch0.idx(0,N-1)];
 		Qin = ch0.q[ch0.idx(1, N-1)];
 		ch0.Pnow = ch0.P[N];
 		Pin = ch0.P[N];
 		Pext = ch0.P[N+1];
-		//cout<<"Qin is"<<Qin<<endl;	
-	//	printf("RHS! %s\n", ch0.Pnow?"true":"false");
 	}
-	else 	//if we're on the left side of the pipe
+	//if we're on the left side of the pipe
+	else 
 	{
 		Ain = ch0.q[ch0.idx(0,0)];
 		Qin = ch0.q[ch0.idx(1,0)];
 		ch0.Pnow = ch0.P[1];
 		Pin = ch0.P[1];
 		Pext = ch0.P[0];
-	//	printf("LHS!%s\n, Qin = %f, Ain = %f", ch0.Pnow?"true":"false", Qin, Ain);
 	}
-//	cout<<"\n\n\n"<<ch0.n<<endl;
-//	ch0.showVals(1);
-	//cout<<"Qin is"<<Qin<<endl;	
-	if(reflect ==1)  //reflect everything
+	 //reflect =1 means reflection BC
+	if(reflect ==1) 
 	{
 		Aext = Ain;
 		Qext = -Qin;
-	//	cout<<"reflect = 1\n";
-
 	}
-	else if(reflect ==-1)//extrapolate
+
+	//reflect =1 means extrapolation BC
+	else if(reflect ==-1)
 	{
 		Aext = Ain;
 		Qext = Qin;
-	//	cout<<"reflect = -1\n";
 	}
-	else//specified BCs
+	//else we have a specified BC, eg Q(t) = z(t)
+	else
 	{
-		
-		if(bvaltype) //if we're specifying Q
+		//if specifying Q
+		if(bvaltype==1) 
 		{
-			//double epsilon = 1e-6;
-			Qext = bval[ch0.n];
-		//	printf("Qext = %f ch0.n = %d  bval[1] = %f \n ", Qext,ch0.n, bval[1]);
+			//sample the boundary time series at the current time step
+			Qext = bval[ch0.n];	
+			//if Qext != 0, problem is harder than if Q = 0 (this case treated seperately below)
 			if(fabs(Qext)>0)
 			{
-			//	int count;
+				//first use Qext to find values c1min and c1max -- range of c+/_(A, Qext) over A in [0, \infty] 
+				//if c1 = c+/_(Ain, Qin) lies in  [c1min, c1max], then it is feasible to follow a characteristic out of the doman
 				double c1min=0., c1max=0., c1, xs=0.;
 				double uin = (Ain>0. ?Qin/Ain :0. );
+				//uniform cross section case is easy
 				if(ch0.channeltype ==0)
 				{
 					c1 = uin +sign*2.*sqrt(G*Ain/w);
-					c1min = 3.*pow((G*fabs(Qext)/w),1./3.);//min achievable value for for c+  (outgoing on right)
-					c1max = -c1min; //-3.*pow(G/w*fabs(Qext),1./3.); //max achievable value for c_ (outgoing on left)
+					c1min = 3.*pow((G*fabs(Qext)/w),1./3.); //min achievable value for for c+  (outgoing on right)
+					c1max = -c1min;  			//max achievable value for c_ (outgoing on left)
 				}
+				//Preissman slot requires rootfinding
 				else
 				{	
 					int count;
 					c1  = uin +sign*ch0.intPhi(Ain);
 					if(sign<0)
 					{	
-						//cout<<"Sign<0 "<<c1<<endl;
 						if(Qext<0)
 						{
 							//solve for xs s.t. 0 = Q + xs*c(xs).
-							cout<<Qext<<endl;
 							fallpurpose fcpm(ch0.w, ch0.At, ch0.Ts, 0, Qext, 0,1,1., ch0.Pnow);
 							xs = ::ridders(fcpm, 1e-8,100,&count, 1e-10, 1e-10);	
-						//	cout<<"xs = "<<xs<<"Qext = "<<Qext<<" ch0.cgrav(xs) = "<<ch0.cgrav(ch0.hofA(xs))<<"  Q-xs*c(xs)= "<<Qext+xs*ch0.cgrav(ch0.hofA(xs))<<endl;
-							c1max = -ch0.cgrav(ch0.hofA(xs))-ch0.intPhi(xs);
-						//	cout<<"c1max = "<<c1max<<"  c1 "<<c1<<endl;
+							c1max = -Cgrav(xs, ch0.At, ch0.w, ch0.At, Pext)-Phi(xs, ch0.At, ch0.w,ch0.At, ch0.Pnow);
 						}
 					}
 					else
 					{
-						//cout<<"Sign>0 "<<endl;
 						if(Qext>0)
 						{
 							//solve for xs s.t. 0 = Q-xs*c(xs)
 							fallpurpose fcpm(ch0.w, ch0.At, ch0.Ts, 0, Qext,0, 1,-1., ch0.Pnow);
 							xs = ::ridders(fcpm,1e-8,100.,&count, 1e-10, 1e-10);	
-							//cout<<"xs = "<<xs<<"  Qext =  "<<Qext<<" ch0.cgrav(xs) = "<<ch0.cgrav(ch0.hofA(xs))<<"  Q-xs*c(xs)= "<<Qext-xs*ch0.cgrav(ch0.hofA(xs))<<endl;
 							c1min = ch0.cgrav(ch0.hofA(xs))+ch0.intPhi(xs);
-							//cout<<"c1min = "<<c1min<<" c1 "<<c1<<endl;
 						}
-					}
-					//c1max = -c1min;
-					//xs = fabs(Qext)/ch0.cgrav(Ain);
-					//for(int i = 0; i<10; i++){xs = fabs(Qext)/ch0.cgrav(xs);}//cout<<xs<<endl;}
-					//c1min = Qext/xs+sign*ch0.intPhi(xs);
-					//c1max = -c1min;
+					}	
 				}
-				//make sure left end boundary flux is enforceable
+				//make sure left end boundary flux is enforceable 
 				if(whichend ==0 && Qext<0. && c1>c1max-ctol)
 				{
 					printf("oops! Qext = %f is too small for c1 = %f\n, setting Aext =Ain= %f\n", Qext, c1,Ain);
@@ -1186,9 +1180,9 @@ void Junction1::boundaryFluxes()
 						}
 						pass =1;
 					}
-					Qext = bval[ch0.n];
+					Qext = bval[ch0.n];*/
 					printf("Qext increased to min allowed value of %f, Aext = %f, RI = %f\n",Qext, Aext, Qext/Aext -ch0.intPhi(Aext));
-				*/
+				
 				}
 				//make sure right end boundary flux is enforceable
 				if(whichend ==1 && Qext>0. && c1<c1min+ctol)
@@ -1232,23 +1226,8 @@ void Junction1::boundaryFluxes()
 				else 
 				{
 				//if flux was unenforceable, Aext was set above.
-				if(!pass){
-					//printf("Whoops haven't implemented yet!\n");
-				//Crappy fixed point iteration
-				//	int k =0;
-				//	double err = 1.;
-				//	Aext = Ain
-				//	double RId = Qext/Aext +sign*ch0.intPhi(Aext)-lhs;
-				//	while (k<50 && err>1e-6 &&Aext>0)
-				//	{
-				//		//cout<<lhs-sign*ch0.intPhi(Aext)<<endl;
-				//		Aext = Qext/(lhs-sign*ch0.intPhi(Aext));	
-				//		cout<<"c1 = "<<lhs<<" Qext = "<<Qext<<"  Aext = "<<Aext<<endl;
-				//		if(Aext>0){err = fabs(Qext/Aext +sign*ch0.intPhi(Aext)-lhs);}
-				//		k++;
-				//	}
-				//	printf("% i fixed point iterations, error = %e, Aext = %f\n", k, err, Aext);
-					
+				if(!pass)
+				{				
 					int count;
 					double uin = (Ain>0. ?Qin/Ain :0. );
 					double lhs = uin +sign*ch0.intPhi(Ain);
@@ -1261,64 +1240,60 @@ void Junction1::boundaryFluxes()
 					}
 				}
 			}
-			else  //if Qext = 0 we can solve it without rootfinding
-			{
+			//if Qext = 0 we can solve it without rootfinding
+			else{
+				//uniform channel	
 				if(ch0.channeltype ==0)
 				{
 					double uin = (Ain>0. ?Qin/Ain :0. );
 					Aext = w/(G*4.)*pow((uin +sign*2.*sqrt(G*Ain/w)),2.);
-			//	cout<<"this is all wrong.\n";
-
 				}
+				//Preissman slot
 				else
 				{       			
-					//cout<<"c1 = "<<lhs<<" Qin ="<<Qin<<endl;	
 					double lhs = Qin/Ain +sign*ch0.intPhi(Ain);
-				//	cout<<sign*lhs<<endl;
-					if(sign*lhs>=0){Aext = ch0.Aofphi(sign*lhs);
-				//		cout<<Aext<<endl;
+					if(sign*lhs>=0)
+					{
+						Aext = ch0.Aofphi(sign*lhs);
 					}
-					else{cout<<"yeah I dunno, setting Aext =Ain"<<endl;Aext = Ain;}
-						
+					else
+					{
+						cout<<"yeah I dunno, setting Aext =Ain"<<endl;Aext = Ain;
+					}
+							
 				}
 			}
 			printf("Ain is %f and Qin is %f and Aext-At is %f and Qext is %f for end %d\n", Ain, Qin, Aext-ch0.At, Qext, whichend);
 		}
-		else	//if we're specifying A
+
+		//if we're specifying A
+		else
 		{
 			Aext = bval[ch0.n];
-			Qext = (Qin/Ain+sign*ePhi(Ain,ch0.w, ch0.At, ch0.Ts, Pin) - sign*ePhi(Aext, ch0.w, ch0.At, ch0.Ts, Pext))*Aext;
+			Qext = (Qin/Ain+sign*Phi(Ain,ch0.w, ch0.At, ch0.Ts, Pin) - sign*Phi(Aext, ch0.w, ch0.At, ch0.Ts, Pext))*Aext;
 			//Qext = (Qin/Ain+sign*2.*sqrt(G*Ain/w) - sign*2.*sqrt(G*Aext/w))*Aext;
 			printf("end %d has Qext is %f and Aext is %f\n", whichend, Qext, Aext);
 		}
 	}	
-	//printf("warning, wrong twice!\n");
+	//compute the fluxes using numFlux
+	//right end of pipe
 	if(whichend)
 	{	
-	//	printf("here! Aext = %f, Qext = %f, Ain = %f, Qin = %f\n", Aext, Qext, Ain, Qin);
 		ch0.numFlux(Ain, Aext, Qin, Qext, ch0.bfluxright, ch0.P[N], ch0.P[N+1]);
-	//	ch0.numFlux(Ain, Ain, Qin, -Qin, ch0.bfluxright);
 		ch0.q_hist[ch0.idx_t(0,N+1,ch0.n)] = Aext;
 		ch0.q_hist[ch0.idx_t(1,N+1,ch0.n)] = Qext;
 		printf("in junction routine!Aext =%f, Ain = %f, Qin %f, Qext = %f, bfluxright = [%f,%f]\n",Aext, Ain, Qin, Qext,ch0.bfluxright[0],ch0.bfluxright[1]);
+		//update pressurization info--this needs work, I think... 
 		if(reflect ==1||reflect==-1){ch0.P[N+1] =ch0.P[N];}
 		else if(bvaltype==0 && Aext<ch0.At){ch0.P[N+1] = false;}
 		else if(Aext>ch0.At){ch0.P[N+1]= true;}
 		else{ch0.P[N+1] =ch0.P[N];}
-
-		//cout<<"Made it!!!\n";
-	//	cout<<"Aext = "<<Aext<<" Qext =" <<Qext<<endl;
-	//	cout<<ch0.bfluxright[0]<<" "<<ch0.bfluxright[1]<<endl;
-
-
 	}
-	
+	//left end of pipe
 	else
 	{
 		
 		ch0.numFlux(Aext, Ain, Qext, Qin, ch0.bfluxleft, ch0.P[0], ch0.P[1]);
-		//cout<<Qin<<endl;
-		//ch0.numFlux(Ain, Ain, Qin, Qin, ch0.bfluxleft);
 		ch0.q_hist[ch0.idx_t(0,0,ch0.n)] = Aext;
 		ch0.q_hist[ch0.idx_t(1,0,ch0.n)] = Qext;
 		if(reflect ==-1||reflect ==1){ch0.P[0] =ch0.P[1];}
@@ -1334,6 +1309,8 @@ void Junction1::boundaryFluxes()
 	}
 }
 
+/** overloaded functions to set boundary value time series*/
+/** set boundary value to a constant value*/
 void Junction1::setbVal(double bvalnew)
 {
 	for(int i =0; i<ch0.M+1; i++)
@@ -1342,6 +1319,7 @@ void Junction1::setbVal(double bvalnew)
 	}
 }
 
+/**set boundary value to a time series stored in various arrays*/
 void Junction1::setbVal(valarray<Real> x)
 {
 	for(int i =0; i<ch0.M+1; i++)
@@ -1371,7 +1349,8 @@ Junction1::~Junction1()
 {
 	delete [] bval;
 }
-	
+
+
 Junction2::Junction2(Channel &a_ch0, Channel &a_ch1, int a_which0, int a_which1, double a_valveopen):ch0(a_ch0),ch1(a_ch1){
 	whichend0 = a_which0;
 	whichend1 = a_which1;

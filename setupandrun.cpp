@@ -36,22 +36,22 @@ void testallthiscrap() //print out all the crap I'm computing to see if it makes
 	       x = pow(-1.,j)*(pow(10.,p))+Af;
 	       h = ch0.fakehofA(x,false);
 	       hp = ch0.fakehofA(x,true);
-	       etap = eEta(x,D,At,Ts,true);
-	       eta = eEta(x,D,At,Ts,false);
-	       c = eCgrav(x,D,At,Ts,false);
-	       cp = eCgrav(x,D,At,Ts,true);
-	       phi = ePhi(x,D,At,Ts,false);
-	       phip = ePhi(x,D,At,Ts,true);
+	       etap = Eta(x,D,At,Ts,true);
+	       eta = Eta(x,D,At,Ts,false);
+	       c = Cgrav(x,D,At,Ts,false);
+	       cp = Cgrav(x,D,At,Ts,true);
+	       phi = Phi(x,D,At,Ts,false);
+	       phip = Phi(x,D,At,Ts,true);
 	       printf("%.10e    %.10f      %.10f     %.10f    %.10f    %.10f    %.10f    %.10f\n", x-Af,h,eta, etap, hp, c, phi, phip);	
 
 	}
 	}
 	 x = Af-(1e-7)/2.;
-	 etap = eEta(x,D,At,Ts,true);
-	 eta = eEta(x,D,At,Ts,false);
-	 c = eCgrav(x,D,At,Ts,false);
-	 cp = eCgrav(x,D,At,Ts,true);
-	 phi = ePhi(x,D,At,Ts,true);
+	 etap = Eta(x,D,At,Ts,true);
+	 eta = Eta(x,D,At,Ts,false);
+	 c = Cgrav(x,D,At,Ts,false);
+	 cp = Cgrav(x,D,At,Ts,true);
+	 phi = Phi(x,D,At,Ts,true);
 	 printf("Evaluated at Af = %.10f\n %.10f  (eta free)\n %.10f (eta press)\n %.10f (c)\n %.10f  (cpress)\n%.10f phi", Af,eta, etap, c, cp, phi);
 	 printf("At-Af = %e\n", fabs(ch0.At-x));
 }
