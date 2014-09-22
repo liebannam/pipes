@@ -10,6 +10,15 @@
 #include "levmar.h"
 #include "setupandrun.h"
 
+double getTheta2(double A, double D)
+{
+	int count;
+	ftheta th(A,D);
+	double theta =::ridders(th, -.1, 2*PI+1, &count,1e-15, 1e-15);
+	return theta;
+}
+
+
 void testallthiscrap() //print out all the crap I'm computing to see if it makes any bloody sense
 {
 	//also wtf is going on with cgrav???!?!?
@@ -54,6 +63,20 @@ void testallthiscrap() //print out all the crap I'm computing to see if it makes
 	 phi = Phi(x,D,At,Ts,true);
 	 printf("Evaluated at Af = %.10f\n %.10f  (eta free)\n %.10f (eta press)\n %.10f (c)\n %.10f  (cpress)\n%.10f phi", Af,eta, etap, c, cp, phi);
 	 printf("At-Af = %e\n", fabs(ch0.At-x));
+	 printf("A                   theta(A)               |A-Af|           |theta-2*pi|        |A(theta) - A|\n");
+	 for(int k = 0; k<40; k++)
+	 {
+		 double aa = PI/4.*(1.-pow(2.,-k-1));
+		 double th = getTheta2(aa,D);
+		 printf("%.16f   %.16f   %e   %e   %e\n", aa, th,fabs(aa-PI/4.), fabs(th-2*PI), fabs(1/8.*(th-sin(th))-aa)); 
+	 }
+	 printf("\n\nA                   theta(A)               |A-Af|           |theta-2*pi|        |A(theta) - A|\n");
+	 for(int k = 0; k<40; k++)
+	 {
+		 double aa = PI/160.*(double)k;
+		 double th = getTheta2(aa,D);
+		 printf("%.16f   %.16f   %e   %e   %e\n", aa, th,fabs(aa-PI/4.), fabs(th-2*PI), fabs(1/8.*(th-sin(th))-aa)); 
+	 }
 }
 
 
@@ -78,17 +101,17 @@ int main(int argc, char *argv[] )
 	int Nedges = Ntwk.Nedges;
 	double V0=Ntwk.getTotalVolume();
 	start_t = clock();
-	for(int k=0; k<Nedges; k++){
+//	for(int k=0; k<Nedges; k++){
 	//	Ntwk.channels[k]->showGeom();
-		Ntwk.channels[k]->showp();
-	}
+//		Ntwk.channels[k]->showp();
+//	}
 
 	Ntwk.runForwardProblem(dt);
 	end_t = clock();
-	for(int k=0; k<Nedges; k++){
+//	for(int k=0; k<Nedges; k++){
 	//	Ntwk.channels[k]->showGeom();
-		Ntwk.channels[k]->showp();
-	}
+//		Ntwk.channels[k]->showp();
+//	}
 //	for(int k=0; k<Ntwk.channels[0]->N; k++)
 //	{ 
 //		printf("%d   %f\n", k, Ntwk.channels[0]->fakehofA(Ntwk.channels[0]->q[(Ntwk.channels[0]->idx(0,k))], true));
@@ -100,15 +123,15 @@ int main(int argc, char *argv[] )
 	cout<<"dV = "<<V-V0<<endl;
 	cout<<"maximum wave speed is "<<Ntwk.channels[0]->cgrav(PI*.25/4.)<<endl;
 	//
-printf("t    H(valve)  h(valve-phys)  Q(reservoir)\n");   
-for (int k = 0; k<M/Mi; k++)
-{
+//printf("t    H(valve)  h(valve-phys)  Q(reservoir)\n");   
+//for (int k = 0; k<M/Mi; k++)
+//{
 //	printf("%f     %f   \n", dt*float(k*Mi), Ntwk.channels[1]->hofA(Ntwk.channels[1]->q_hist[Ntwk.channels[1]->idx_t(0,N/2,k*Mi)]));}
 //negprestest3.config
 //	printf("%f     %.10f   %10f   %f\n", dt*float(k*Mi), Ntwk.channels[0]->fakehofA(Ntwk.channels[0]->q_hist[Ntwk.channels[0]->idx_t(0,199,k*Mi)],true), Ntwk.channels[0]->fakehofA(Ntwk.channels[0]->q_hist[Ntwk.channels[0]->idx_t(0,199,k*Mi)],false), Ntwk.channels[0]->q_hist[Ntwk.channels[0]->idx_t(1,1,k*Mi)]);
 //trajkovic.config
-	printf("%f     %.10f   %10f   %f\n", dt*float(k*Mi), Ntwk.channels[0]->fakehofA(Ntwk.channels[0]->q_hist[Ntwk.channels[0]->idx_t(0,140,k*Mi)],true), Ntwk.channels[0]->fakehofA(Ntwk.channels[0]->q_hist[Ntwk.channels[0]->idx_t(0,140,k*Mi)],false), Ntwk.channels[0]->q_hist[Ntwk.channels[0]->idx_t(1,140,k*Mi)]);
-}
+//	printf("%f     %.10f   %10f   %f\n", dt*float(k*Mi), Ntwk.channels[0]->fakehofA(Ntwk.channels[0]->q_hist[Ntwk.channels[0]->idx_t(0,140,k*Mi)],true), Ntwk.channels[0]->fakehofA(Ntwk.channels[0]->q_hist[Ntwk.channels[0]->idx_t(0,140,k*Mi)],false), Ntwk.channels[0]->q_hist[Ntwk.channels[0]->idx_t(1,140,k*Mi)]);
+//}
 
 printf("h = .014, A = %.10f\n",Ntwk.channels[0]->Aofh(0.014));
 printf("h = .008, A = %.10f\n",Ntwk.channels[0]->Aofh(0.008));
@@ -116,14 +139,20 @@ printf("h = 150, A = %.10f\n",Ntwk.channels[0]->Aofh(150));
 printf("h = 1, A = %.10f\n",Ntwk.channels[0]->Aofh(1));
 printf("Af is %f\n", Ntwk.channels[0]->At);
 printf("dt = %f , dx = %f, CFL = %f\n",dt, dx, dt/dx*Ntwk.channels[0]->a);
-for (int i=0;i<Ntwk.channels[0]->N; i++){
+/*for (int i=0;i<Ntwk.channels[0]->N; i++){
 	//printf("%f   %f   \n",i*Ntwk.channels[0]->dx, Ntwk.channels[0]->fakehofA(Ntwk.channels[0]->q[Ntwk.channels[0]->idx(0,i)],Ntwk.channels[0]->P[i+1]));
 	printf("%f   %f   \n",i*Ntwk.channels[0]->dx, Ntwk.channels[0]->fakehofA(Ntwk.channels[0]->q[Ntwk.channels[0]->idx(0,i)],Ntwk.channels[0]->P[i+1]));
-}
+}*/
+
+
+double places[2] = {9.2,7.2};
+int which[2] = {1,1};
+Ntwk.channels[0]->quickWrite(places, which, 2,T,Mi); 
+
 //}
 //writeOutputTarga(Ntwk, M, Mi,jIDs, xcoords, ycoords, elevs, T, writelogs);
 writeOutputText(Ntwk, M, Mi);
-//testallthiscrap();
+testallthiscrap();
 
 }
 //optimization crap	

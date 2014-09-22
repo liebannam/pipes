@@ -26,6 +26,8 @@ class Coords{
 
 };
 */
+
+
 //for writing output to labeled .tga files for use in POVRAY
 void w3d_targa_output_surface(const char* filename,double *fld,int m,int n,double zmin,double zmax);
 Network setupNetwork(char *finp, char *fconfig, int &M, int &Mi, double &T, int channeltype_);

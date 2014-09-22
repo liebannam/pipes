@@ -74,6 +74,7 @@ class Channel
 		const double L;                            // pipe length
 		const int N;                               // number of grid points
 		const int M;				   // number of time steps (each channel instance must specify!)
+	//	const int Mi;				   // number of time steps between recording data in q_hist
 		int n;					   // what time step we're at...		
 		double dx;                                 // grid spacing
 		double At, Af, a, Ts;		           // Preissman parameters (won't get initialized or used for uniform cross section)
@@ -83,7 +84,7 @@ class Channel
 		double cmax;				   // maximum wave speed
 /****dynamic variables and boundary info
 * initial and final states q0 and q = [q(0,0), q(0,1)...,q(0,N-1), q(1,0),....q(1,N-1)] where q(0,:) is area A andq(1,:) is discharge Q
-* history of states is q_hist laid out as [q(t=0), q(t=dt), ....q(t=dt*(M-1))] and each q is a row vector arranged as above.
+* history of states is q_hist laid out as [q(t=0), q(t=dt), ....q(t=dt*(M/Mi-1))] and each q is a row vector arranged as above.
 * associated indexing functions so you don't have to recall how this is laid out
 *** idx: //indexing function to access q(i,j)  where i =0,1 and j= 0,1...N-1
 *** idx_t: indexing function to accessq^n(i,j)with i,j as above and n = 0,...M-1 (n*dt = t at which this slice is taken)
@@ -96,8 +97,10 @@ class Channel
 		vector<bool> P;   			   // pressurization states
 		bool Pnow; 				   // ''current pressurization'' at cell under consideration-- this is a hilariously bad idea!
 		//indexing functions		
-		int idx(int i_in, int j_in){return (N*i_in+j_in);}
-		int idx_t(int i_in, int j_in, int n_in){return (2*(N+2)*n_in+(N+2)*i_in+j_in);} 
+		int idx(int i_in, int j_in){return (N*i_in+j_in);}    //access q(i,j)  where i =0,1 and j= 0,1...N-1
+
+		int idx_t(int i_in, int j_in, int n_in){return (2*(N+2)*n_in+(N+2)*i_in+j_in);} //accessq^n(i,j)with i,j as above and n = 0,...M-1 (n*dt = t at which this slice is taken)
+
 		int pj(int i){return i+1;} 		    // indexing for pressurization states vector
 		double bfluxleft[2], bfluxright[2];         // left and right boundary fluxes
 /*****Methods*/
@@ -141,9 +144,10 @@ class Channel
 		double getTheGoddamnVolume();
 		double getAveGradH(int i);  //returns int_0^L(dh/dx) dx at time ti (probably not accurate enough...) 
 
-/**Write stuff to file*/
-		int writeqToFile(int Mi, double dt);
-		int writeRItofile(double dt, int sign);	
+/**Write stuff */
+		int writeqToFile(int Mi, double dt);    //write all information to file at intervals of dt*Mi/M 
+		int writeRItofile(double dt, int sign); //Write Riemann Invariants to file
+		void quickWrite(double *where, int *which, int K, double T, int skip);        //quickly output end results at location x = places[i] for i = 1...length(places)	
 };
 
 

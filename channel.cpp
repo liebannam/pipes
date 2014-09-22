@@ -157,7 +157,7 @@ Channel::Channel(int Nin, double win, double Lin, int Min):N(Nin), w(win), L(Lin
 	for(int i = 0; i<N+1; i++){P.push_back(false);}
 	P.push_back(false);
 	n = 0;
-	if(N*M<1e8){
+	if(N*M<1e7){
 		q_hist = new double[2*(N+2)*(M+2)];
 	}
 	else 
@@ -757,6 +757,59 @@ int Channel::writeRItofile(double dt, int sign)
 	return 0;
 }
 
+/**quickly write out some run time info!
+ * where is either times or places (if which[k] = 0, then where is a time; else it's a place)
+ * K is the length of where
+ */
+void Channel::quickWrite(double *where, int *which, int K, double T, int skip)
+{
+	int i, MN;
+	double ds;
+	for (int k=0; k<K; k++)
+	{
+		if(which[k]==0)//write variables at all locations at time where[k] 
+
+		{
+			i = round(where[k]*(double)M/K);
+			if(i>=M){i=M;}
+			if(i<0){i=0;}
+			printf("t = %f, index = %d\n", where[k], i);
+			MN = N;
+			ds = dx;
+		}
+		else  //write variables at all times at location where[k]
+		{
+			i = round(where[k]*(double)N/L);
+			if(i>=N){i=N-1;}
+			if(i<0){i=0;}
+			printf("x = %f m, index = %d\n", where[k], i);
+			MN = M;
+			ds = T/(double)M;
+		}
+		printf("%s     A     h      hfake   Q \n",which?"t":"x");
+		double A, h, hfake, Q;
+		for(int j = 0; j<MN; j+=skip)
+		{
+			if(which[k]==0)  		
+			{
+				A = q_hist[idx_t(0,j,i)];
+				Q = q_hist[idx_t(1,j,i)];
+
+			}
+			else
+			{
+				A = q_hist[idx_t(0,i,j)];
+				Q = q_hist[idx_t(0,i,j)];
+				
+			}
+
+			h = hofA(A);
+			hfake = fakehofA(A,true);
+
+			printf(" %f    %f     %f    %f    %f \n", ds*(double)j,A, h, hfake, Q);
+		}
+	}	
+}
  /**Set Preissman parameters 
  * a is the pressure wave speed for this pipe -- defaults to 1200
  */
@@ -770,19 +823,20 @@ void Cpreiss::setGeom(double a_)
 	Ts = G*Af/(a*a);
 //this bit fails epically	
 	//ftheta th(At,D);
-	//tt =::ridders(th, 0, 2*PI+1, &count,1e-10, 1e-12);
+//	tt =::ridders(th, 0, 2*PI+1, &count,1e-10, 1e-12);
 
-	//tt = 2*(PI-asin(Ts/D));
-	//yt = D/2.*(1-cos(tt/2.));
-//	cout<<"yt = "<<yt<<" tt = "<<tt<<endl;
+	tt = 2*(PI-asin(Ts/D));
+	yt = D/2.*(1-cos(tt/2.));
 	At = Aofh(yt);
-	tt = 2*asin(G*D*2*PI/(8*a*a));// theta such that c(A(theta)) = a
+
+//	tt = 2*asin(G*D*2*PI/(8*a*a));// theta such that c(A(theta)) = a
 	
-	At = Af;
-	yt = hofA(At);
+	double yt2 = hofA(At);
 	cout<<"At = "<<At<<" Ts ="<<Ts<<endl;
 	printf("difference between At and Af is  %e\n", At-PI*D*D/4.);
 	printf("slot gravity wavespeed c  = %f\n", sqrt(D*D*PI/4.*G/Ts));
+	double t2 = 2*PI-tt;
+	printf("tt = %.16f, yt = %f,At = %.16f, fAt = %.16f\ntt-2pi = %.15f\n", tt,yt, At, D*D/8*(tt-sin(tt)),tt-2*PI);
 }
 
 
@@ -1272,7 +1326,7 @@ void Junction1::boundaryFluxes()
 			Aext = bval[ch0.n];
 			Qext = (Qin/Ain+sign*Phi(Ain,ch0.w, ch0.At, ch0.Ts, Pin) - sign*Phi(Aext, ch0.w, ch0.At, ch0.Ts, Pext))*Aext;
 			//Qext = (Qin/Ain+sign*2.*sqrt(G*Ain/w) - sign*2.*sqrt(G*Aext/w))*Aext;
-			printf("end %d has Qext is %f and Aext is %f\n", whichend, Qext, Aext);
+		//	printf("end %d has Qext is %f and Aext is %f\n", whichend, Qext, Aext);
 		}
 	}	
 	//compute the fluxes using numFlux
@@ -1282,7 +1336,7 @@ void Junction1::boundaryFluxes()
 		ch0.numFlux(Ain, Aext, Qin, Qext, ch0.bfluxright, ch0.P[N], ch0.P[N+1]);
 		ch0.q_hist[ch0.idx_t(0,N+1,ch0.n)] = Aext;
 		ch0.q_hist[ch0.idx_t(1,N+1,ch0.n)] = Qext;
-		printf("in junction routine!Aext =%f, Ain = %f, Qin %f, Qext = %f, bfluxright = [%f,%f]\n",Aext, Ain, Qin, Qext,ch0.bfluxright[0],ch0.bfluxright[1]);
+	//	printf("in junction routine!Aext =%f, Ain = %f, Qin %f, Qext = %f, bfluxright = [%f,%f]\n",Aext, Ain, Qin, Qext,ch0.bfluxright[0],ch0.bfluxright[1]);
 		//update pressurization info--this needs work, I think... 
 		if(reflect ==1||reflect==-1){ch0.P[N+1] =ch0.P[N];}
 		else if(bvaltype==0 && Aext<ch0.At){ch0.P[N+1] = false;}
@@ -1301,7 +1355,7 @@ void Junction1::boundaryFluxes()
 		else if(Aext>ch0.At){ch0.P[0]= true;}
 		else{ch0.P[0] =ch0.P[1];}
 
-		printf("in junction routine!Aext =%f, Ain = %f, Qin %f, Qext = %f, bfluxleft = [%f,%f]\n",Aext, Ain, Qin, Qext,ch0.bfluxleft[0],ch0.bfluxleft[1]);
+	//	printf("in junction routine!Aext =%f, Ain = %f, Qin %f, Qext = %f, bfluxleft = [%f,%f]\n",Aext, Ain, Qin, Qext,ch0.bfluxleft[0],ch0.bfluxleft[1]);
 
 
 	//	printf("Aext = %f and Qext = %f \n",Aext, Qext);
