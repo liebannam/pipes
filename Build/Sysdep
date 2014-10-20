@@ -11,7 +11,7 @@ CFLAGSD = -g -Wall
 #if on Orinoco
 ROOT   = /Users/lieba
 #if on Macbook Air
-ROOT   = /Users/anna
+#ROOT   = /Users/anna
 
 INC    = -I$(ROOT)/include  -I/opt/local/include
 
