@@ -49,25 +49,26 @@ void testallthiscrap() //print out all the crap I'm computing to see if it makes
 	       eta = Eta(x,D,At,Ts,false);
 	       c = Cgrav(x,D,At,Ts,false);
 	       cp = Cgrav(x,D,At,Ts,true);
-	       phi = Phi(x,D,At,Ts,false);
-	       phip = Phi(x,D,At,Ts,true);
+	       phi = PhiofA(x,D,At,Ts,false);
+	       phip = PhiofA(x,D,At,Ts,true);
 	       printf("%.10e    %.10f      %.10f     %.10f    %.10f    %.10f    %.10f    %.10f\n", x-Af,h,eta, etap, hp, c, phi, phip);	
 
 	}
 	}
+	 bool pp = false;
 	 x = Af-(1e-7)/2.;
 	 etap = Eta(x,D,At,Ts,true);
 	 eta = Eta(x,D,At,Ts,false);
 	 c = Cgrav(x,D,At,Ts,false);
 	 cp = Cgrav(x,D,At,Ts,true);
-	 phi = Phi(x,D,At,Ts,true);
+	 phi = PhiofA(x,D,At,Ts,true);
 	 printf("Evaluated at Af = %.10f\n %.10f  (eta free)\n %.10f (eta press)\n %.10f (c)\n %.10f  (cpress)\n%.10f phi", Af,eta, etap, c, cp, phi);
 	 printf("At-Af = %e\n", fabs(ch0.At-x));
 	 printf("A                   h(A)               |A-Af|           |hnew-hold|        |A(theta) - A|\n");
 	 for(int k = 0; k<40; k++)
 	 {
 		 double aa = D*D*PI/4.*(1.-pow(2.,-k-1));
-		 double h = ch0.hofA(aa);
+		 double h = ch0.HofA(aa,pp);
 		 double hold =ch0.hofAold(aa);
 		 double th = 2*acos(1-2.*h/D);
 		 printf("%.16f   %.16f   %e   %e   %e\n", aa, h,fabs(aa-D*D*PI/4.), fabs(h-hold), fabs(D*D/8.*(th-sin(th))-aa)); 
@@ -76,10 +77,10 @@ void testallthiscrap() //print out all the crap I'm computing to see if it makes
 	 for(int k = 0; k<40; k++)
 	 {
 		 double aa = D*D*PI/160.*(double)k;
-		 double h = ch0.hofA(aa);
+		 double h = ch0.HofA(aa,pp);
 		 double hold =ch0.hofAold(aa);
 		 double th = 2*acos(1-2.*h/D);
-		 double ae = ch0.Aofphi(ch0.phiofA(aa));
+		 double ae = ch0.AofPhi(ch0.PhiofA(aa,pp),pp);
 		 printf("%.16f   %.16f   %e   %e   %e   %e\n", aa, h,fabs(aa-D*D*PI/4.), fabs(h-hold), fabs(D*D/8.*(th-sin(th))-aa), fabs(aa-ae)); 
 	 }
 	 //compare timings
@@ -87,35 +88,17 @@ void testallthiscrap() //print out all the crap I'm computing to see if it makes
 	 t0 = clock();
 	 double yy;
 	 int MM = 10000;
-	 for (int i = 1; i<MM; i++)
-	 {
-	   yy =ch0.hofA((float)i/MM*PI*D*D/4.); 
-	 }
+	 for (int i = 1; i<MM; i++){yy =ch0.HofA((float)i/MM*PI*D*D/4.,false);}
 	 t1 = clock();
-	 for (int i = 1; i<MM; i++)		 
-	 {
-	   yy =ch0.hofAold((float)i/MM*PI*D*D/4.); 
-	 } 
+	 for (int i = 1; i<MM; i++) {yy =ch0.hofAold((float)i/MM*PI*D*D/4.); } 
 	 t2  = clock();
-	 for (int i = 1; i<MM; i++)		 
-	 {
-	   yy =ch0.pbar_old((float)i/MM*PI*D*D/4., false); 
-	 }
+	 for (int i = 1; i<MM; i++){yy =ch0.pbar_old((float)i/MM*PI*D*D/4., false);}
 	t3 = clock();
-	for (int i = 1; i<MM; i++)		 
-	{
-	   yy =ch0.Aofh((float)i/MM*PI*D*D/4.); 
-	}
+	for (int i = 1; i<MM; i++){yy =ch0.AofH((float)i/MM*PI*D*D/4.,false); }
 	t4 = clock();
-	for (int i = 1; i<MM; i++)		 
-	{
-	   yy =ch0.phiofA((float)i/MM*PI*D*D/4.); 
-	}
+	for (int i = 1; i<MM; i++){ yy =ch0.PhiofA((float)i/MM*PI*D*D/4.,false); }
 	t5 = clock();
-	for (int i = 1; i<MM; i++)		 
-	{
-	   yy =ch0.pbar((float)i/MM*PI*D*D/4., false); 
-	}
+	for (int i = 1; i<MM; i++){yy =ch0.pbar((float)i/MM*PI*D*D/4., false); }
 	t6 = clock();
 	printf("%d evaluations\n", MM);
 	cout<<"h(A) chebyshev eval time =          "<<(t1-t0)/(double)CLOCKS_PER_SEC<<endl;
@@ -169,7 +152,7 @@ int main(int argc, char *argv[] )
 	double V = Ntwk.getTotalVolume();
 	cout<<"initial volume "<<V0<< "    "<<"Final Volume " <<V<< endl;
 	cout<<"dV = "<<V-V0<<endl;
-	cout<<"maximum wave speed is "<<Ntwk.channels[0]->cgrav(PI*.25/4.)<<endl;
+	cout<<"maximum wave speed is "<<Ntwk.channels[0]->Cgrav(PI*.25/4.,false)<<endl;
 	//
 //printf("t    H(valve)  h(valve-phys)  Q(reservoir)\n");   
 //for (int k = 0; k<M/Mi; k++)
@@ -181,10 +164,10 @@ int main(int argc, char *argv[] )
 //	printf("%f     %.10f   %10f   %f\n", dt*float(k*Mi), Ntwk.channels[0]->fakehofA(Ntwk.channels[0]->q_hist[Ntwk.channels[0]->idx_t(0,140,k*Mi)],true), Ntwk.channels[0]->fakehofA(Ntwk.channels[0]->q_hist[Ntwk.channels[0]->idx_t(0,140,k*Mi)],false), Ntwk.channels[0]->q_hist[Ntwk.channels[0]->idx_t(1,140,k*Mi)]);
 //}
 
-printf("h = .014, A = %.10f\n",Ntwk.channels[0]->Aofh(0.014));
-printf("h = .008, A = %.10f\n",Ntwk.channels[0]->Aofh(0.008));
-printf("h = 150, A = %.10f\n",Ntwk.channels[0]->Aofh(150));
-printf("h = 1, A = %.10f\n",Ntwk.channels[0]->Aofh(1));
+printf("h = .014, A = %.10f\n",Ntwk.channels[0]->AofH(0.014,false));
+printf("h = .008, A = %.10f\n",Ntwk.channels[0]->AofH(0.008,false));
+printf("h = 150, A = %.10f\n",Ntwk.channels[0]->AofH(150,false));
+printf("h = 1, A = %.10f\n",Ntwk.channels[0]->AofH(1,false));
 printf("Af is %f\n", Ntwk.channels[0]->At);
 printf("dt = %f , dx = %f, CFL = %f\n",dt, dx, dt/dx*Ntwk.channels[0]->a);
 /*for (int i=0;i<Ntwk.channels[0]->N; i++){
@@ -193,17 +176,18 @@ printf("dt = %f , dx = %f, CFL = %f\n",dt, dx, dt/dx*Ntwk.channels[0]->a);
 }*/
 
 
-double places[2] = {9.2,7.2};
+double places[2] = {10,990};
 int which[2] = {1,1};
-Ntwk.channels[0]->quickWrite(places, which, 2,T,Mi); 
 
 //}
 //writeOutputTarga(Ntwk, M, Mi,jIDs, xcoords, ycoords, elevs, T, writelogs);
 writeOutputText(Ntwk, M, Mi);
 testallthiscrap();
 printf("Coefficients!!\n");
-for(int i = 0; i<Ntwk.channels[0]->Ncheb+1; i++)
-printf("%d   %.15f    %.15f    %.15f    %.15f    %.15f   \n", i, Ntwk.channels[0]->coeffs_h[i],Ntwk.channels[0]->coeffs_p1[i],Ntwk.channels[0]->coeffs_p2[i], Ntwk.channels[0]->coeffs_a1[i],Ntwk.channels[0]->coeffs_a2[i]);
+
+Ntwk.channels[0]->quickWrite(places, which, 2,T,Mi); 
+//for(int i = 0; i<Ntwk.channels[0]->Ncheb+1; i++)
+//printf("%d   %.15f    %.15f    %.15f    %.15f    %.15f   \n", i, coeffs_h[i],coeffs_p1[i],coeffs_p2[i], Ntwk.channels[0]->coeffs_a1[i],coeffs_a2[i]);
 }
 //optimization crap	
 //	int ndof = 16;   // degrees of freedom (in Fourier or Hermite modes)
@@ -429,7 +413,7 @@ Network setupNetwork(char *finp, char *fconfig, int &M, int &Mi, double &T, int 
 
 	double dt = T/(double)M;
 
-	//make the damn network
+	//make the damn return PhiofA(A, D, At, Ts, P);
 	Network Ntwk(Nnodes, conns, Nedges, Ns, diams, lengths, S0s, Mrs, h0s, q0s, M, channeltype);
 	
 	
@@ -439,8 +423,8 @@ Network setupNetwork(char *finp, char *fconfig, int &M, int &Mi, double &T, int 
 	cout<<"Number of edges is "<<Nedges<<endl;
 	for(int k = 0; k<Ntwk.channels.size(); k++)
 	{
-		double a0 = Ntwk.channels[k]->Aofh(h0s[k]);
-		printf("h0 = %f, a0 = %.10f, h(a0) = %f\n", h0s[k],a0, Ntwk.channels[k]->hofA(a0) );
+		double a0 = Ntwk.channels[k]->AofH(h0s[k],false);
+		printf("h0 = %f, a0 = %.10f, h(a0) = %f\n", h0s[k],a0, Ntwk.channels[k]->HofA(a0,false) );
 		Ntwk.channels[k]->setq(a0, q0s[k]);
 		Ntwk.channels[k]->setq0(a0, q0s[k]);
 	}	
@@ -522,10 +506,14 @@ void writeOutputTarga(Network &Ntwk, int M, int Mi,vector <int> jIDs, vector<dou
 				//	}
 					if(writelogs)
 					{
-						val = log(Ntwk.channels[kk]->hofA(Ntwk.channels[kk]->q_hist[Ntwk.channels[kk]->idx_t(0,i+1, ii)])+1);
+						bool p =  false;//Ntwk.channels[kk]->P_hist[Ntwk.channels[kk]->pidx_t(i+1, ii)]
+						double a = Ntwk.channels[kk]->q_hist[Ntwk.channels[kk]->idx_t(0,i+1, ii)];
+						val = log(Ntwk.channels[kk]->HofA(a,p)+1);
 					}
 					else{
-						val = Ntwk.channels[kk]->hofA(Ntwk.channels[kk]->q_hist[Ntwk.channels[kk]->idx_t(0,i+1, ii)]);
+						bool p = false;
+						double a = Ntwk.channels[kk]->q_hist[Ntwk.channels[kk]->idx_t(0,i+1, ii)];
+						val = Ntwk.channels[kk]->HofA(a,p);
 					}	
 					myfld[i+mm*j] = val;
 				       //cout<<val<<"   ";	

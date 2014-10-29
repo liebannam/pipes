@@ -39,16 +39,61 @@ inline double getTheta(double A, double D)
 
 /*unstable and possibly  terrible way to comput Phi in the circular part of the pipe*/
 
-inline double powPhi(double t, double D){
-	return sqrt(G*3.*D/8.)*(t-1/80.*t*t*t+19./448000.*t*t*t*t*t
-		+1./10035200.*t*t*t*t*t*t*t+491./(27.*70647808000.)*t*t*t*t*t*t*t*t*t);}
+//inline double powPhi(double t, double D){
+//	return sqrt(G*3.*D/8.)*(t-1/80.*t*t*t+19./448000.*t*t*t*t*t
+//		+1./10035200.*t*t*t*t*t*t*t+491./(27.*70647808000.)*t*t*t*t*t*t*t*t*t);}
 
 
 /**Phi = \int_0^A (c(z)/z)dz, where c(z) is the gravity wavespeed as a function of A
  * A = area, D = diameter, At = transition area, Ts = slot width, P = true if pressurized, false otherwise
  */
 
-double Phi(double A, double D, double At, double Ts, bool P)
+const int Ncheb = 20;
+const double xx []= {-1.0000000000000000,  -0.9876883405951378,  -0.9510565162951535,  -0.8910065241883679,  
+		     -0.8090169943749475,  -0.7071067811865476,  -0.5877852522924732,  -0.4539904997395468,  
+		     -0.3090169943749475,  -0.1564344650402309,  -0.0000000000000000,  0.1564344650402306,  
+		      0.3090169943749473,  0.4539904997395467,  0.5877852522924730,  0.7071067811865475,  
+		      0.8090169943749473,  0.8910065241883678,  0.9510565162951535,  0.9876883405951377, 1.0000000000000000, };
+
+//polynomial coefficients
+////for h(A)
+const double coeffs_h[]={2.412767243157768248135319100059554e-01, 2.490551009703833796234839617091749e-01, 8.588320472482467973567819078662384e-03,
+ 			 9.228793157998457405435172914627134e-04, 1.310660974448734367701266018026398e-04, 2.129558025374983921564763711749651e-05,
+			 3.749094616467203989458105646535410e-06, 6.962795341462423230912527993610194e-07, 1.343547052451044239960227996180368e-07,
+		  	 2.668125626637029475349687868096361e-08, 5.418626817526250261028102778989540e-09, 1.120393624965683396198531943326663e-09,
+		  	 2.350950901068854991515379247450580e-10, 4.994029090156534158917749943719349e-11, 1.071960458760750008323825025497721e-11,   
+		     	 2.321591726189518874185799075341815e-12, 5.067116805835826216315004584447364e-13, 1.113605910211862088384776819368985e-13,
+		  	 2.467624478577450438100243851682381e-14, 5.743999679585741830689301264332563e-15, 1.221321604072796243118941605439226e-15};
+
+//for phi(A)  when 0<A<=pi/8  
+const double coeffs_p1[] = {2.6099703290809577, 2.6418910954954722, 0.0407198075367772, 0.0101962412156085, 0.0017585298273079,
+       			0.0004510739954107, 0.0001148009501627, 0.0000322213950326, 0.0000093014159914, 0.0000027886790457, 
+			0.0000008553527957, 0.0000002678904977, 0.0000000852610460, 0.0000000275113722, 0.0000000089810480, 
+			0.0000000029602467, 0.0000000009847978, 0.0000000003306886, 0.0000000001120956, 0.0000000000423243, 0.0000000000127085 };
+//for phi(A) when pi/8<=A<=pi
+const double coeffs_p2[]= {6.4670122383491355, -0.8635238603246120, -0.2591109614939733, -0.0292512185543841, -0.0076221992053693,
+       			-0.0017389019022193, -0.0004503493365253, -0.0001208472298793, -0.0000332374280799, -0.0000093988438938, 
+			-0.0000027068870730, -0.0000007850335833, -0.0000002345070328, -0.0000000682526355, -0.0000000214757085, 
+			-0.0000000059227336, -0.0000000021646739, -0.0000000004279834, -0.0000000002981759, 0.0000000000305111, -0.0000000000597102};
+//for A(phi) when phi<phi(pi/8)
+const double coeffs_a1[] = {0.1262575316112871, 0.1873031261944491, 0.0712845714324142, 0.0092391530562048, -0.0011662365223237,
+       			-0.0001871946267119, -0.0000251074200750, -0.0000052509280877, -0.0000011451817876, -0.0000002739189119,
+		       	-0.0000000680431439, -0.0000000175632951, -0.0000000046503898, -0.0000000012589959, -0.0000000003467156, 
+			-0.0000000000969788, -0.0000000000276160, -0.0000000000079714, -0.0000000000024471, -0.0000000000003386, 0.0000000000001585};
+//for A(phi) when phi(pi/8)<phi
+const double coeffs_a2[] = {0.6277322274489641, -0.2023497520119139, -0.0391435613898155, 0.0060556625096610, 0.0004614027183724,
+       			-0.0000553007320124, -0.0000015358044760, -0.0000001139988435, 0.0000000727565380, -0.0000000282843815,
+		       	0.0000000124134323, -0.0000000058741562, 0.0000000029710635, -0.0000000015906890, 0.0000000008960590, 
+			-0.0000000005293791, 0.0000000003289447, -0.0000000002183606, 0.0000000001557247, -0.0000000001192869, 0.0000000000532795};
+
+//powers for scaling x points before evaluation (determined via python-automated trial and error)
+const double pA1 = 1./3.;
+const double pA2 = 5./12.;
+const double pPhi1 = 1.;
+const double pPhi2 = 3./5.;
+
+
+/*double PhiofAold(double A, double D, double At, double Ts, bool P)
 {
 	
 	double phi = 0.;
@@ -64,6 +109,87 @@ double Phi(double A, double D, double At, double Ts, bool P)
 		phi = powPhi(t,D)+2*sqrt(A/Ts)-2*sqrt(At/Ts);
 	}
 	return phi;
+}*/
+
+double HofA(double A, double D, double At, double Ts, bool P)
+{
+	double y; 
+	if(A<1e-15){return 0.;}
+	if(A<At&& !P)  //below slot
+	{
+		A = A/(D*D);//normalize by full area;
+		if (A<=PI/8.){
+			double Ahat = 2*pow((A*8./PI),pA1)-1.;
+			y = D*ChebEval(&coeffs_h[0],Ncheb, Ahat);
+		}
+		else{
+			double Ahat = 2*pow(8./PI*(PI/4.-A),pA2)-1.;
+			y = D*(1.- ChebEval(&coeffs_h[0],Ncheb, Ahat));
+
+		}
+	}
+	else      //in Preissman Slot
+	{
+		y = D+(A-At)/Ts;
+	}
+	return y;
+}
+
+double PhiofA(double A, double D, double At, double Ts, bool P)
+{
+	if(A<1e-15){return 0.;}
+	double phi = 0.;
+	if(A<=At && !P)
+	{	
+		A = A/(D*D);
+		if(A<PI*D*D/8.)
+		{	
+			double Ahat = 2*pow((A*8./PI),pA1)-1.;
+			phi = D*ChebEval(&coeffs_p1[0],Ncheb, Ahat);
+		}
+		else
+		{
+			double Ahat = 2.*pow((PI/4.-A)*8/PI,pA2)-1;
+			phi = D*ChebEval(&coeffs_p2[0], Ncheb, Ahat);
+		}
+	}
+	else
+	{
+		phi = D*ChebEval(&coeffs_p2[0], Ncheb, -1)+2.*(sqrt(A/Ts)-sqrt(At/Ts));
+
+	}
+	return phi;
+}
+
+double AofPhi(double phi, double D, double At, double Ts, bool P)
+{
+	if(phi<1e-15){return 0.;}
+	double A = 0.;
+	double phi1m = D*ChebEval(&coeffs_p2[0],Ncheb, 1.);
+	double phi2m = D*ChebEval(&coeffs_p2[0],Ncheb, -1.);
+	if(phi<phi2m&&!P)
+	{
+		
+		double p1 = 1.;
+		double p2 = 3./5.;
+		if(phi<phi1m)
+		{	
+			double phat = 2*pow(phi/phi1m,pPhi1)-1.;
+			A = D*D*ChebEval(&coeffs_a1[0],Ncheb, phat);
+		}
+		else
+		{
+			double phat = 2.*pow((phi2m-phi)/(phi2m-phi1m),pPhi2)-1.;
+			A = D*D*ChebEval(&coeffs_a2[0], Ncheb, phat);
+		}
+	}
+	else
+	{
+		A = D*D*ChebEval(&coeffs_a2[0], Ncheb, -1)+2.*(sqrt(A/Ts)-sqrt(At/Ts));
+
+	}
+	return A;
+
 }
 
 /** Cgrav = sqrt(g*A/l)  is the gravity wavespeed (l is the width of the free surface)
@@ -73,24 +199,16 @@ double Phi(double A, double D, double At, double Ts, bool P)
 double Cgrav(double A, double D, double At, double Ts, bool P)
 {
 	double c;
-	double eps = 1e-6;
 	if(A<At &&(!P))
 	{
-		double t = getTheta(A,D);
-	//	double tt =  2.*(PI-asin(D*PI*Ts/(4.*At)));	
-		//printf("theta = %.16f  A = %.16f\n", t, A);;
-		if(A<At-eps){
-			c = sqrt(G*A/(D*sin(t/2.)));
-		}
-		else{
-			c = (sqrt(G*At/Ts)-sqrt(G*A/(D*sin(t/2.))))/eps*(A-At+eps)+sqrt(G*A/(D*sin(t/2.)));
-		}	
+		double h = HofA(A,D,At,Ts,P);
+		double l = 2.*sqrt(h/D*(1.-h/D));
+		c = sqrt(G*A/l);
 	}
-	//in slot assign pressure wavespeed a = sqrt(G*Af/Ts)
+	//in slot assign pressure wavespeed sqrt(G*A/Ts) (should be basically a)
 	else   
 	{
-		double Af = PI*D*D/4.;
-		c = sqrt(G*Af/Ts);
+		c = sqrt(G*A/Ts);
 	}
 
 	return c;    
@@ -117,13 +235,13 @@ double Eta(double A, double D, double At, double Ts, bool P)
 	double Eta,t;
 	if (A<At &&(!P))
 	{
-		t = getTheta(A,D);
-	//	double y = hofA(A);
+	//	t = getTheta(A,D);
+		double y = HofA(A, D, At, Ts, P);
 	//	double y = D/2.*(1.+cos(PI-t/2.));
-	//	Eta = G/12.*((3.*D*D-4.*D*y+4.*y*y)*sqrt(y*(D-y))
-	//		-3.*D*D*(D-2.*y)*atan(sqrt(y)/sqrt(D-y)));
-		double st  = sin(t/2.);
-		Eta = 1./24.*(3*st-st*st*st-3*t/2*cos(t/2))*G*D*D*D;
+		Eta = G/12.*((3.*D*D-4.*D*y+4.*y*y)*sqrt(y*(D-y))
+			-3.*D*D*(D-2.*y)*atan(sqrt(y)/sqrt(D-y)));
+	//	double st  = sin(t/2.);
+	//	Eta = 1./24.*(3*st-st*st*st-3*t/2*cos(t/2))*G*D*D*D;
 	//      printf("Eta_s -Eta_mine = %e\n", fabs(Eta2-Eta));	
 	}
 	//in slot use Sanders 2011 TPA approach
@@ -183,23 +301,6 @@ Channel::Channel(int Nin, double win, double Lin, int Min):N(Nin), w(win), L(Lin
 		bfluxleft[j] = 0;
 		bfluxright[j] = 0;
 	}
-//read in coefficients for h(A) evaluations
-	const char *fnameh = "../chebcoeffs/hofA.txt";
-	const char *fnamep1 = "../chebcoeffs/phiofA1.txt";
-	const char *fnamep2 = "../chebcoeffs/phiofA2.txt";
-	const char *fnamea1 = "../chebcoeffs/Aofphi1.txt";
-	const char *fnamea2 = "../chebcoeffs/Aofphi2.txt";
-	
-	int count;
-	readCoeffs(&fnameh[0], coeffs_h,count);	
-	readCoeffs(&fnamep1[0], coeffs_p1,count);	
-	readCoeffs(&fnamep2[0], coeffs_p2,count);	
-	readCoeffs(&fnamea1[0], coeffs_a1,count);	
-	readCoeffs(&fnamea2[0], coeffs_a2,count);	
-	Ncheb = count-1;
-	cout<<"Ncheb ="<<Ncheb<<endl;
-	xx.resize(Ncheb+1);	
-	getChebNodes(&xx[0],Ncheb);
 
 }
 
@@ -447,8 +548,8 @@ void Cpreiss::updateExactRS(double q1m, double q1p, double q2m, double q2p, doub
 	f_exactRS ff(fl, fr, um, up);
 	printf("about to solve for Astar with qm = [%f, %f] and qp = [%f,%f] ul = %f, ur = %f\n", q1m, q2m, q1p, q2p, um, up);
 	Astar = ::ridders(ff, 0, Amax, &count,1e-10, 1e-12);
-	double cbar = (Cgrav(q1m, w, At, Ts, Pl) +Cgrav(q1p, w, At, Ts, Pr))/2.;
-	double Astar1 = (q1m+q1p)/2.*(1+(um-up)/(Phi(q1p, w, At, Ts, Pl)+Phi(q1m, w, At, Ts, Pr)));
+	double cbar = (Cgrav(q1m,Pl) +Cgrav(q1p,Pr))/2.;
+	double Astar1 = (q1m+q1p)/2.*(1+(um-up)/(PhiofA(q1p,Pl)+PhiofA(q1m,Pr)));
 	double Astar2 = (q1m+q1p)/2.*(1+( (cbar>1e-6)? (um-up)/(2.*cbar): 0));
 	Qstar = Astar/2.*(up+um)+Astar/2.*(-fl(Astar)+fr(Astar));
 	cout<<"Astar = "<<Astar<<"  f(A*) = "<<ff(Astar)<<" Aapprox = "<<Astar1<<" ff(Aapprox)="<<ff(Astar1)<<"Alin = "<<Astar2<<" f(Alin) = "<<(Astar2>0?ff(Astar2):42)<<endl;
@@ -463,8 +564,8 @@ void Cpreiss::updateExactRS(double q1m, double q1p, double q2m, double q2p, doub
 		
 		printf("left rarefaction-- ");
 		double sl1, sl2; //bounding edges of rarefaction fan
-		sl1 = um - Cgrav(q1m,w, At, Ts, Pl);
-		sl2 = ustar - Cgrav(Astar,w, At, Ts, Px);
+		sl1 = um - Cgrav(q1m, Pl);
+		sl2 = ustar - Cgrav(Astar,Px);
 		double m1 = fmin(sl1,sl2);
 		double m2 = fmax(sl1, sl2);
 		if (m1<0 && m2>0)//omg we're in the rarefaction!!!
@@ -472,11 +573,11 @@ void Cpreiss::updateExactRS(double q1m, double q1p, double q2m, double q2p, doub
 			//assume u-c = x/t = 0 (evaluate on x-axis). Then assume u+phi(A) = ul+phi(Al) (Riemann invariant is const)
 			//so nonlinear solve here: c(x)+phi(x)-ul-phi(Al) = 0
 			double Ah;
-			double lhs = um +Phi(q1m,w, At, Ts, Pl);
+			double lhs = um +PhiofA(q1m,Pl);
 			fallpurpose fri(w,At,Ts,lhs,0., 1, 0., 1.,Px);
 			Ah = ::ridders(fri,0, Amax, &count,1e-10, 1e-12);
 			qnew[0] = Ah;
-			qnew[1] = Cgrav(Ah,w, At, Ts, Px)*Ah;
+			qnew[1] = Cgrav(Ah,Px)*Ah;
 			printf("in rarefaction!");
 		}
 		else if (m2<=0)//whole rarefaction wave is tilted off to the left
@@ -520,8 +621,8 @@ void Cpreiss::updateExactRS(double q1m, double q1p, double q2m, double q2p, doub
 	{
 		printf("right rarefaction-- ");
 		double sr1, sr2;
-		sr1 = ustar + Cgrav(Astar,w, At, Ts, Px);
-		sr2 = up    + Cgrav(q1p  ,w, At, Ts, Pr);
+		sr1 = ustar + Cgrav(Astar,Px);
+		sr2 = up    + Cgrav(q1p  ,Pr);
 		double m1 = fmin(sr1,sr2);
 		double m2 = fmax(sr1,sr2);
 
@@ -531,11 +632,11 @@ void Cpreiss::updateExactRS(double q1m, double q1p, double q2m, double q2p, doub
 			//assume u+c = x/t = 0 (evaluate on x-axis). Then assume u-phi(A) = ur-phi(Ar) (Riemann invariant is const)
 			//so nonlinear solve here: -c(x)-phi(x)-ur+phi(Ar) = 0
 			double Ah;
-			double lhs = up -Phi(q1p,w, At, Ts, Pr);
+			double lhs = up -PhiofA(q1p,Pr);
 			fallpurpose fri(w,At,Ts,lhs,0., -1, 0., -1.,Px);
 			Ah = ::ridders(fri, 0, Amax, &count,1e-10, 1e-12);
 			qnew[0] = Ah;
-			qnew[1] = -Cgrav(Ah,w, At, Ts, Px)*Ah;
+			qnew[1] = -Cgrav(Ah,Px)*Ah;
 			printf("in rarefaction!, A= %f, Q = %f", Ah, qnew[1]);
 		}
 		else if (m2<=0)//whole rarefaction wave is titled off to the left
@@ -624,18 +725,19 @@ void Cuniform::speedsHLL(double q1m, double q1p, double q2m, double q2p, double 
 {
     double um, up, hm, hp, uhat, hhat, smin, smax;
     int j;
+    bool p = Pm && Pp;
     um = (q1m>0.? q2m/q1m : 0.);
     up = (q1p>0.? q2p/q1p : 0.);
-    hm = hofA(q1m);
-    hp = hofA(q1p);
+    hm = HofA(q1m,Pm);
+    hp = HofA(q1p,Pp);
     uhat = (hm+hp >0.)? (sqrt(hm)*um+sqrt(hp)*up)/(sqrt(hm)+sqrt(hp)) : 0. ;
     hhat = (hm+hp)/2.;
     Pnow = false;
-    smin = cgrav(hhat) +uhat;
-    smax =  cgrav(hhat) +uhat; 
+    smin = Cgrav(hhat*w,p) +uhat;
+    smax =  Cgrav(hhat*w,p) +uhat; 
     for(j=0; j<2; j++){
-        smin =  min3(um + pow(-1.,j)*cgrav(hm), uhat + pow(-1.,j)*cgrav(hhat),smin);
-        smax =  max3(up + pow(-1.,j)*cgrav(hp),uhat+ pow(-1.,j)*cgrav(hhat),smax);
+        smin =  min3(um + pow(-1.,j)*Cgrav(hm*w,Pm), uhat + pow(-1.,j)*Cgrav(hhat*w,p),smin);
+        smax =  max3(up + pow(-1.,j)*Cgrav(hp*w,Pp),uhat+ pow(-1.,j)*Cgrav(hhat*w,p),smax);
         }
     s[0] = smin;
     s[1] = smax;
@@ -704,12 +806,20 @@ double Channel::getTheGoddamnVolume()
 // Simpson's rule... in theory...
 double Channel::getAveGradH(int i)
 {
-	double I =0.5*pow((q_hist[idx_t(0,2,i)]-q_hist[idx_t(0,1,i)])/(dx*w),2);	
+	double h1, h2, h3;
+	bool p = false;
+	h1 = HofA(q_hist[idx_t(0,1,i)],p);
+	h2 = HofA(q_hist[idx_t(0,2,i)],p);
+	h3 = HofA(q_hist[idx_t(0,3,i)],p);
+	double I =0.5*pow((h2-h1)/dx,2);	
 	for(int k = 2; k<N-1; k++)
 	{
-		I += 2*pow(2.,k%2)*0.5*pow((q_hist[idx_t(0,k+1,i)]-q_hist[idx_t(0,k-1,i)])/(2.*dx*w),2);
+		h1 = h2;
+		h2 = h3;
+		h3 = HofA(q_hist[idx_t(0,k+1,i)],p);
+		I += 2*pow(2.,k%2)*0.5*pow((h3-h1)/(2.*dx),2);
 	}
-	I += 0.5*pow((q_hist[idx_t(0,N,i)]-q_hist[idx_t(0,N-1,i)])/(dx*w),2); 
+	I += 0.5*pow((h3-h2)/dx,2); 
 	I *= dx/3.;
 	return I;
 }
@@ -736,7 +846,8 @@ int Channel::writeqToFile(int Mi, double dt)
 		fprintf(fp, " #x   h(A(x))    Q(x)  at t = %f (L = %f, dx = %f, T = %f,  dt = %f ) \n",dt*((float)kk), L,dx, ((double)M)*dt,dt); 
 		for(int jj = 0; jj<N+2; jj++)
 		{
-		       fprintf(fp,"%d     %.10f     %.10f\n", jj, hofA(q_hist[idx_t(0,jj,kk)]),q_hist[idx_t(1,jj,kk)]);
+			bool p = false;
+		       fprintf(fp,"%d     %.10f     %.10f\n", jj, HofA(q_hist[idx_t(0,jj,kk)],p),q_hist[idx_t(1,jj,kk)]);
 		}
 		fclose(fp); 
 	}	
@@ -765,7 +876,7 @@ int Channel::writeRItofile(double dt, int sign)
 				x = (jj-1)*dx;
 				A = q_hist[idx_t(0,jj,kk)];
 				Q = q_hist[idx_t(1,jj,kk)];
-				RI = Q/A +sign*powPhi(getTheta(A,w),w);
+				RI = Q/A +sign*PhiofA(A,false);
 				if(sign==0){RI = A;}
 		        	fprintf(fp,"%.10f     %.10f     %.10f\n", x, t, RI);
 		        	//printf("%.10f     %.10f     %.10f\n", x, t, RI);
@@ -822,7 +933,7 @@ void Channel::quickWrite(double *where, int *which, int K, double T, int skip)
 				
 			}
 
-			h = hofA(A);
+			h = HofA(A,false);
 			hfake = fakehofA(A,true);
 
 			printf(" %f    %f     %f    %f    %f \n", ds*(double)j,A, h, hfake, Q);
@@ -840,7 +951,7 @@ void Cpreiss::setGeom(double a_)
 	a = a_;
 	int count;
 
-//	a = 1200;//desired pressure wave speed
+	a = 1200;//desired pressure wave speed
         a = 9;
 	Af = PI*D*D/4.;
 	Ts = G*Af/(a*a);
@@ -850,32 +961,33 @@ void Cpreiss::setGeom(double a_)
 
 	tt = 2*(PI-asin(Ts/D));
 	yt = D/2.*(1-cos(tt/2.));
-	At = Aofh(yt);
-
+	At = D*D*(tt-sin(tt))/8.;
+	cout<<"D= "<<D<<endl;
 //	tt = 2*asin(G*D*2*PI/(8*a*a));// theta such that c(A(theta)) = a
 	
-	double yt2 = hofA(At);
+	double yt2 = HofA(At, false);
 	cout<<"At = "<<At<<" Ts ="<<Ts<<endl;
 	printf("difference between At and Af is  %e\n", At-PI*D*D/4.);
 	printf("slot gravity wavespeed c  = %f\n", sqrt(D*D*PI/4.*G/Ts));
 	double t2 = 2*PI-tt;
 	printf("tt = %.16f, yt = %f,At = %.16f, fAt = %.16f\ntt-2pi = %.15f\n", tt,yt, At, D*D/8*(tt-sin(tt)),tt-2*PI);
-	printf("Ncheb = %d\n", Ncheb);
-	printf("i  x[i]    alpha[i]\n");
-	for (int i=0; i<Ncheb+1; i++)
-		printf("%d %.16f  %.16f\n",i, xx[i], coeffs_h[i]);
-	double a1 = 1.;
-	//double y1 = ChebEval(&coeffs_h[0], Ncheb, a1);
-	//printf("x = %f, f(x) = %f\n", a1, y1); 
 
 }
 
 	
-
-double Cpreiss::pbar(double A, bool P)
+double Cpreiss::AofH(double h, bool p)
 {
-	double y = hofA(A);
-	if(y<D && (!P) )
+	if(h<yt && !p)
+	{	double t = 2.*(acos(1.-h/D*2.));
+		return	 D*D*(t-sin(t))/8.;
+	}
+	else
+		return At+Ts*(h-yt);
+}
+double Cpreiss::pbar(double A, bool p)
+{
+	double y = HofA(A,p);
+	if(y<D && (!p) )
 		return  G/12.*((3.*D*D-4.*D*y+4.*y*y)*sqrt(y*(D-y))-3.*D*D*(D-2.*y)*atan(sqrt(y)/sqrt(D-y)));
 	else 
 		return PI/4.*G*D*D*((A-At)/Ts+D/2.);
@@ -890,61 +1002,28 @@ double Cpreiss::pbar_old(double A, bool P)
 
 double Cpreiss::hofAold(double A)
 {
-		double theta = thetaofA(A);		
+		double theta = getTheta(A,D);		
 		double y = D/2.*(1.+cos(PI-theta/2.));
 		//	cout<<theta<<"= theta and y = "<<y<<endl;
 		return y;
 }
-double Cpreiss::hofA(double A)
-	{
-		double ph = 2./3.;
-		double y; 
-		if(A<1e-15){return 0.;}
-		if(A<D*D*PI/4.)  //below slot
-		{
-			A = A/(D*D);//normalize by full area;
-			if (A<=PI/8.){
-				double Ahat = 2*pow((A*8./PI),ph)-1.;
-				y = D*ChebEval(&coeffs_h[0],Ncheb, Ahat);
-			}
-			else{
-				double Ahat = 2*pow(8./PI*(PI/4.-A),ph)-1.;
-				y = D*(1.- ChebEval(&coeffs_h[0],Ncheb, Ahat));
 
-			}
-		}
-		else      //in Preissman Slot
-		{
-			y = yt+(A-At)/Ts;
-		}
-		return y;
-	}
-double Cpreiss::fakehofA(double A, bool P)
-	{
-		if (A>=At){P=true;}
-		double y;
-	        if (P)
-		{
-			y = yt+(A-At)/Ts;
-
-		}	
-		else  //below slot
-		{
-			y = hofA(A);
-		}
-		return y;
-	}
-
-double Cpreiss::fakeAofh(double h, bool P)
+double Cpreiss::fakehofA(double A, bool p)
 {
-	if (!P)
-	{
-		return Aofh(h);
-	}
-	else{
-		return (h-yt)*Ts+At;
-	}	
+	if (A>=At){p=true;}
+	double y;
+	if (p){y = yt+(A-At)/Ts;}	
+	else {y = HofA(A,p);}
+	return y;
 }
+
+double Cpreiss::fakeAofh(double h, bool p)
+{
+	if (!p){return AofH(h,p);}
+	else{return (h-yt)*Ts+At;}	
+}
+
+/*
 double Cpreiss::Aofh(double h)
 	{        
 		double A;
@@ -969,23 +1048,14 @@ double Cpreiss::thetaofA(double A) //only works for A<polynomial approximation, 
 		else {
 		cout<<"whoops! theta not defined for A>Af"<<endl;
 		return 2*PI;}
-	}
-double Cpreiss::cgrav(double h)
-	{
-		double c;
-		double A = fakeAofh(h,Pnow);
-		
-		/*double theta  =  2.*acos(1.-2.*h/D)*/
-
-		return Cgrav(A, w, At, Ts, Pnow);	
-	}	
+	}*/
 
 double Cpreiss::getHydRad(double A)
 	{	
 		double perim;
 		if(A<At)
 		{
-			double y = hofA(A);
+			double y = HofA(A,false);
 			double theta = 2*acos(1.-2*y/D);
 			perim = D*(2*PI- theta);
 		}
@@ -997,19 +1067,21 @@ double Cpreiss::getHydRad(double A)
 void Cpreiss::speedsRoe(double q1m, double q1p, double q2m, double q2p, double *s, bool Pm, bool Pp)                            // HLL speeds with Roe estimates...
 {
 
-    double um, up, hm, hp, uhat, hhat, smin, smax;
+    double um, up, hm, hp, uhat, hhat,chat, smin, smax;
     int j;
+    bool p = Pm && Pp;
     um = (q1m>0.? q2m/q1m : 0.);
     up = (q1p>0.? q2p/q1p : 0.);
-    hm = hofA(q1m);
-    hp = hofA(q1p);
+    hm = HofA(q1m,Pm);
+    hp = HofA(q1p,Pp);
     uhat = (hm+hp >0.)? (sqrt(hm)*um+sqrt(hp)*up)/(sqrt(hm)+sqrt(hp)) : 0. ;
     hhat = (hm+hp)/2.;
-    smin = cgrav(hhat) +uhat;
-    smax =  cgrav(hhat) +uhat; 
+    chat = Cgrav(AofH(hhat,p),p); 
+    smin = chat +uhat;
+    smax = chat +uhat; 
     for(j=0; j<2; j++){
-        smin =  min3(um + pow(-1.,j)*cgrav(hm), uhat + pow(-1.,j)*cgrav(hhat),smin);
-        smax =  max3(up + pow(-1.,j)*cgrav(hp),uhat+ pow(-1.,j)*cgrav(hhat),smax);
+        smin =  min3(um + pow(-1.,j)*Cgrav(q1m,Pm), uhat + pow(-1.,j)*chat,smin);
+        smax =  max3(up + pow(-1.,j)*Cgrav(q1p,Pp),uhat+ pow(-1.,j)*chat,smax);
         }
     s[0] = smin;
     s[1] = smax;
@@ -1029,10 +1101,10 @@ void Cpreiss::speedsHLL(double q1m, double q1p, double q2m, double q2p, double *
     	double dry = 1e-6*At;;                                                  //pay attention to this!?
     	double cbar,Astar, ym,yp,cm, cp, um =0 , up= 0;	
 	//double Astar1, Astar2;
-	ym = hofA(q1m);
-	yp = hofA(q1p);
-	cm = Cgrav(q1m, w, At, Ts, Pm);
-	cp = Cgrav(q1p, w, At, Ts, Pp);
+	ym = HofA(q1m,Pm);
+	yp = HofA(q1p,Pp);
+	cm = Cgrav(q1m, Pm);
+	cp = Cgrav(q1p, Pp);
 //	cout<<"[ym, yp]=["<<ym<<","<<yp<<"]\n";
 	//if no dry bed present
 	if(fmin(ym,yp)>=dry){
@@ -1041,7 +1113,7 @@ void Cpreiss::speedsHLL(double q1m, double q1p, double q2m, double q2p, double *
 		up = q2p/q1p;
 		//cout<<"um = "<<um<< "up = " <<up<<endl;
 		//if (max(q1p,q1m)<0.75*Af){
-			Astar = (q1m+q1p)/2.*(1+(um-up)/(Phi(q1p, w, At, Ts, Pp)+Phi(q1m, w, At, Ts, Pm))); //this verstion uses depth positivity condition
+			Astar = (q1m+q1p)/2.*(1+(um-up)/(PhiofA(q1p,Pp)+PhiofA(q1m,Pm))); //this verstion uses depth positivity condition
 		//	printf("Astar = %f um = %f, up = %f intphim = %f intphip = %f\n",Astar, um, up, intPhi(q1m), intPhi(q1p));
 			Astar = (q1m+q1p)/2.*(1+( (cbar>1e-6)? (um-up)/(2.*cbar): 0));  //this is linearized version
 			if(Astar<0){Astar = (q1p+q1m)/2;}
@@ -1065,7 +1137,7 @@ void Cpreiss::speedsHLL(double q1m, double q1p, double q2m, double q2p, double *
 		{
 			printf("left side dry\n");
 			up = q2p/q1p;
-			s[0] = up - Phi(q1p, w, At, Ts, Pp);
+			s[0] = up - PhiofA(q1p,Pp);
 			s[1] = up + cp;	
 		}
 		else if(yp<dry) //right side dry
@@ -1073,7 +1145,7 @@ void Cpreiss::speedsHLL(double q1m, double q1p, double q2m, double q2p, double *
 			printf("right side dry\n");
 			um = q2m/q1m;
 			s[0] = um - cm;
-			s[1] = um + Phi(q1m, w, At, Ts, Pm);
+			s[1] = um + PhiofA(q1m,Pm);
 		}
 		
 	}
@@ -1108,7 +1180,7 @@ double Cpreiss::findOmega(double Astar, double Ak, bool Ps, bool Pk)
         	if(Astar<=Ak+eps)//if Ak-x is super small, the usual routine will fuck up
 			{//so use Ak-eps small and taylor expand to evaluate Eta(Ak)-Eta(x) ~ dEta/dA(x)(x-Ak)
 			//this is easy since c^2 = GdEta/dA, lol. 
-				double c = Cgrav((Astar+Ak)/2.,D, At, Ts, Pk);
+				double c = Cgrav((Astar+Ak)/2.,Pk);
 				return c*sqrt(Astar/Ak); 
 		//		printf("c = %f\n", c);	
 			}
@@ -1119,70 +1191,13 @@ double Cpreiss::findOmega(double Astar, double Ak, bool Ps, bool Pk)
 	else
     	{
 		//double y = hofA(Ak);
-        	omega  = Cgrav(Ak, w, At, Ts, Ps);
+        	omega  = Cgrav(Ak,Ps);
     	}
 	//cout<<"omega = "<<omega<<endl;	
 	return omega;
 }
 
-double Cpreiss::phiofA(double A)
-{
-	if(A<1e-15){return 0.;}
-	double phi = 0.;
-	if(A<=At)
-	{
-		double p1 = 1./3.;
-		double p2 = 5./12.;
-		A = A/(D*D);
-		if(A<PI*D*D/8.)
-		{	
-			double Ahat = 2*pow((A*8./PI),p1)-1.;
-			phi = D*ChebEval(&coeffs_p1[0],Ncheb, Ahat);
-		}
-		else
-		{
-			double Ahat = 2.*pow((PI/4.-A)*8/PI,p2)-1;
-			phi = D*ChebEval(&coeffs_p2[0], Ncheb, Ahat);
-		}
-	}
-	else
-	{
-		phi = D*ChebEval(&coeffs_p2[0], Ncheb, -1)+2.*(sqrt(A/Ts)-sqrt(At/Ts));
 
-	}
-	return phi;
-}
-
-double Cpreiss::Aofphi(double phi)
-{
-	if(phi<1e-15){return 0.;}
-	double A = 0.;
-	double phi1m = D*ChebEval(&coeffs_p2[0],Ncheb, 1.);
-	double phi2m = D*ChebEval(&coeffs_p2[0],Ncheb, -1.);
-	if(phi<phi2m)
-	{
-		
-		double p1 = 1.;
-		double p2 = 3./5.;
-		if(phi<phi1m)
-		{	
-			double phat = 2*pow(phi/phi1m,p1)-1.;
-			A = D*D*ChebEval(&coeffs_a1[0],Ncheb, phat);
-		}
-		else
-		{
-			double phat = 2.*pow((phi2m-phi)/(phi2m-phi1m),p2)-1.;
-			A = D*D*ChebEval(&coeffs_a2[0], Ncheb, phat);
-		}
-	}
-	else
-	{
-		A = D*D*ChebEval(&coeffs_a2[0], Ncheb, -1)+2.*(sqrt(A/Ts)-sqrt(At/Ts));
-
-	}
-	return A;
-
-}
 
 /*
 double Cpreiss::intPhiold(double A)
@@ -1306,7 +1321,7 @@ void Junction1::boundaryFluxes()
 				else
 				{	
 					int count;
-					c1  = uin +sign*ch0.phiofA(Ain);
+					c1  = uin +sign*ch0.PhiofA(Ain,Pin);
 					if(sign<0)
 					{	
 						if(Qext<0)
@@ -1314,7 +1329,7 @@ void Junction1::boundaryFluxes()
 							//solve for xs s.t. 0 = Q + xs*c(xs).
 							fallpurpose fcpm(ch0.w, ch0.At, ch0.Ts, 0, Qext, 0,1,1., ch0.Pnow);
 							xs = ::ridders(fcpm, 1e-8,100,&count, 1e-10, 1e-10);	
-							c1max = -Cgrav(xs, ch0.At, ch0.w, ch0.At, Pext)-Phi(xs, ch0.At, ch0.w,ch0.At, ch0.Pnow);
+							c1max = -Cgrav(xs, ch0.At, ch0.w, ch0.At, Pext)-PhiofA(xs, ch0.At, ch0.w,ch0.At, ch0.Pnow);
 						}
 					}
 					else
@@ -1324,7 +1339,7 @@ void Junction1::boundaryFluxes()
 							//solve for xs s.t. 0 = Q-xs*c(xs)
 							fallpurpose fcpm(ch0.w, ch0.At, ch0.Ts, 0, Qext,0, 1,-1., ch0.Pnow);
 							xs = ::ridders(fcpm,1e-8,100.,&count, 1e-10, 1e-10);	
-							c1min = ch0.cgrav(ch0.hofA(xs))+ch0.phiofA(xs);
+							c1min = ch0.Cgrav(xs,ch0.Pnow)+ch0.PhiofA(xs,ch0.Pnow);
 						}
 					}	
 				}
@@ -1355,7 +1370,7 @@ void Junction1::boundaryFluxes()
 						pass =1;
 					}
 					Qext = bval[ch0.n];*/
-					printf("Qext increased to min allowed value of %f, Aext = %f, RI = %f\n",Qext, Aext, Qext/Aext -ch0.phiofA(Aext));
+					printf("Qext increased to min allowed value of %f, Aext = %f, RI = %f\n",Qext, Aext, Qext/Aext -ch0.PhiofA(Aext,Pext));
 				
 				}
 				//make sure right end boundary flux is enforceable
@@ -1390,7 +1405,7 @@ void Junction1::boundaryFluxes()
 				}
 				else if (ch0.Pnow)//pressurized R.I. are simple!
 				{
-					double c1t = c1 -sign*(ch0.phiofA(ch0.At) -2*sqrt(G*ch0.At/ch0.Ts));
+					double c1t = c1 -sign*(ch0.PhiofA(ch0.At,false) -2*sqrt(G*ch0.At/ch0.Ts));
 					double c2 = 2*sign*sqrt(G/ch0.Ts);
 					fRI f(c1t,c2, bval[ch0.n]);
 					dfRI df(c2,bval[ch0.n]);
@@ -1404,12 +1419,13 @@ void Junction1::boundaryFluxes()
 				{				
 					int count;
 					double uin = (Ain>0. ?Qin/Ain :0. );
-					double lhs = uin +sign*ch0.phiofA(Ain);
+					double lhs = uin +sign*ch0.PhiofA(Ain,Pin);
 					//solve lhs = Qext/x +sign*phi(x) for x
+					//
 					fallpurpose fp(ch0.w, ch0.At,ch0.Ts, lhs, Qext, sign,1.,0., ch0.Pnow);
 					Aext = ::ridders(fp,-.1,10.,&count, 1e-10, 1e-10);
 					double uext = (Aext>0 ?Qext/Aext :0.);
-					double err = fabs(uext +sign*ch0.phiofA(Aext)-lhs);
+					double err = fabs(uext +sign*ch0.PhiofA(Aext,Pext)-lhs);
 					printf("ridders answer = %.16f, lhs = %f, Qext = %f, RI_ext-RI_n = %f\n", Aext,  lhs,Qext, err);
 					}
 				}
@@ -1425,10 +1441,10 @@ void Junction1::boundaryFluxes()
 				//Preissman slot
 				else
 				{       			
-					double lhs = Qin/Ain +sign*ch0.phiofA(Ain);
+					double lhs = Qin/Ain +sign*ch0.PhiofA(Ain,Pin);
 					if(sign*lhs>=0)
 					{
-						Aext = ch0.Aofphi(sign*lhs);
+						Aext = ch0.AofPhi(sign*lhs,Pin);
 					}
 					else
 					{
@@ -1444,7 +1460,8 @@ void Junction1::boundaryFluxes()
 		else
 		{
 			Aext = bval[ch0.n];
-			Qext = (Qin/Ain+sign*Phi(Ain,ch0.w, ch0.At, ch0.Ts, Pin) - sign*Phi(Aext, ch0.w, ch0.At, ch0.Ts, Pext))*Aext;
+			//Qext = (Qin/Ain+sign*Phi(Ain,ch0.w, ch0.At, ch0.Ts, Pin) - sign*Phi(Aext, ch0.w, ch0.At, ch0.Ts, Pext))*Aext;
+			Qext = (Qin/Ain+sign*ch0.PhiofA(Ain,Pin) - sign*ch0.PhiofA(Aext,Pext))*Aext;
 			//Qext = (Qin/Ain+sign*2.*sqrt(G*Ain/w) - sign*2.*sqrt(G*Aext/w))*Aext;
 		//	printf("end %d has Qext is %f and Aext is %f\n", whichend, Qext, Aext);
 		}
@@ -1571,12 +1588,14 @@ void Junction2::boundaryFluxes(){
 	q2m = ch0.q[ch0.idx(1,N0)];
 	q1p = ch1.q[ch1.idx(0,N1)];
 	q2p = ch1.q[ch1.idx(1,N1)];
+	bool pm = ch0.P[N0];
+	bool pp = ch0.P[N1];
 //attempt at incorporating valve opening coefficient - wish me luck/facepalm
 	//printf("ws=  %f %f %f %f \n",w1[0], w1[1],w2[0], w2[1]);
 	if(valveopen>0)
 	{
-		q1pfake = ch0.Aofh(ch1.hofA(q1p)-offset);      //what channel 0 sees
-		q1mfake = ch1.Aofh(ch0.hofA(q1m)+offset);      //what channel 1 sees
+		q1pfake = ch0.AofH(ch1.HofA(q1p,pm)-offset,pm);      //what channel 0 sees
+		q1mfake = ch1.AofH(ch0.HofA(q1m,pp)+offset,pp);      //what channel 1 sees
 		printf("q1m = %f, q1mfake = %f, q1p = %f, q1pfake = %f, q2m = %f, q2p = %f N1 = %d \n", q1m, q1mfake,q1p,q1pfake, q2m, q2p, N1);
 	//	ch1.showVals(1);	
 		if(whichend0)

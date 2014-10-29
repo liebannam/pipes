@@ -67,7 +67,7 @@ AppendToVector<T> appendTo(std::vector<T>& vec)
 {
     return AppendToVector<T>(vec);
 }
-
+/*whoops don't need this crap
 template<typename T>
 void readCoeffs(const char *fname, std::vector<T> &V, int &count)
 {
@@ -84,7 +84,7 @@ void readCoeffs(const char *fname, std::vector<T> &V, int &count)
 	}
 	file1.close();
 }
-
+*/
 
 //////
 //various prototype detritus
@@ -94,11 +94,14 @@ void readCoeffs(const char *fname, std::vector<T> &V, int &count)
 //typedef double(*drdA_t )(double Am, double A, double Ap, int j, double w, double dx, int N);
 
 
-inline double getTheta(double A, double D);
-inline double powPhi(double t, double D);
-double Phi  (double A, double D, double At, double Ts, bool P);
-double Cgrav(double A, double D, double At, double Ts, bool P);
-double Eta  (double A, double D, double At, double Ts, bool P);
+//inline double getTheta(double A, double D);
+//inline double powPhi(double t, double D);
+//
+double HofA   (double A, double D, double At, double Ts, bool P);
+double PhiofA (double A, double D, double At, double Ts, bool P);
+double AofPhi (double phi, double D, double At, double Ts, bool P);
+double Cgrav  (double A, double D, double At, double Ts, bool P);
+double Eta    (double A, double D, double At, double Ts, bool P);
 
 ///
 /////
@@ -122,7 +125,6 @@ class Channel
 		const double L;                            // pipe length
 		const int N;                               // number of grid points
 		const int M;				   // number of time steps (each channel instance must specify!)
-		int Ncheb ;			   //number of chebyshev nodes
 	//	const int Mi;				   // number of time steps between recording data in q_hist
 		int n;					   // what time step we're at...		
 		double dx;                                 // grid spacing
@@ -131,6 +133,7 @@ class Channel
 		double S0;                                 // bed slope (-dz/dx)
 		double Mr;                                 // Manning Roughness coefficient
 		double cmax;				   // maximum wave speed
+
 /****dynamic variables and boundary info
 * initial and final states q0 and q = [q(0,0), q(0,1)...,q(0,N-1), q(1,0),....q(1,N-1)] where q(0,:) is area A andq(1,:) is discharge Q
 * history of states is q_hist laid out as [q(t=0), q(t=dt), ....q(t=dt*(M/Mi-1))] and each q is a row vector arranged as above.
@@ -145,14 +148,6 @@ class Channel
 		double *q_hist;           		   // history of dynamical variables	  		  			
 		vector<bool> P;   			   // pressurization states
 		bool Pnow; 				   // ''current pressurization'' at cell under consideration-- this is a hilariously bad idea!
-		
-		//polynomial coefficients
-		vector<Real> coeffs_h;			//for h(A)
-		vector<Real> coeffs_p1;			//for phi(A)  when 0<A<=pi/8  
-		vector<Real> coeffs_p2;			//for phi(A) when pi/8<=A<=pi/4
-		vector<Real> coeffs_a1;			//for A(phi) when phi(A)<phi(pi/8)
-		vector<Real> coeffs_a2;			//for A(phi) wehn phi(pi/8)<phi(A)
-		vector<Real> xx;
 
 		
 		//indexing functions		
@@ -183,15 +178,15 @@ class Channel
 		virtual void updateExactRS(double q1m, double q1p, double q2m, double q2p, double *qnew, bool Pl, bool Pr, bool Px)=0;
 /**Specify geometry of specific cross section in a derived class:*/
 		virtual void showp()=0;
-		virtual double pbar(double A, bool P) = 0;		         // pbar = average hydrostatic pressure term 
-		virtual double hofA(double A)=0;		 	 	 //height as a function of cross sectional area
-		virtual double fakehofA(double A, bool P)=0;		 	 //for ``negative Preissman'' model, height as a function of cross sectional area
-		virtual double fakeAofh(double h, bool P) =0;
-		virtual double Aofh(double h)=0;			  	//crosssectional area as a function of height
-		virtual double cgrav(double h)=0;                   		//gravity wavespeed actually redudant, I think!?!?!?
+		virtual double pbar(double A, bool p) = 0;		         // pbar = average hydrostatic pressure term 
+		virtual double HofA(double A, bool p)=0;		 	 //height as a function of cross sectional area
+		virtual double fakehofA(double A, bool p)=0;		 	 //for ``negative Preissman'' model, height as a function of cross sectional area
+		virtual double fakeAofh(double h, bool p) =0;
+		virtual double AofH(double h, bool p)=0;			  	//crosssectional area as a function of height
+		virtual double Cgrav(double A, bool p)=0;                   		//gravity wavespeed actually redudant, I think!?!?!?
 		virtual double getHydRad(double A)=0;               		// Hydraulic radius =(Area/Wetted Perimeter)	
-		virtual double phiofA(double A) = 0;				//integral (c(x)/x)dx
-		virtual double Aofphi(double phi) =0;				//solve A = phi(x) for x
+		virtual double PhiofA(double A, bool p) = 0;				//integral (c(x)/x)dx
+		virtual double AofPhi(double phi, bool p) =0;				//solve A = phi(x) for x
 //random detritus
 		double min3(double a, double b, double c);
 		double max3(double a, double b, double c);
@@ -219,20 +214,20 @@ class Cuniform: public Channel
 			channeltype = 0;
 		}	
 		void showp();
-		double pbar(double A, bool P){return G/(2.*w)*A*A;}
-		double hofA(double A){return A/w;}
-		double fakehofA(double A, bool P){return A/w;}
-		double fakeAofh(double h, bool P){return h*w;}
-		double Aofh(double h){return h*w;}
-		double cgrav(double h){return sqrt(G*h);}			
+		double pbar(double A, bool p){return G/(2.*w)*A*A;}
+		double HofA(double A, bool p){return A/w;}
+		double fakehofA(double A, bool p){return A/w;}
+		double fakeAofh(double h, bool p){return h*w;}
+		double AofH(double h, bool p){return h*w;}
+		double Cgrav(double A, bool p){return sqrt(G*A/w);}			
 		double getHydRad(double A){return A/w*2.+w;} 
 
 		void showGeom();
 		void speedsHLL(double q1m, double q1p, double q2m, double q2p, double *s, bool Pm, bool Pp);
 		void speedsRoe(double q1m, double q1p, double q2m, double q2p, double *s, bool Pm, bool Pp){return;};
 		void updateExactRS(double q1m, double q1p, double q2m, double q2p, double *qnew, bool Pl, bool Pr, bool Px){return;};
-		double phiofA(double A){return 2.*sqrt(G*A/w);}
-		double Aofphi(double phi){return (phi/2.)*(phi/2.)*w/G;} //invert the phi thing that's such a pain in the ass...
+		double PhiofA(double A,bool p){return 2.*sqrt(G*A/w);}
+		double AofPhi(double phi, bool p){return (phi/2.)*(phi/2.)*w/G;} //invert the phi thing that's such a pain in the ass...
 };
 
 
@@ -252,20 +247,20 @@ class Cpreiss: public Channel{
 		}
 		
 		void showp();	
-		double pbar(double A, bool P);
-		double pbar_old(double A, bool P);
-		double hofA(double A);
+		double pbar(double A, bool p);
+		double pbar_old(double A, bool p);
+		double HofA(double A,bool p){return ::HofA(A, D, At, Ts, p);}
 	        double hofAold(double A);	
-		double fakehofA(double A, bool P);
-		double fakeAofh(double h, bool P);
-		double Aofh(double h);
-		double thetaofA(double A);
-		double cgrav(double h);		
+		double fakehofA(double A, bool p);
+		double fakeAofh(double h, bool p);
+		double AofH(double h, bool p);
+	//	double thetaofA(double A);
+		double Cgrav(double A, bool p){return ::Cgrav(A, w, At, Ts,p);}	
 		double getHydRad(double A);
 		void showGeom();
 		double findOmega(double Astar, double Ak, bool Ps, bool Pk);
-		double phiofA(double A);
-		double Aofphi(double phi); //invert the phi thing that's such a pain in the ass...
+		double PhiofA(double A,bool p){return ::PhiofA(A, D, At, Ts, p);}
+		double AofPhi(double phi,bool p){return ::AofPhi(phi, D, At, Ts, p);}
 		void speedsHLL(double q1m, double q1p, double q2m, double q2p, double *s, bool Pm, bool Pp);
 		void speedsRoe(double q1m, double q1p, double q2m, double q2p, double *s, bool Pm, bool Pp);
 		void updateExactRS(double q1m, double q1p, double q2m, double q2p, double *qnew, bool Pl, bool Pr, bool Px);
@@ -418,13 +413,11 @@ public:
 		if(x<0){return lhs;}
 		else if (x<=At)
 		{
-			t = getTheta(x,D);
-			Phi = powPhi(t,D);
+			Phi = PhiofA(x,D,At, Ts, false);
 		}
 		else
 		{
-			t  = getTheta(At,D);
-			Phi = powPhi(t,D);		
+			Phi = PhiofA(PI*D*D/4.,D, At, Ts, false);		
 			Phi += 2*sqrt(x/Ts)-2*sqrt(At/Ts);
 		}
 		return -Phi+lhs;
@@ -451,7 +444,7 @@ public:
 	{
 		if(x<=Ak)
 		{
-			return Phi(x,D,At,Ts,Px)-Phi(Ak,D,At,Ts,Pk);
+			return PhiofA(x,D,At,Ts,Px)-PhiofA(Ak,D,At,Ts,Pk);
 		}
 		else
 		{
@@ -521,7 +514,7 @@ public:
 
 	double operator()(double x) 
 	{
-		return x*lhs-(cq*Q+x*(sign*Phi(x,D,At,Ts,P)+cc*Cgrav(x,D,At,Ts,P)));
+		return x*lhs-(cq*Q+x*(sign*PhiofA(x,D,At,Ts,P)+cc*Cgrav(x,D,At,Ts,P)));
 	}
 
 

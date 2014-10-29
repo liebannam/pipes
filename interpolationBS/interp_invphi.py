@@ -127,9 +127,10 @@ def main():
 	for i in range(4):
 		f = open(fnames[i],"w")
 	        for j in range(len(fa1)):
-			f.write("%d   %.15e\n" %(j,coeffs[j,i]) ) 
+			f.write("%.16f, " %(coeffs[j,i]) ) 
 	    	f.close()
-
+	for i in range(N+1):
+		print "%.16f,  " %x[i]
 
 
 if __name__ == "__main__":
