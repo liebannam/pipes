@@ -6,13 +6,13 @@ N = 10;
 Af = pi/4;
 eps = Af*1e-5;
 g = 9.8;
-M = 3*2^2;
+M = 3*2^1;
 
 tx = @(x,p,ym) ym*((x+1)/2).^(1/p);
 ty = @(y,p,ym) 2*(y/ym).^(p)-1;
 
 alphas = [(2:M)/M];
-%alphas = [1/3];
+alphas = [1/3];
 x = -cos(pi*[0:N]/N)'; %regular Chebyshev nodes
 ca = 2*(8/pi)^(2/3);   %coefficient for transform for A
 a = ((1+x)/ca).^(3/2); %a_j = A values where we need solution for h(A) interpolation 
@@ -42,20 +42,22 @@ for j = 1:length(alphas)
     p = alphas(j);
     a1 = pi/8*((x+1)/2).^(1/p);
     a2 = -pi/8*((x+1)/2).^(1/p)+pi/4;
-
     ta1 = @(a) 2*(8*a/pi).^(p)-1;
     ta2 = @(a) 2*((pi/4-a)*8/pi).^(p)-1;
-
+  %  a1 = pi/16*((x+1)/2).^(1/p);
+  % a2 = -15*pi/16*((x+1)/2).^(1/p)+pi/4;
+  %  ta1 = @(a) 2*(16*a/pi).^(p)-1;
+  %  ta2 = @(a) 2*((pi/4-a)*16/(15*pi)).^(p)-1;
     phimax = quad(fphi, 0,pi/4,1e-12);
     for k = 1:N+1 
         I1(k) = Ie(hofA(a1(k)));
         I2(k) = Ie(hofA(a2(k)));
-        phi1(k) = quad(fphi, 0,a1(k),1e-12);
-        phi2(k) = quad(fphi,0,a2(k),1e-12);
+        phi1(k) = quad(fphi, 0,a1(k),1e-7);
+        phi2(k) = quad(fphi,0,a2(k),1e-7);
     end
     I1(1) = 0;
     oops = [find(isnan(phi1)) find(isinf(phi1))];
-    phi1(oops) = fphi(a(oops)).*a(oops);
+    phi1(oops) = fphi(a1(oops)/2).*a1(oops);
     phi1(1) =0;
     fI1 = polyfit(ta1(a1), I1', N, domain(-1,1));
     fI2 = polyfit(ta2(a2), I2', N,domain(-1,1));    

@@ -24,14 +24,10 @@
 
 #include "newton.h"
 #include <vector>
-#include "chebyshevlite.h"
-
 using namespace std;
 
 using std::max;
 using std::min;
-
-
 ///////
 //horrifying macros for easily changing numerical flux routines
 //numFlux choices are numFluxHLL and numFluxExact (THEY'RE BOTH IDIOTIC SO DON'T WORRY TOO MUCH HERE)
@@ -42,49 +38,6 @@ using std::min;
 //#define numFlux(q1m, q1p, q2m, q2p, flux, Pm, Pp)  numFluxExact(q1m, q1p, q2m, q2p, flux, Pm, Pp) 
 #define speeds(q1m, q1p, q2m, q2p, flux, Pm, Pp)   speedsHLL(q1m, q1p, q2m, q2p, flux, Pm, Pp) 
 //#define speeds speedsRoe
-
-
-
-//Templating magic for streaming into vectors (THANKS ROB!!!!!)
-template<typename T>
-struct AppendToVector
-{
-    std::vector<T>& vec;
-    AppendToVector(std::vector<T>& vec) : vec(vec) {}
-};
-
-template<typename T>
-std::istream& operator>>(std::istream& s, const AppendToVector<T>& app)
-{
-    T val;
-    if (s >> val)
-        app.vec.push_back(val);
-    return s;
-}
-
-template<typename T>
-AppendToVector<T> appendTo(std::vector<T>& vec)
-{
-    return AppendToVector<T>(vec);
-}
-
-template<typename T>
-void readCoeffs(const char *fname, std::vector<T> &V, int &count)
-{
-	ifstream file1(fname);
-	string stuff;
-	count = 0;
-	int trash;
-	while (getline(file1, stuff, '\n')) 
-	{
-		stringstream ss(stuff);
-		ss>>trash>>appendTo(V);
-		count++;
-		//cout<<V[count-1]<<endl;
-	}
-	file1.close();
-}
-
 
 //////
 //various prototype detritus
@@ -100,7 +53,6 @@ double Phi  (double A, double D, double At, double Ts, bool P);
 double Cgrav(double A, double D, double At, double Ts, bool P);
 double Eta  (double A, double D, double At, double Ts, bool P);
 
-///
 /////
 ///Class for channel data 
 /////////
@@ -122,7 +74,6 @@ class Channel
 		const double L;                            // pipe length
 		const int N;                               // number of grid points
 		const int M;				   // number of time steps (each channel instance must specify!)
-		int Ncheb ;			   //number of chebyshev nodes
 	//	const int Mi;				   // number of time steps between recording data in q_hist
 		int n;					   // what time step we're at...		
 		double dx;                                 // grid spacing
@@ -145,18 +96,9 @@ class Channel
 		double *q_hist;           		   // history of dynamical variables	  		  			
 		vector<bool> P;   			   // pressurization states
 		bool Pnow; 				   // ''current pressurization'' at cell under consideration-- this is a hilariously bad idea!
-		
-		//polynomial coefficients
-		vector<Real> coeffs_h;			//for h(A)
-		vector<Real> coeffs_p1;			//for phi(A)  when 0<A<=pi/8  
-		vector<Real> coeffs_p2;			//for phi(A) when pi/8<=A<=pi/4
-		vector<Real> coeffs_a1;			//for A(phi) when phi(A)<phi(pi/8)
-		vector<Real> coeffs_a2;			//for A(phi) wehn phi(pi/8)<phi(A)
-		vector<Real> xx;
-
-		
 		//indexing functions		
 		int idx(int i_in, int j_in){return (N*i_in+j_in);}    //access q(i,j)  where i =0,1 and j= 0,1...N-1
+
 		int idx_t(int i_in, int j_in, int n_in){return (2*(N+2)*n_in+(N+2)*i_in+j_in);} //accessq^n(i,j)with i,j as above and n = 0,...M-1 (n*dt = t at which this slice is taken)
 
 		int pj(int i){return i+1;} 		    // indexing for pressurization states vector
@@ -190,7 +132,7 @@ class Channel
 		virtual double Aofh(double h)=0;			  	//crosssectional area as a function of height
 		virtual double cgrav(double h)=0;                   		//gravity wavespeed actually redudant, I think!?!?!?
 		virtual double getHydRad(double A)=0;               		// Hydraulic radius =(Area/Wetted Perimeter)	
-		virtual double phiofA(double A) = 0;				//integral (c(x)/x)dx
+		virtual double intPhi(double A) = 0;				//integral (c(x)/x)dx
 		virtual double Aofphi(double phi) =0;				//solve A = phi(x) for x
 //random detritus
 		double min3(double a, double b, double c);
@@ -231,12 +173,12 @@ class Cuniform: public Channel
 		void speedsHLL(double q1m, double q1p, double q2m, double q2p, double *s, bool Pm, bool Pp);
 		void speedsRoe(double q1m, double q1p, double q2m, double q2p, double *s, bool Pm, bool Pp){return;};
 		void updateExactRS(double q1m, double q1p, double q2m, double q2p, double *qnew, bool Pl, bool Pr, bool Px){return;};
-		double phiofA(double A){return 2.*sqrt(G*A/w);}
+		double intPhi(double A){return 2.*sqrt(G*A/w);}
 		double Aofphi(double phi){return (phi/2.)*(phi/2.)*w/G;} //invert the phi thing that's such a pain in the ass...
 };
 
 
-//extern double Ptheta(double A);//mumblemumle plzwork??
+extern double Ptheta(double A);//mumblemumle plzwork??
 //preissmann slot geometry
 class Cpreiss: public Channel{
 	public:
@@ -253,9 +195,7 @@ class Cpreiss: public Channel{
 		
 		void showp();	
 		double pbar(double A, bool P);
-		double pbar_old(double A, bool P);
 		double hofA(double A);
-	        double hofAold(double A);	
 		double fakehofA(double A, bool P);
 		double fakeAofh(double h, bool P);
 		double Aofh(double h);
@@ -264,7 +204,7 @@ class Cpreiss: public Channel{
 		double getHydRad(double A);
 		void showGeom();
 		double findOmega(double Astar, double Ak, bool Ps, bool Pk);
-		double phiofA(double A);
+		double intPhi(double A);
 		double Aofphi(double phi); //invert the phi thing that's such a pain in the ass...
 		void speedsHLL(double q1m, double q1p, double q2m, double q2p, double *s, bool Pm, bool Pp);
 		void speedsRoe(double q1m, double q1p, double q2m, double q2p, double *s, bool Pm, bool Pp);
@@ -526,9 +466,5 @@ public:
 
 
 };
-
-
-
-
 
 #endif

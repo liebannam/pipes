@@ -4,7 +4,7 @@ headers = $(shell ls ../*.h)
 
 optimizeit:  optimizeit.o  mp_mat.o levmar.o mp_mat_double.o str_double.o channel.o network.o file_output.o
 	$(CC) -o $@ $(CFLAGS) $^ $(LIBS)
-setupandrun:  setupandrun.o  mp_mat.o levmar.o mp_mat_double.o str_double.o channel.o network.o file_output.o
+setupandrun:  setupandrun.o  mp_mat.o levmar.o mp_mat_double.o str_double.o channel.o network.o file_output.o	
 	$(CC) -o $@ $(CFLAGS) $^ $(LIBS)
 
 test_levmar : test_levmar.o levmar.o mp_mat.o mp_mat_double.o \

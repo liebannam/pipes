@@ -35,7 +35,7 @@ void writeOutputTarga(Network &Ntwk, int M, int Mi,vector <int> jIDs, vector<dou
 void writeOutputText(Network &Ntwk, int M, int Mi);
 
 //using namespace std;
-
+/*
 //Templating magic for streaming into vectors (THANKS ROB!!!!!)
 template<typename T>
 struct AppendToVector
@@ -58,6 +58,6 @@ AppendToVector<T> appendTo(std::vector<T>& vec)
 {
     return AppendToVector<T>(vec);
 }
-
+*/
 #endif
 

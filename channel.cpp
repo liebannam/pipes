@@ -5,7 +5,7 @@
 *includes adjoint variable storage/solvers
 *************************************/
 #include "channel.h"
-#include <cstdio>
+
 /*
 ////
 double Ptheta(double A){
@@ -118,6 +118,7 @@ double Eta(double A, double D, double At, double Ts, bool P)
 	if (A<At &&(!P))
 	{
 		t = getTheta(A,D);
+	//	double y = hofA(A);
 	//	double y = D/2.*(1.+cos(PI-t/2.));
 	//	Eta = G/12.*((3.*D*D-4.*D*y+4.*y*y)*sqrt(y*(D-y))
 	//		-3.*D*D*(D-2.*y)*atan(sqrt(y)/sqrt(D-y)));
@@ -182,6 +183,24 @@ Channel::Channel(int Nin, double win, double Lin, int Min):N(Nin), w(win), L(Lin
 		bfluxleft[j] = 0;
 		bfluxright[j] = 0;
 	}
+//read in coefficients for h(A) evaluations
+	const char *fnameh = "../chebcoeffs/hofA.txt";
+	const char *fnamep1 = "../chebcoeffs/phiofA1.txt";
+	const char *fnamep2 = "../chebcoeffs/phiofA2.txt";
+	const char *fnamea1 = "../chebcoeffs/Aofphi1.txt";
+	const char *fnamea2 = "../chebcoeffs/Aofphi2.txt";
+	
+	int count;
+	readCoeffs(&fnameh[0], coeffs_h,count);	
+	readCoeffs(&fnamep1[0], coeffs_p1,count);	
+	readCoeffs(&fnamep2[0], coeffs_p2,count);	
+	readCoeffs(&fnamea1[0], coeffs_a1,count);	
+	readCoeffs(&fnamea2[0], coeffs_a2,count);	
+	Ncheb = count-1;
+	cout<<"Ncheb ="<<Ncheb<<endl;
+	xx.resize(Ncheb+1);	
+	getChebNodes(&xx[0],Ncheb);
+
 }
 
 //Destructor
@@ -814,9 +833,13 @@ void Channel::quickWrite(double *where, int *which, int K, double T, int skip)
  * a is the pressure wave speed for this pipe -- defaults to 1200
  */
 void Cpreiss::setGeom(double a_)
+
 {
+
+	printf("Ncheb = %d\n", Ncheb);
 	a = a_;
 	int count;
+
 //	a = 1200;//desired pressure wave speed
         a = 9;
 	Af = PI*D*D/4.;
@@ -837,21 +860,58 @@ void Cpreiss::setGeom(double a_)
 	printf("slot gravity wavespeed c  = %f\n", sqrt(D*D*PI/4.*G/Ts));
 	double t2 = 2*PI-tt;
 	printf("tt = %.16f, yt = %f,At = %.16f, fAt = %.16f\ntt-2pi = %.15f\n", tt,yt, At, D*D/8*(tt-sin(tt)),tt-2*PI);
+	printf("Ncheb = %d\n", Ncheb);
+	printf("i  x[i]    alpha[i]\n");
+	for (int i=0; i<Ncheb+1; i++)
+		printf("%d %.16f  %.16f\n",i, xx[i], coeffs_h[i]);
+	double a1 = 1.;
+	//double y1 = ChebEval(&coeffs_h[0], Ncheb, a1);
+	//printf("x = %f, f(x) = %f\n", a1, y1); 
+
+}
+
+	
+
+double Cpreiss::pbar(double A, bool P)
+{
+	double y = hofA(A);
+	if(y<D && (!P) )
+		return  G/12.*((3.*D*D-4.*D*y+4.*y*y)*sqrt(y*(D-y))-3.*D*D*(D-2.*y)*atan(sqrt(y)/sqrt(D-y)));
+	else 
+		return PI/4.*G*D*D*((A-At)/Ts+D/2.);
+
 }
 
 
-double Cpreiss::pbar(double A, bool P)
+double Cpreiss::pbar_old(double A, bool P)
 	{
 		return Eta(A,w, At,Ts, P); 
 	}
+
+double Cpreiss::hofAold(double A)
+{
+		double theta = thetaofA(A);		
+		double y = D/2.*(1.+cos(PI-theta/2.));
+		//	cout<<theta<<"= theta and y = "<<y<<endl;
+		return y;
+}
 double Cpreiss::hofA(double A)
 	{
+		double ph = 2./3.;
 		double y; 
-		if(A<=At)  //below slot
+		if(A<1e-15){return 0.;}
+		if(A<D*D*PI/4.)  //below slot
 		{
-			double theta = thetaofA(A);		
-			y = D/2.*(1.+cos(PI-theta/2.));
-		//	cout<<theta<<"= theta and y = "<<y<<endl;
+			A = A/(D*D);//normalize by full area;
+			if (A<=PI/8.){
+				double Ahat = 2*pow((A*8./PI),ph)-1.;
+				y = D*ChebEval(&coeffs_h[0],Ncheb, Ahat);
+			}
+			else{
+				double Ahat = 2*pow(8./PI*(PI/4.-A),ph)-1.;
+				y = D*(1.- ChebEval(&coeffs_h[0],Ncheb, Ahat));
+
+			}
 		}
 		else      //in Preissman Slot
 		{
@@ -870,8 +930,7 @@ double Cpreiss::fakehofA(double A, bool P)
 		}	
 		else  //below slot
 		{
-			double theta = thetaofA(A);			
-			y = D/2.*(1.+cos(PI-theta/2.));
+			y = hofA(A);
 		}
 		return y;
 	}
@@ -893,7 +952,6 @@ double Cpreiss::Aofh(double h)
 		{
 			double theta = 2.*acos(1.-2.*h/D);
 			A  = D*D/8.*(theta-sin(theta));
-		//	cout<<"h = "<<h<<" theta = "<<theta<<endl;
 		}
 		else
 		{ 
@@ -927,7 +985,8 @@ double Cpreiss::getHydRad(double A)
 		double perim;
 		if(A<At)
 		{
-			double theta = thetaofA(A); 
+			double y = hofA(A);
+			double theta = 2*acos(1.-2*y/D);
 			perim = D*(2*PI- theta);
 		}
 		else {perim = D*PI;}
@@ -1066,7 +1125,67 @@ double Cpreiss::findOmega(double Astar, double Ak, bool Ps, bool Pk)
 	return omega;
 }
 
-double Cpreiss::intPhi(double A)
+double Cpreiss::phiofA(double A)
+{
+	if(A<1e-15){return 0.;}
+	double phi = 0.;
+	if(A<=At)
+	{
+		double p1 = 1./3.;
+		double p2 = 5./12.;
+		A = A/(D*D);
+		if(A<PI*D*D/8.)
+		{	
+			double Ahat = 2*pow((A*8./PI),p1)-1.;
+			phi = D*ChebEval(&coeffs_p1[0],Ncheb, Ahat);
+		}
+		else
+		{
+			double Ahat = 2.*pow((PI/4.-A)*8/PI,p2)-1;
+			phi = D*ChebEval(&coeffs_p2[0], Ncheb, Ahat);
+		}
+	}
+	else
+	{
+		phi = D*ChebEval(&coeffs_p2[0], Ncheb, -1)+2.*(sqrt(A/Ts)-sqrt(At/Ts));
+
+	}
+	return phi;
+}
+
+double Cpreiss::Aofphi(double phi)
+{
+	if(phi<1e-15){return 0.;}
+	double A = 0.;
+	double phi1m = D*ChebEval(&coeffs_p2[0],Ncheb, 1.);
+	double phi2m = D*ChebEval(&coeffs_p2[0],Ncheb, -1.);
+	if(phi<phi2m)
+	{
+		
+		double p1 = 1.;
+		double p2 = 3./5.;
+		if(phi<phi1m)
+		{	
+			double phat = 2*pow(phi/phi1m,p1)-1.;
+			A = D*D*ChebEval(&coeffs_a1[0],Ncheb, phat);
+		}
+		else
+		{
+			double phat = 2.*pow((phi2m-phi)/(phi2m-phi1m),p2)-1.;
+			A = D*D*ChebEval(&coeffs_a2[0], Ncheb, phat);
+		}
+	}
+	else
+	{
+		A = D*D*ChebEval(&coeffs_a2[0], Ncheb, -1)+2.*(sqrt(A/Ts)-sqrt(At/Ts));
+
+	}
+	return A;
+
+}
+
+/*
+double Cpreiss::intPhiold(double A)
 {	
 	double Phi;	
 	if (A<=At&&(!Pnow))
@@ -1082,7 +1201,7 @@ double Cpreiss::intPhi(double A)
 	return Phi;
 }
 
-double Cpreiss::Aofphi(double phi)
+double Cpreiss::Aofphiold(double phi)
 {
 	int count;
 //	cout<<"phi ="<<phi<<endl;
@@ -1092,7 +1211,7 @@ double Cpreiss::Aofphi(double phi)
 	return A;
  
 }
-
+*/
 
 
 ////
@@ -1122,6 +1241,7 @@ Junction1::Junction1(Channel &a_ch0, int a_which, double a_bval, int a_bvaltype)
  * Specify: specify Q,A, or f(Q,A) = 0 (not implemented yet) 
  * following a characteristcic out of the domain to solve for unknown value, then updating boundary fluxes accordingly.
  * */
+
 void Junction1::boundaryFluxes()
 {
 	double Ain, Qin, Aext, Qext;
@@ -1182,11 +1302,11 @@ void Junction1::boundaryFluxes()
 					c1min = 3.*pow((G*fabs(Qext)/w),1./3.); //min achievable value for for c+  (outgoing on right)
 					c1max = -c1min;  			//max achievable value for c_ (outgoing on left)
 				}
-				//Preissman slot requires rootfinding
+				//Preissman slot requires SUBTERFUDGE (formerly, rootfinding)
 				else
 				{	
 					int count;
-					c1  = uin +sign*ch0.intPhi(Ain);
+					c1  = uin +sign*ch0.phiofA(Ain);
 					if(sign<0)
 					{	
 						if(Qext<0)
@@ -1204,7 +1324,7 @@ void Junction1::boundaryFluxes()
 							//solve for xs s.t. 0 = Q-xs*c(xs)
 							fallpurpose fcpm(ch0.w, ch0.At, ch0.Ts, 0, Qext,0, 1,-1., ch0.Pnow);
 							xs = ::ridders(fcpm,1e-8,100.,&count, 1e-10, 1e-10);	
-							c1min = ch0.cgrav(ch0.hofA(xs))+ch0.intPhi(xs);
+							c1min = ch0.cgrav(ch0.hofA(xs))+ch0.phiofA(xs);
 						}
 					}	
 				}
@@ -1235,7 +1355,7 @@ void Junction1::boundaryFluxes()
 						pass =1;
 					}
 					Qext = bval[ch0.n];*/
-					printf("Qext increased to min allowed value of %f, Aext = %f, RI = %f\n",Qext, Aext, Qext/Aext -ch0.intPhi(Aext));
+					printf("Qext increased to min allowed value of %f, Aext = %f, RI = %f\n",Qext, Aext, Qext/Aext -ch0.phiofA(Aext));
 				
 				}
 				//make sure right end boundary flux is enforceable
@@ -1270,7 +1390,7 @@ void Junction1::boundaryFluxes()
 				}
 				else if (ch0.Pnow)//pressurized R.I. are simple!
 				{
-					double c1t = c1 -sign*(ch0.intPhi(ch0.At) -2*sqrt(G*ch0.At/ch0.Ts));
+					double c1t = c1 -sign*(ch0.phiofA(ch0.At) -2*sqrt(G*ch0.At/ch0.Ts));
 					double c2 = 2*sign*sqrt(G/ch0.Ts);
 					fRI f(c1t,c2, bval[ch0.n]);
 					dfRI df(c2,bval[ch0.n]);
@@ -1284,12 +1404,12 @@ void Junction1::boundaryFluxes()
 				{				
 					int count;
 					double uin = (Ain>0. ?Qin/Ain :0. );
-					double lhs = uin +sign*ch0.intPhi(Ain);
+					double lhs = uin +sign*ch0.phiofA(Ain);
 					//solve lhs = Qext/x +sign*phi(x) for x
 					fallpurpose fp(ch0.w, ch0.At,ch0.Ts, lhs, Qext, sign,1.,0., ch0.Pnow);
 					Aext = ::ridders(fp,-.1,10.,&count, 1e-10, 1e-10);
 					double uext = (Aext>0 ?Qext/Aext :0.);
-					double err = fabs(uext +sign*ch0.intPhi(Aext)-lhs);
+					double err = fabs(uext +sign*ch0.phiofA(Aext)-lhs);
 					printf("ridders answer = %.16f, lhs = %f, Qext = %f, RI_ext-RI_n = %f\n", Aext,  lhs,Qext, err);
 					}
 				}
@@ -1305,7 +1425,7 @@ void Junction1::boundaryFluxes()
 				//Preissman slot
 				else
 				{       			
-					double lhs = Qin/Ain +sign*ch0.intPhi(Ain);
+					double lhs = Qin/Ain +sign*ch0.phiofA(Ain);
 					if(sign*lhs>=0)
 					{
 						Aext = ch0.Aofphi(sign*lhs);

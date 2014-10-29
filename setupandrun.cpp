@@ -22,7 +22,7 @@ double getTheta2(double A, double D)
 void testallthiscrap() //print out all the crap I'm computing to see if it makes any bloody sense
 {
 	//also wtf is going on with cgrav???!?!?
-	double D = 1.;
+	double D = 1.2;
 	int M = 100;
 	int N = 100;
 	double L = 1000;
@@ -63,20 +63,68 @@ void testallthiscrap() //print out all the crap I'm computing to see if it makes
 	 phi = Phi(x,D,At,Ts,true);
 	 printf("Evaluated at Af = %.10f\n %.10f  (eta free)\n %.10f (eta press)\n %.10f (c)\n %.10f  (cpress)\n%.10f phi", Af,eta, etap, c, cp, phi);
 	 printf("At-Af = %e\n", fabs(ch0.At-x));
-	 printf("A                   theta(A)               |A-Af|           |theta-2*pi|        |A(theta) - A|\n");
+	 printf("A                   h(A)               |A-Af|           |hnew-hold|        |A(theta) - A|\n");
 	 for(int k = 0; k<40; k++)
 	 {
-		 double aa = PI/4.*(1.-pow(2.,-k-1));
-		 double th = getTheta2(aa,D);
-		 printf("%.16f   %.16f   %e   %e   %e\n", aa, th,fabs(aa-PI/4.), fabs(th-2*PI), fabs(1/8.*(th-sin(th))-aa)); 
+		 double aa = D*D*PI/4.*(1.-pow(2.,-k-1));
+		 double h = ch0.hofA(aa);
+		 double hold =ch0.hofAold(aa);
+		 double th = 2*acos(1-2.*h/D);
+		 printf("%.16f   %.16f   %e   %e   %e\n", aa, h,fabs(aa-D*D*PI/4.), fabs(h-hold), fabs(D*D/8.*(th-sin(th))-aa)); 
 	 }
-	 printf("\n\nA                   theta(A)               |A-Af|           |theta-2*pi|        |A(theta) - A|\n");
+	 printf("\n\nA                   h(A)               |A-Af|           |theta-2*pi|        |A(theta) - A|   A(phi(A))-A\n");
 	 for(int k = 0; k<40; k++)
 	 {
-		 double aa = PI/160.*(double)k;
-		 double th = getTheta2(aa,D);
-		 printf("%.16f   %.16f   %e   %e   %e\n", aa, th,fabs(aa-PI/4.), fabs(th-2*PI), fabs(1/8.*(th-sin(th))-aa)); 
+		 double aa = D*D*PI/160.*(double)k;
+		 double h = ch0.hofA(aa);
+		 double hold =ch0.hofAold(aa);
+		 double th = 2*acos(1-2.*h/D);
+		 double ae = ch0.Aofphi(ch0.phiofA(aa));
+		 printf("%.16f   %.16f   %e   %e   %e   %e\n", aa, h,fabs(aa-D*D*PI/4.), fabs(h-hold), fabs(D*D/8.*(th-sin(th))-aa), fabs(aa-ae)); 
 	 }
+	 //compare timings
+	 clock_t t0,t1,t2,t3,t4,t5,t6;
+	 t0 = clock();
+	 double yy;
+	 int MM = 10000;
+	 for (int i = 1; i<MM; i++)
+	 {
+	   yy =ch0.hofA((float)i/MM*PI*D*D/4.); 
+	 }
+	 t1 = clock();
+	 for (int i = 1; i<MM; i++)		 
+	 {
+	   yy =ch0.hofAold((float)i/MM*PI*D*D/4.); 
+	 } 
+	 t2  = clock();
+	 for (int i = 1; i<MM; i++)		 
+	 {
+	   yy =ch0.pbar_old((float)i/MM*PI*D*D/4., false); 
+	 }
+	t3 = clock();
+	for (int i = 1; i<MM; i++)		 
+	{
+	   yy =ch0.Aofh((float)i/MM*PI*D*D/4.); 
+	}
+	t4 = clock();
+	for (int i = 1; i<MM; i++)		 
+	{
+	   yy =ch0.phiofA((float)i/MM*PI*D*D/4.); 
+	}
+	t5 = clock();
+	for (int i = 1; i<MM; i++)		 
+	{
+	   yy =ch0.pbar((float)i/MM*PI*D*D/4., false); 
+	}
+	t6 = clock();
+	printf("%d evaluations\n", MM);
+	cout<<"h(A) chebyshev eval time =          "<<(t1-t0)/(double)CLOCKS_PER_SEC<<endl;
+	cout<<"h(A) rootfind for theta eval time = "<<(t2-t1)/(double)CLOCKS_PER_SEC<<endl;
+	cout<<"I(A) rootfind eval time =           "<<(t3-t2)/(double)CLOCKS_PER_SEC<<endl;
+	cout<<"I(A) new eval time =                "<<(t6-t5)/(double)CLOCKS_PER_SEC<<endl;
+	cout<<"A(h) eval time =                    "<<(t4-t3)/(double)CLOCKS_PER_SEC<<endl;
+	cout<<"phi(A) eval time =                  "<<(t5-t4)/(double)CLOCKS_PER_SEC<<endl;
+	
 }
 
 
@@ -153,7 +201,9 @@ Ntwk.channels[0]->quickWrite(places, which, 2,T,Mi);
 //writeOutputTarga(Ntwk, M, Mi,jIDs, xcoords, ycoords, elevs, T, writelogs);
 writeOutputText(Ntwk, M, Mi);
 testallthiscrap();
-
+printf("Coefficients!!\n");
+for(int i = 0; i<Ntwk.channels[0]->Ncheb+1; i++)
+printf("%d   %.15f    %.15f    %.15f    %.15f    %.15f   \n", i, Ntwk.channels[0]->coeffs_h[i],Ntwk.channels[0]->coeffs_p1[i],Ntwk.channels[0]->coeffs_p2[i], Ntwk.channels[0]->coeffs_a1[i],Ntwk.channels[0]->coeffs_a2[i]);
 }
 //optimization crap	
 //	int ndof = 16;   // degrees of freedom (in Fourier or Hermite modes)
