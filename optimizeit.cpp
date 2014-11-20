@@ -51,20 +51,17 @@ int main(int argc, char *argv[] )
 
 	int ndof = 16;   // degrees of freedom (in Fourier or Hermite modes)
 	int modetype = 1;
-	int blargh[2] = {1,2};
-	vector<int> whichnode(blargh, blargh+sizeof(blargh)/sizeof(int));
-	int Nbounds = whichnode.size();
-	double b0 = Ntwk.junction1s[whichnode[0]]->bval[0];
+	int whichnode = 0;
+	double b0 = Ntwk.junction1s[whichnode]->bval[0];
 	double Dt = T/(ndof/2-1); //hermite interpolation spacing
 	vector<double> h(M+1);
-	vector<Real> x0(ndof*Nbounds,0.);
+	vector<Real> x0(ndof+1,0);
 	if (modetype)x0[0] = 2*b0;
 	else{
-		for(int k = 0;k<(ndof*Nbounds)/2;k++)
+		for(int k = 0;k<(ndof)/2+1;k++)
 		{
 			x0[2*k] = b0;
-			x0[2*k+1] = 0.;
-			printf("x[%d] = %f, x[%d] = %f\n", 2*k,b0, 2*k+1, 0.);
+			x0[2*k-1] = 0.;
 		}
 	}
 	bc_opt_dh test1(ndof, M, x0, Ntwk, modetype, T, whichnode);
@@ -95,26 +92,11 @@ int main(int argc, char *argv[] )
 	test1.dump(fp);
 	fclose(fp);
 	double solvet = (end_t-start_t)/(double)CLOCKS_PER_SEC;
-	vector <vector <Real> >bf(2);
-
-	FILE *fb = fopen("boundaryvals.txt", "w");
-	fprintf(fb, "t        Q(Junction %d)  Q(Junction %d)\n", 1,2);
-	for (int k = 0; k<2; k++)
-	{
-		bf[k].resize(M+1);
-		getTimeSeries(bf[k], test1.x, ndof,M,T,modetype,k);
-	}
-	for (int j = 0; j<M+1; j++)
-	{
-		fprintf(fb, "%f   ", dt*(double)j);
-		for (int k = 0; k<2; k++){
-			fprintf(fb,"%f   ",bf[k][j]);	
-		}
-		fprintf(fb,"\n");
-	}
-	fclose(fb);
+	vector <Real> bf(M+1);
+	getTimeSeries(bf, test1.x, ndof,M,T,modetype);
 	for(int k = 0;k<ndof;k++)cout<<test1.x[k]<<"  "<<x0[k]<<endl;
 	cout<<"\n\n";
+//	for (int k =0;k<M+1;k++)cout<<bf[k]<<endl;
 	printf("chkder time = %f s and solve time = %f s\n",chkt, solvet);
 	printf("fold = %f\n fnew = %f\n",f0, fnew);
 	printf("a0 = %f, q0 = %f\n", test1.a0[0][0], test1.q0[0][0]);

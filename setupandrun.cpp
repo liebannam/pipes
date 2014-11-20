@@ -119,7 +119,7 @@ void testallthiscrap() //print out all the crap I'm computing to see if it makes
 	
 }
 
-//namespace setup{
+namespace setup{
 
 int main(int argc, char *argv[] )	
 {
@@ -203,7 +203,7 @@ writeOutputText(Ntwk, M, Mi);
 
 //for(int i = 0; i<Ntwk.channels[0]->Ncheb+1; i++)
 //printf("%d   %.15f    %.15f    %.15f    %.15f    %.15f   \n", i, coeffs_h[i],coeffs_p1[i],coeffs_p2[i], Ntwk.channels[0]->coeffs_a1[i],coeffs_a2[i]);
-}//}
+}}
 
 
 //optimization crap	
