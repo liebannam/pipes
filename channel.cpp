@@ -87,6 +87,7 @@ const double coeffs_a2[] = {0.6277322274489641, -0.2023497520119139, -0.03914356
 			-0.0000000005293791, 0.0000000003289447, -0.0000000002183606, 0.0000000001557247, -0.0000000001192869, 0.0000000000532795};
 
 //powers for scaling x points before evaluation (determined via python-automated trial and error)
+const double ph = 2./3.;
 const double pA1 = 1./3.;
 const double pA2 = 5./12.;
 const double pPhi1 = 1.;
@@ -115,15 +116,15 @@ double HofA(double A, double D, double At, double Ts, bool P)
 {
 	double y; 
 	if(A<1e-15){return 0.;}
-	if(A<At&& !P)  //below slot
+	if(A<=At)  //below slot
 	{
 		A = A/(D*D);//normalize by full area;
 		if (A<=PI/8.){
-			double Ahat = 2*pow((A*8./PI),pA1)-1.;
+			double Ahat = 2*pow((A*8./PI),ph)-1.;
 			y = D*ChebEval(&coeffs_h[0],Ncheb, Ahat);
 		}
 		else{
-			double Ahat = 2*pow(8./PI*(PI/4.-A),pA2)-1.;
+			double Ahat = 2*pow(8./PI*(PI/4.-A),ph)-1.;
 			y = D*(1.- ChebEval(&coeffs_h[0],Ncheb, Ahat));
 
 		}
@@ -131,6 +132,7 @@ double HofA(double A, double D, double At, double Ts, bool P)
 	else      //in Preissman Slot
 	{
 		y = D+(A-At)/Ts;
+		//cout<<"y = "<<y<<" A = "<<A<<endl;
 	}
 	return y;
 }
@@ -139,7 +141,7 @@ double PhiofA(double A, double D, double At, double Ts, bool P)
 {
 	if(A<1e-15){return 0.;}
 	double phi = 0.;
-	if(A<=At && !P)
+	if(A<=At)
 	{	
 		A = A/(D*D);
 		if(A<PI*D*D/8.)
@@ -199,7 +201,8 @@ double AofPhi(double phi, double D, double At, double Ts, bool P)
 double Cgrav(double A, double D, double At, double Ts, bool P)
 {
 	double c;
-	if(A<At &&(!P))
+	if(A<1e-15){return 0.;}
+	if(A<At)
 	{
 		double h = HofA(A,D,At,Ts,P);
 		double l = 2.*sqrt(h/D*(1.-h/D));
@@ -233,7 +236,7 @@ double Cgrav(double A, double D, double At, double Ts, bool P)
 double Eta(double A, double D, double At, double Ts, bool P)
 {
 	double Eta,t;
-	if (A<At &&(!P))
+	if (A<At)
 	{
 	//	t = getTheta(A,D);
 		double y = HofA(A, D, At, Ts, P);
@@ -266,7 +269,7 @@ double Eta(double A, double D, double At, double Ts, bool P)
 ////
 //
 //Constructor
-Channel::Channel(int Nin, double win, double Lin, int Min):N(Nin), w(win), L(Lin),kn(1.0), M(Min) 
+Channel::Channel(int Nin, double win, double Lin, int Min, double a):N(Nin), w(win), L(Lin),kn(1.0), M(Min) 
 {
 	q0 = new double[2*N];
 	q = new double[2*N];
@@ -896,7 +899,7 @@ void Channel::quickWrite(double *where, int *which, int K, double T, int skip)
 	int i, MN;
 	double ds;
 	for (int k=0; k<K; k++)
-	{
+	{	
 		if(which[k]==0)//write variables at all locations at time where[k] 
 
 		{
@@ -916,9 +919,9 @@ void Channel::quickWrite(double *where, int *which, int K, double T, int skip)
 			MN = M;
 			ds = T/(double)M;
 		}
-		printf("%s     A     h      hfake   Q \n",which?"t":"x");
+		printf("%s             A               h               Q \n",(which[k])?"t":"x");
 		double A, h, hfake, Q;
-		for(int j = 0; j<MN; j+=skip)
+		for(int j = 0; j<=MN; j+=skip)
 		{
 			if(which[k]==0)  		
 			{
@@ -929,14 +932,14 @@ void Channel::quickWrite(double *where, int *which, int K, double T, int skip)
 			else
 			{
 				A = q_hist[idx_t(0,i,j)];
-				Q = q_hist[idx_t(0,i,j)];
+				Q = q_hist[idx_t(1,i,j)];
 				
 			}
 
 			h = HofA(A,false);
 			hfake = fakehofA(A,true);
 
-			printf(" %f    %f     %f    %f    %f \n", ds*(double)j,A, h, hfake, Q);
+			printf(" %f    %f     %f    %f \n", ds*(double)j,A, h, Q);
 		}
 	}	
 }
@@ -952,7 +955,8 @@ void Cpreiss::setGeom(double a_)
 	int count;
 
 	a = 1200;//desired pressure wave speed
-        a = 9;
+	a = 120;
+//      a = 9;
 	Af = PI*D*D/4.;
 	Ts = G*Af/(a*a);
 //this bit fails epically	
@@ -960,8 +964,12 @@ void Cpreiss::setGeom(double a_)
 //	tt =::ridders(th, 0, 2*PI+1, &count,1e-10, 1e-12);
 
 	tt = 2*(PI-asin(Ts/D));
+
 	yt = D/2.*(1-cos(tt/2.));
-	At = D*D*(tt-sin(tt))/8.;
+	At = AofH(yt,false);
+//	At = D*D*(tt-sin(tt))/8.;
+//	At = .99999*Af;
+//	yt = HofA(At,false);	
 	cout<<"D= "<<D<<endl;
 //	tt = 2*asin(G*D*2*PI/(8*a*a));// theta such that c(A(theta)) = a
 	
@@ -969,15 +977,54 @@ void Cpreiss::setGeom(double a_)
 	cout<<"At = "<<At<<" Ts ="<<Ts<<endl;
 	printf("difference between At and Af is  %e\n", At-PI*D*D/4.);
 	printf("slot gravity wavespeed c  = %f\n", sqrt(D*D*PI/4.*G/Ts));
-	double t2 = 2*PI-tt;
-	printf("tt = %.16f, yt = %f,At = %.16f, fAt = %.16f\ntt-2pi = %.15f\n", tt,yt, At, D*D/8*(tt-sin(tt)),tt-2*PI);
+	printf("yt = %.16f,At = %.16f, fAt = %.16f AofH(At)-At = %.16f\n",yt, At, AofH(yt,false)-At);
+        	
+	char fname1[30];
+	clock_t time1 = clock();
+	int duh = (int)time1;
+	sprintf(fname1,"geomconfirm%3d.txt",1);
+	FILE *fg1 = fopen(fname1,"w");
+	int Mp= 500;
+	fprintf(fg1, "#D = %f, cgrav = %f, Ts = %.16f, At = %.16f, yt = %.16f \n",D, a, Ts,At,yt); 
+	fprintf(fg1, "#A                  h(A)                   I(A)                  c(A)                  phi(A)                  hA(phi(A))                  A(h(A))   htrue(A)\n");
+	bool pp = false; 
+	for(int k = 0; k<Mp; k++)
+	 {
+		 //double aa = D*D*PI/(4*Mp)*(double)k;
+		 double tt = PI*2/Mp*(double)k;
+		 double aa = D*D/8.*(tt-sin(tt));
+		 double ht = 0.5*D*(1-cos(tt*.5));
+		 double h = HofA(aa,pp);
+		 double I = pbar(aa,pp);
+		 double ah = AofH(ht,pp);
+		 double c = Cgrav(aa,pp);
+		 double phi = PhiofA(aa,pp);
+		 double ae = AofPhi(PhiofA(aa,pp),pp);
+		 fprintf(fg1,"%.16f   %.16f    %.16f   %.16f   %.16f   %.16f   %.16f    %.16f\n", aa, h, I, c, phi, ae, ah, ht); 
+	 }
+	 fclose(fg1);
 
+	char fname2[30];
+       	sprintf(fname2, "geomconfirm%3d.txt", 2);
+	FILE *fg2 = fopen(fname2, "w");	
+	fprintf(fg2, "A                   h(A)              A-Af\n");
+	
+	for (int i=0; i<2;i++)
+	{
+		for(int k = 0; k<40; k++)
+		{
+		 	double aa =D*D*PI/4.*(1.+pow(-1.,i+1)*pow(2.,-k-1));
+		 	double h = HofA(aa,pp);
+		 	fprintf(fg2, "%.16f   %.16f   %e   \n", aa, h, aa-D*D*PI/4.);
+		} 
+	}
+	fclose(fg2);
 }
 
 	
 double Cpreiss::AofH(double h, bool p)
 {
-	if(h<yt && !p)
+	if(h<=yt)
 	{	double t = 2.*(acos(1.-h/D*2.));
 		return	 D*D*(t-sin(t))/8.;
 	}
@@ -1105,7 +1152,6 @@ void Cpreiss::speedsHLL(double q1m, double q1p, double q2m, double q2p, double *
 	yp = HofA(q1p,Pp);
 	cm = Cgrav(q1m, Pm);
 	cp = Cgrav(q1p, Pp);
-//	cout<<"[ym, yp]=["<<ym<<","<<yp<<"]\n";
 	//if no dry bed present
 	if(fmin(ym,yp)>=dry){
 		cbar = (cp+cm)/2.;
@@ -1129,20 +1175,27 @@ void Cpreiss::speedsHLL(double q1m, double q1p, double q2m, double q2p, double *
 	else{
 		if(fmax(ym,yp)<dry)     // Both sides dry - both stay dry
 		{
-			printf("both sides dry\n");
+		//	printf("both sides dry\n");
+		//	cout<<"P = ["<<Pm<<","<<Pp<<"]\n";
+		//	cout<<"[ym, yp]=["<<ym<<","<<yp<<"]  "<<"[um, up]= ["<<um<<","<<up<<"]\n";
 			s[0] = 0.;
 			s[1] = 0.;
 		}
 		else if(ym<dry)  //left side dry
 		{
-			printf("left side dry\n");
+		//	printf("left side dry\n");
+		//	cout<<"P = ["<<Pm<<","<<Pp<<"]\n";
+		//	cout<<"[ym, yp]=["<<ym<<","<<yp<<"]  "<<"[um, up]= ["<<um<<","<<up<<"]\n";
+
 			up = q2p/q1p;
 			s[0] = up - PhiofA(q1p,Pp);
 			s[1] = up + cp;	
 		}
 		else if(yp<dry) //right side dry
 		{
-			printf("right side dry\n");
+		//	printf("right side dry\n");
+		//	cout<<"P = ["<<Pm<<","<<Pp<<"]\n";
+		//	cout<<"[ym, yp]=["<<ym<<","<<yp<<"]  "<<"[um, up]= ["<<um<<","<<up<<"]\n";
 			um = q2m/q1m;
 			s[0] = um - cm;
 			s[1] = um + PhiofA(q1m,Pm);
@@ -1327,8 +1380,9 @@ void Junction1::boundaryFluxes()
 						if(Qext<0)
 						{
 							//solve for xs s.t. 0 = Q + xs*c(xs).
+						//	cout<<"Qext"<<Qext<<endl;
 							fallpurpose fcpm(ch0.w, ch0.At, ch0.Ts, 0, Qext, 0,1,1., ch0.Pnow);
-							xs = ::ridders(fcpm, 1e-8,100,&count, 1e-10, 1e-10);	
+							xs = ::ridders(fcpm, 0,100,&count, 1e-10, 1e-10);	
 							c1max = -Cgrav(xs, ch0.At, ch0.w, ch0.At, Pext)-PhiofA(xs, ch0.At, ch0.w,ch0.At, ch0.Pnow);
 						}
 					}
@@ -1337,8 +1391,10 @@ void Junction1::boundaryFluxes()
 						if(Qext>0)
 						{
 							//solve for xs s.t. 0 = Q-xs*c(xs)
+							
+						//	cout<<"Qext"<<Qext<<endl;
 							fallpurpose fcpm(ch0.w, ch0.At, ch0.Ts, 0, Qext,0, 1,-1., ch0.Pnow);
-							xs = ::ridders(fcpm,1e-8,100.,&count, 1e-10, 1e-10);	
+							xs = ::ridders(fcpm,0,100.,&count, 1e-10, 1e-10);	
 							c1min = ch0.Cgrav(xs,ch0.Pnow)+ch0.PhiofA(xs,ch0.Pnow);
 						}
 					}	
@@ -1376,7 +1432,7 @@ void Junction1::boundaryFluxes()
 				//make sure right end boundary flux is enforceable
 				if(whichend ==1 && Qext>0. && c1<c1min+ctol)
 				{
-					printf("oops! Qext = %f is too large for c1 = %f\nsetting Aext =Ain=%f\n", Qext,c1, Ain);
+					printf("oops! Qext = %f is too large for c1 = %f\nsetting Aext =Ain=%f, Qin = %f\n", Qext,c1, Ain, Qin);
 					pass = 1;
 					Aext =Ain;
 			/*		if(ch0.channeltype==0){bval[ch0.n] = w/G*pow(c1/3.,3.);}
@@ -1421,12 +1477,13 @@ void Junction1::boundaryFluxes()
 					double uin = (Ain>0. ?Qin/Ain :0. );
 					double lhs = uin +sign*ch0.PhiofA(Ain,Pin);
 					//solve lhs = Qext/x +sign*phi(x) for x
-					//
+					
+				//	cout<<"Qext = "<<Qext<<"  lhs = "<<lhs<<"sign ="<<sign<<endl;
 					fallpurpose fp(ch0.w, ch0.At,ch0.Ts, lhs, Qext, sign,1.,0., ch0.Pnow);
-					Aext = ::ridders(fp,-.1,10.,&count, 1e-10, 1e-10);
+					Aext = ::ridders(fp,0.,ch0.Af*2,&count, 1e-10, 1e-10);
 					double uext = (Aext>0 ?Qext/Aext :0.);
 					double err = fabs(uext +sign*ch0.PhiofA(Aext,Pext)-lhs);
-					printf("ridders answer = %.16f, lhs = %f, Qext = %f, RI_ext-RI_n = %f\n", Aext,  lhs,Qext, err);
+				//printf("ridders answer = %.16f, lhs = %f, Qext = %f, RI_ext-RI_n = %f\n", Aext,  lhs,Qext, err);
 					}
 				}
 			}
@@ -1448,12 +1505,16 @@ void Junction1::boundaryFluxes()
 					}
 					else
 					{
-						cout<<"yeah I dunno, setting Aext =Ain"<<endl;Aext = Ain;
+						cout<<"yeah I dunno, setting Aext =Ain"<<endl;
+						printf("Qin = %f, Ain  %f, lhs= %f",Qin, Ain, lhs);
+						Aext = Ain;
 					}
+					Qext = -Qin;
+					Aext = Ain;
 							
 				}
 			}
-			printf("Ain is %f and Qin is %f and Aext-At is %f and Qext is %f for end %d\n", Ain, Qin, Aext-ch0.At, Qext, whichend);
+		//	printf("Ain is %f and Qin is %f and Aext-At is %f and Qext is %f for end %d\n", Ain, Qin, Aext-ch0.At, Qext, whichend);
 		}
 
 		//if we're specifying A
@@ -1472,6 +1533,7 @@ void Junction1::boundaryFluxes()
 	{	
 		ch0.numFlux(Ain, Aext, Qin, Qext, ch0.bfluxright, ch0.P[N], ch0.P[N+1]);
 		ch0.q_hist[ch0.idx_t(0,N+1,ch0.n)] = Aext;
+	//	cout<<"Aext = "<<Aext<<"  Qext = "<<Qext<<endl;
 		ch0.q_hist[ch0.idx_t(1,N+1,ch0.n)] = Qext;
 	//	printf("in junction routine!Aext =%f, Ain = %f, Qin %f, Qext = %f, bfluxright = [%f,%f]\n",Aext, Ain, Qin, Qext,ch0.bfluxright[0],ch0.bfluxright[1]);
 		//update pressurization info--this needs work, I think... 
@@ -1588,15 +1650,18 @@ void Junction2::boundaryFluxes(){
 	q2m = ch0.q[ch0.idx(1,N0)];
 	q1p = ch1.q[ch1.idx(0,N1)];
 	q2p = ch1.q[ch1.idx(1,N1)];
-	bool pm = ch0.P[N0];
-	bool pp = ch0.P[N1];
+	bool pm = ch0.P[ch0.pj(N0)];
+	bool pp = ch1.P[ch1.pj(N1)];
 //attempt at incorporating valve opening coefficient - wish me luck/facepalm
 	//printf("ws=  %f %f %f %f \n",w1[0], w1[1],w2[0], w2[1]);
 	if(valveopen>0)
 	{
-		q1pfake = ch0.AofH(ch1.HofA(q1p,pm)-offset,pm);      //what channel 0 sees
-		q1mfake = ch1.AofH(ch0.HofA(q1m,pp)+offset,pp);      //what channel 1 sees
-		printf("q1m = %f, q1mfake = %f, q1p = %f, q1pfake = %f, q2m = %f, q2p = %f N1 = %d \n", q1m, q1mfake,q1p,q1pfake, q2m, q2p, N1);
+		double h0f = ch1.HofA(q1p,pm)-offset;
+		double h1f = ch0.HofA(q1m,pp)+offset;
+		q1pfake = ch0.AofH(h0f,pm);      //what channel 0 sees
+		q1mfake = ch1.AofH(h1f,pp);      //what channel 1 sees
+	//	cout<< q1p-ch0.AofH(h0f,pm)<<" "<<q1m-ch1.AofH(h1f,pm)<<endl;
+	//	printf("q1m = %f, q1mfake = %f, q1p = %f, q1pfake = %f, hm = %f, hp = %f N1 = %d N0 = %d\n", q1m, q1mfake,q1p,q1pfake, h0f, h1f, N1,N0);
 	//	ch1.showVals(1);	
 		if(whichend0)
 		{
@@ -1656,7 +1721,7 @@ void Junction3::boundaryFluxes(){
 	p12 = 0.5;
 	p20 = 1-p02;
 	p21 = 1-p12;
-	cout<<"junction 3 time godfuckingdamnallofthisfuckinguselessfuckingshit\n";
+//	cout<<"junction 3 time godfuckingdamnallofthisfuckinguselessfuckingshit\n";
 //this routine assumes you have one incoming (whichend =1) and two outgoing pipes (whichend =0)
 //I can see needing to set up the machinery to have two incoming and one outgong but there's no reason to have anything else
 	if((whichend[0]==1 &&whichend[1] ==0 &&whichend[2] ==0) || (whichend[0] ==0&& whichend[1] ==1 &&whichend[2] ==1))
@@ -1678,8 +1743,8 @@ void Junction3::boundaryFluxes(){
 		flux1[1] =  p10*ch1.bfluxleft[1];
 	//1-2 is a pain in the neck	
 		ch2.q[ch2.idx(1,0)]= -ch2.q[ch2.idx(1,0)];
-		cout<<"ch1.q[0] ="<<ch1.q[ch1.idx(1,0)]<<endl; 
-		cout<<"ch2.q[0] ="<<ch2.q[ch2.idx(1,0)]<<endl; 
+	//	cout<<"ch1.q[0] ="<<ch1.q[ch1.idx(1,0)]<<endl; 
+	//	cout<<"ch2.q[0] ="<<ch2.q[ch2.idx(1,0)]<<endl; 
 		j2_12.boundaryFluxes();	
 		ch2.q[ch2.idx(1,0)]= -ch2.q[ch2.idx(1,0)];
 		flux1[0] += p12*ch1.bfluxleft[0];

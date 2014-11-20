@@ -18,11 +18,10 @@ double getTheta2(double A, double D)
 	return theta;
 }
 
-
 void testallthiscrap() //print out all the crap I'm computing to see if it makes any bloody sense
 {
 	//also wtf is going on with cgrav???!?!?
-	double D = 1.2;
+	double D = 1;
 	int M = 100;
 	int N = 100;
 	double L = 1000;
@@ -35,7 +34,7 @@ void testallthiscrap() //print out all the crap I'm computing to see if it makes
 	bool P = true;
 	double x,hp, h,c,eta,phi, etap, phip, cp, A2;
 
-	ch0.setGeom();
+	ch0.setGeom(1200);
 	printf("#Ts = %f D = %f  a = %f \n#A               h                  eta(free)        eta(pressurized)      h(pressurized)    cgrav phi(free) phi(pressurized)\n", ch0.Ts, ch0.D, ch0.a);
 	for(int j = 1; j<3; j++)
 	{
@@ -73,16 +72,26 @@ void testallthiscrap() //print out all the crap I'm computing to see if it makes
 		 double th = 2*acos(1-2.*h/D);
 		 printf("%.16f   %.16f   %e   %e   %e\n", aa, h,fabs(aa-D*D*PI/4.), fabs(h-hold), fabs(D*D/8.*(th-sin(th))-aa)); 
 	 }
-	 printf("\n\nA                   h(A)               |A-Af|           |theta-2*pi|        |A(theta) - A|   A(phi(A))-A\n");
-	 for(int k = 0; k<40; k++)
+	 FILE *fg1 = fopen("geomconfirm1.txt","w");
+	 int Mp= 500;
+	 fprintf(fg1, "#A                  h(A)                   I(A)                  c(A)                  phi(A)                  hA(phi(A))                  A(h(A))   htrue(A)\n");
+	 for(int k = 0; k<Mp; k++)
 	 {
-		 double aa = D*D*PI/160.*(double)k;
+		 //double aa = D*D*PI/(4*Mp)*(double)k;
+		 double tt = PI*2/Mp*(double)k;
+		 double aa = D*D/8.*(tt-sin(tt));
+		 double ht = 0.5*D*(1-cos(tt*.5));
 		 double h = ch0.HofA(aa,pp);
-		 double hold =ch0.hofAold(aa);
-		 double th = 2*acos(1-2.*h/D);
+		 double I = ch0.pbar(aa,pp);
+		 double ah = ch0.AofH(ht,pp);
+		 double c = ch0.Cgrav(aa,pp);
+		 double phi = ch0.PhiofA(aa,pp);
 		 double ae = ch0.AofPhi(ch0.PhiofA(aa,pp),pp);
-		 printf("%.16f   %.16f   %e   %e   %e   %e\n", aa, h,fabs(aa-D*D*PI/4.), fabs(h-hold), fabs(D*D/8.*(th-sin(th))-aa), fabs(aa-ae)); 
+		 fprintf(fg1,"%.16f   %.16f    %.16f   %.16f   %.16f   %.16f   %.16f    %.16f\n", aa, h, I, c, phi, ae, ah, ht); 
 	 }
+	 fclose(fg1);
+
+
 	 //compare timings
 	 clock_t t0,t1,t2,t3,t4,t5,t6;
 	 t0 = clock();
@@ -110,6 +119,7 @@ void testallthiscrap() //print out all the crap I'm computing to see if it makes
 	
 }
 
+//namespace setup{
 
 int main(int argc, char *argv[] )	
 {
@@ -136,7 +146,8 @@ int main(int argc, char *argv[] )
 	//	Ntwk.channels[k]->showGeom();
 //		Ntwk.channels[k]->showp();
 //	}
-
+	printf("h = .014, A = %.10f\n",Ntwk.channels[1]->HofA(0.4,false));
+	printf("h = .008, A = %.10f\n",Ntwk.channels[0]->HofA(0.45,false));
 	Ntwk.runForwardProblem(dt);
 	end_t = clock();
 //	for(int k=0; k<Nedges; k++){
@@ -164,8 +175,7 @@ int main(int argc, char *argv[] )
 //	printf("%f     %.10f   %10f   %f\n", dt*float(k*Mi), Ntwk.channels[0]->fakehofA(Ntwk.channels[0]->q_hist[Ntwk.channels[0]->idx_t(0,140,k*Mi)],true), Ntwk.channels[0]->fakehofA(Ntwk.channels[0]->q_hist[Ntwk.channels[0]->idx_t(0,140,k*Mi)],false), Ntwk.channels[0]->q_hist[Ntwk.channels[0]->idx_t(1,140,k*Mi)]);
 //}
 
-printf("h = .014, A = %.10f\n",Ntwk.channels[0]->AofH(0.014,false));
-printf("h = .008, A = %.10f\n",Ntwk.channels[0]->AofH(0.008,false));
+
 printf("h = 150, A = %.10f\n",Ntwk.channels[0]->AofH(150,false));
 printf("h = 1, A = %.10f\n",Ntwk.channels[0]->AofH(1,false));
 printf("Af is %f\n", Ntwk.channels[0]->At);
@@ -176,19 +186,26 @@ printf("dt = %f , dx = %f, CFL = %f\n",dt, dx, dt/dx*Ntwk.channels[0]->a);
 }*/
 
 
-double places[2] = {10,990};
-int which[2] = {1,1};
+double places0[1] = {0};
+double places1[1] = {2.75};
+double times[1] = {T};
+int which[1] = {1};
 
 //}
-//writeOutputTarga(Ntwk, M, Mi,jIDs, xcoords, ycoords, elevs, T, writelogs);
-writeOutputText(Ntwk, M, Mi);
-testallthiscrap();
-printf("Coefficients!!\n");
+writeOutputTarga(Ntwk, M, Mi,T, writelogs);
 
-Ntwk.channels[0]->quickWrite(places, which, 2,T,Mi); 
+Ntwk.channels[0]->quickWrite(places1, which, 1,T,100); 
+Ntwk.channels[2]->quickWrite(places1, which, 1,T,100); 
+Ntwk.channels[2]->quickWrite(times, which, 1,T,100); 
+writeOutputText(Ntwk, M, Mi);
+//testallthiscrap();
+//printf("Coefficients!!\n");
+
 //for(int i = 0; i<Ntwk.channels[0]->Ncheb+1; i++)
 //printf("%d   %.15f    %.15f    %.15f    %.15f    %.15f   \n", i, coeffs_h[i],coeffs_p1[i],coeffs_p2[i], Ntwk.channels[0]->coeffs_a1[i],coeffs_a2[i]);
-}
+}//}
+
+
 //optimization crap	
 //	int ndof = 16;   // degrees of freedom (in Fourier or Hermite modes)
 ////	int modetype;
@@ -413,7 +430,7 @@ Network setupNetwork(char *finp, char *fconfig, int &M, int &Mi, double &T, int 
 
 	double dt = T/(double)M;
 
-	//make the damn return PhiofA(A, D, At, Ts, P);
+	//make the damn return network
 	Network Ntwk(Nnodes, conns, Nedges, Ns, diams, lengths, S0s, Mrs, h0s, q0s, M, channeltype);
 	
 	
@@ -471,7 +488,7 @@ Network setupNetwork(char *finp, char *fconfig, int &M, int &Mi, double &T, int 
 
 
 ////output heightfields and a textfile "runinfo.txt" of maxvalues to accompany them.
-void writeOutputTarga(Network &Ntwk, int M, int Mi,vector <int> jIDs, vector<double>xcoords, vector<double>ycoords, vector<double> elevs, double T, int writelogs)
+void writeOutputTarga(Network &Ntwk, int M, int Mi, double T, int writelogs)
 {
 	char sdata[] = "../output_data/scalings.txt";
 	int Nedges = Ntwk.Nedges;
@@ -560,7 +577,7 @@ void writeOutputText(Network &Ntwk, int M, int Mi)
 			int NN = Ntwk.channels[kk]->N;
 			for(int j = 0;j<NN; j++)
 			{
-				val = m_to_psi*Ntwk.channels[kk]->fakehofA(Ntwk.channels[kk]->q_hist[Ntwk.channels[kk]->idx_t(0,j+1, ii)], Ntwk.channels[kk]->P[ii+1]);
+				val = m_to_psi*Ntwk.channels[kk]->fakehofA(Ntwk.channels[kk]->q_hist[Ntwk.channels[kk]->idx_t(0,j+1, ii)], false);
 				fprintf(fd, "%.10f     ", val);
 
 			}

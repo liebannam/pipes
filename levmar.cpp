@@ -144,18 +144,17 @@ void levmar::compute_diag(int nD)
 }
     
 
-void levmar::dump() // fixme: needs work. output r?
+void levmar::dump(FILE *fp) // fixme: needs work. output r?
 {
-    printf("nfev = %d, nJev = %d\n", nfev, nJev);
-    cout << "f = " << f << endl;
+    fprintf(fp,"nfev = %d, nJev = %d\n", nfev, nJev);
+    fprintf(fp,"f = %f\n",f);
 
     compute_g(); // from r and J
 
-    printf("x,g =\n");
+    fprintf(fp,"x,g =\n");
     for (int i=0; i<n; i++)
-	printf("%4d %23s  %23s\n", i, str(x[i],0), str(g[i],0));
-
-    J.dump("JJ");
+	fprintf(fp,"%4d %23s  %23s\n", i, str(x[i],0), str(g[i],0));
+   // J.dump("JJ");
 }
 
 

@@ -50,7 +50,7 @@ class Network{
 	int channeltype; //0 for uniform, 1 for Preissman slot
 	//constructor
 	Network(int Nnodes_, std::vector<int> conns_, int Nedges_, std::vector<int> Ns, std::vector<double> ws, std::vector<double> Ls, 
-			std::vector<double> S0s, std::vector<double> Mrs, std::vector<double> a0s, std::vector<double> q0s, int M_,  int channeltype_);
+			std::vector<double> S0s, std::vector<double> Mrs, std::vector<double> a0s, std::vector<double> q0s, int M_,  int channeltype_, double a = 1200.);
 	//copy constructor goddamnit, I have to do this now, and do it perfectly :(
 	Network(const Network &N_old);
 	//destructor
@@ -60,7 +60,7 @@ class Network{
 	void stepRK3_SSP(double dt);
 	void runForwardProblem(double dt);//step dynamic variables from t =0 to t = T
 	double getTotalVolume();//total volume (because this is an FV code, V= sum(A(i))*dx))
-	double getAveGradH(double dt); //average gradient of h(x) over lengths
+	double getAveGradH(int i); //average gradient of h(x) over lengths
 };
 
 

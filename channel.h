@@ -157,7 +157,7 @@ class Channel
 		int pj(int i){return i+1;} 		    // indexing for pressurization states vector
 		double bfluxleft[2], bfluxright[2];         // left and right boundary fluxes
 /*****Methods*/
-		Channel (int Nin, double win, double Lin, int Min); // constructor
+		Channel (int Nin, double win, double Lin, int Min, double a); // constructor
 		~Channel();
 		void showVals(int Iwantq);                 // show values of q		
 		virtual void showGeom() =0;		   // show geometry paramters	
@@ -209,7 +209,7 @@ class Channel
 class Cuniform: public Channel
 {
 	public:
-		Cuniform(int Nin, double win, double Lin, int Min):Channel(Nin, win, Lin, Min)
+		Cuniform(int Nin, double win, double Lin, int Min, double a):Channel(Nin, win, Lin, Min,a)
 		{
 			channeltype = 0;
 		}	
@@ -237,13 +237,12 @@ class Cpreiss: public Channel{
 	public:
 		
 		double D, yt, tt;  //Preissman parameters
-		void setGeom(double a_=1200.);
-	    		
-		Cpreiss(int Nin, double win, double Lin, int Min):Channel(Nin, win, Lin, Min)
+		void setGeom(double a_);	
+		Cpreiss(int Nin, double win, double Lin, int Min, double a =1200.):Channel(Nin, win, Lin, Min,a)
 		{
 			D = win;
 			channeltype = 1;
-			setGeom();
+			setGeom(a);
 		}
 		
 		void showp();	
@@ -511,10 +510,15 @@ public:
 	}
 	~fallpurpose(){
 	}
-
 	double operator()(double x) 
 	{
-		return x*lhs-(cq*Q+x*(sign*PhiofA(x,D,At,Ts,P)+cc*Cgrav(x,D,At,Ts,P)));
+		//cout<<"cc = "<<cc<<endl;
+		if (x<1e-15) return lhs;
+		else{
+//		printf("solving %f -(%f*%f/x+(%d*phi(x)+%f*cgrav))=0\n",lhs,cq,Q,sign, cc);
+		//return x*lhs-(cq*Q+x*(sign*PhiofA(x,D,At,Ts,P)+cc*Cgrav(x,D,At,Ts,P)));
+		return lhs-(cq*Q/x+(sign*PhiofA(x,D,At,Ts,P)+cc*Cgrav(x,D,At,Ts,P)));
+		}
 	}
 
 

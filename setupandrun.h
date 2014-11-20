@@ -31,7 +31,7 @@ class Coords{
 //for writing output to labeled .tga files for use in POVRAY
 void w3d_targa_output_surface(const char* filename,double *fld,int m,int n,double zmin,double zmax);
 Network setupNetwork(char *finp, char *fconfig, int &M, int &Mi, double &T, int channeltype_);
-void writeOutputTarga(Network &Ntwk, int M, int Mi,vector <int> jIDs, vector<double>xcoords, vector<double>ycoords, vector<double> elevs,double T, int writelogs);
+void writeOutputTarga(Network &Ntwk, int M, int Mi,double T, int writelogs);
 void writeOutputText(Network &Ntwk, int M, int Mi);
 
 //using namespace std;

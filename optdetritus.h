@@ -5,13 +5,18 @@
 #include "network.h"
 #include "levmar.h"
 
-void getTimeSeries(vector<Real> & bvals, vector<Real> &x, int m, int M, double T, int Fourier)
+void getTimeSeries(vector<Real> & bvals, vector<Real> &x, int m, int M, double T, int Fourier,int Nnodes)
        	
 //bvals is time series of M+1 values at t =0, T/M, ...T
-//x is a length m vector. either contains Fourier modes (Fourier==1) or of Hermite spline components (Fourier ==0)
+//x is a vector of length Nnodes*m. either contains Fourier modes (Fourier==1) or of Hermite spline components (Fourier ==0)
+//Nnodes is the number of nodes we need time series for
 //we have m/2 values in Fourier series or m/2 spline interpolation points. Interpolation dt = 1/(m/2-1)
-//
+
 {
+	
+	int shift = (m)*Nnodes;
+	
+	cout<<"shift is!"<<shift<<endl;
 	if(Fourier)	//Discrete Fourier modes:
 	//x[k] = a_k (k<=m/2)
 	//x[k] = b_j (where j =k-m/2, for k>m/2)
@@ -22,14 +27,14 @@ void getTimeSeries(vector<Real> & bvals, vector<Real> &x, int m, int M, double T
 		double t;
 		for(int nn = 0; nn<M+1; nn++)
 		{
-			bvals[nn] = 0.5*x[0];
+			bvals[nn] = 0.5*x[0+shift];
 			t = (double)(nn)/(double)M;
 			for (int k = 1; k<m/2; k++)
 			{
-				bvals[nn] += x[k]*cos(2.*PI*(double)k*t) + x[k+m/2]*sin(2.*PI*(double)k*t);
-		//		cout<<k<< " "<< x[k+m/2+1]<<endl;
+				bvals[nn] += x[k+shift]*cos(2.*PI*(double)k*t) + x[k+m/2+shift]*sin(2.*PI*(double)k*t);
+			//	cout<<k<< " "<< x[k+m/2+1+shift]<<endl;
 			}
-			bvals[nn] +=0.5*x[m/2]*cos(PI*(double)m*t);
+			bvals[nn] +=0.5*x[m/2+shift]*cos(PI*(double)m*t);
 		//	printf("n = %d, t/T = %f, gah %f\n", n, t, bvals[n]);
 		//	cout<<"!!!!!"<<bvals[n]<<endl;
 		}
@@ -45,19 +50,19 @@ void getTimeSeries(vector<Real> & bvals, vector<Real> &x, int m, int M, double T
 	{
 		double t, Dt,dt;
 		dt = T/M;//time series dt
-		Dt = T/(m/2-1.);//spline dt. Careful! This is NOT the dt in your problem!
+		Dt = T/((double)m/2.-1.);//spline dt. Careful! This is NOT the dt in your problem!
 		for(int nn = 0; nn<M+1; nn++)
 		{
 			t= nn*dt;
 			int j = int((t)/Dt);
-			t = t/Dt-j; 
-		      // cout<<Dt<<endl;	
-			if(j>m+1 || j<0) printf("warning! t out of range!!");
+			t = t/Dt-j;
+		        //cout<<"nn="<<nn<<"  j= "<<j<<endl;	
+			if(j>m+1 || j<0) printf("warning! t=%f out of range!!, Dt = %f, T = %d\n",t,Dt,T);
 			// Calculate square and cube, and pointer to the values to use
 			double t2=t*t,t3=t2*t;
 			// Calculate the value of the spline function
-			if(j==m){bvals[nn] = x[2*j];}
-			else{bvals[nn] = x[2*j]*(2*t3-3*t2+1)+x[2*j+1]*(t3-2*t2+t)*Dt+x[2*j+2]*(-2*t3+3*t2)+x[2*j+3]*(t3-t2)*Dt;}
+			if(j==m){bvals[nn] = x[2*j+shift];}
+			else{bvals[nn] = x[2*j+shift]*(2*t3-3*t2+1)+x[2*j+1+shift]*(t3-2*t2+t)*Dt+x[2*j+2+shift]*(-2*t3+3*t2)+x[2*j+3+shift]*(t3-t2)*Dt;}
 		}
 	}
 }
@@ -68,23 +73,27 @@ void getTimeSeries(vector<Real> & bvals, vector<Real> &x, int m, int M, double T
 class bc_opt_dh: public levmar{
 public:
 	//x = [a_0, a_1,...a_m/2, b_1, ,,,,b_m/2-1] 2m values for discrete trig transform 	
-        vector<Real> x0;
+        vector<int> whichnode;  //at which nodes we're applying this BC time series...
+
+	int Nnodes;	
+	vector<Real> x0;
 	vector< vector <double> >  a0, q0; //a0[i][j] is the jth value in edge i...I think?
-	vector<double> bvals;//M+1 list of actual time series values
-	int whichnode; //at which node we're applying this BC time series...
+	vector< vector <double> > bvals;//bvals[k] is an M+1 list of actual time series values for node k
 	Network Ntwk;
 	int M;                //number of time steps
 	int modetype;         //1 - Fourier   0- Hermite interpolation 
 	double T;
 	double dt;
 	double mydelta; //for finite diff approx for J
-	bc_opt_dh(int n, int M_, vector<double>x0_, Network Ntwk_i, int modetype_, double T_, int whichnode_):
+	bc_opt_dh(int n, int M_, vector<double>x0_, Network Ntwk_i, int modetype_, double T_, vector<int> whichnode_):
 		levmar(M_+1,n), x0(n),bvals(M_+1), Ntwk(Ntwk_i), modetype(modetype_), whichnode(whichnode_) 
 	{
 
 		//x = [x_0,...x_m-1 ] d.o.f in Fourier space
 		//r = [r_0,...r_M] = residuals at times t=0, dt.. , M*dt
+		T = T_;
 		M = Ntwk.M;
+		Nnodes = whichnode.size();
 		dt = T/(double)M;
 		a0.resize(Ntwk_i.channels.size());
 		q0.resize(Ntwk_i.channels.size());
@@ -103,10 +112,20 @@ public:
 		{
 			x0[i] = x0_[i];
 			x[i] = x0[i];
+			printf("i = %d, x0 = %f\n ", i,x0[i]);
 		}
-		
-		getTimeSeries(bvals, x0, n,M,T,modetype);
-		Ntwk.junction1s[whichnode]->setbVal(bvals);
+		for (int k = 0; k<Nnodes; k++){
+			vector <Real> tmp(M+1,0);
+			cout<<"k = "<<k<<endl;
+			getTimeSeries(tmp, x0, n,M,T,modetype,k);
+			cout<<"k = "<<k<<endl;
+			bvals.push_back(tmp);	
+			cout<<"size is"<<bvals.size()<<endl;	
+			for(int i = 0; i<M+1; i++)cout<<tmp[i]<<endl;
+			cout<<"here?\n";
+			Ntwk.junction1s[whichnode[k]]->setbVal(bvals[k]);
+		}
+		//printf("T = %f, n = %d, M = %d, modetype = %d", T,n,M,modetype);
 	}
 	void compute_r();
 	void compute_J();
@@ -121,20 +140,14 @@ void bc_opt_dh::compute_r()
 		Ntwk.channels[i]->n = 0;
 	}
 	Ntwk.nn = 0;
-	getTimeSeries(bvals, x, n,M,T,modetype);
-//	for(int i =0; i<bvals.size(); i++){
-//		cout<<bvals[i]<<endl;
-//	}
-	Ntwk.junction1s[whichnode]->setbVal(bvals);
-	
+	for (int k = 0; k<Nnodes;k++){
+		getTimeSeries(bvals[k], x, n,M,T,modetype,k);	
+		Ntwk.junction1s[whichnode[k]]->setbVal(bvals[k]);
+	}
 	Ntwk.runForwardProblem(dt);
 	for(int i=0; i<M+1; i++)
 	{
-		r[i] = 0;
-		for(int k = 0; k<Ntwk.Nedges; k++)
-		{
-			r[i] += Ntwk.channels[k]->getAveGradH(i);
-		}
+		r[i] = dt*Ntwk.getAveGradH(i);
 	}
 }
 
@@ -156,14 +169,14 @@ void bc_opt_dh::compute_J()
 			Ntwk.channels[i]->n = 0;
 		}
 		Ntwk.nn = 0;
-		getTimeSeries(bvals, x, n,M,T,modetype);	
-		Ntwk.junction1s[whichnode]->setbVal(bvals);	
+		for (int k = 0; k<Nnodes; k++){
+			getTimeSeries(bvals[k], x, n,M,T,modetype,k);	
+			Ntwk.junction1s[whichnode[k]]->setbVal(bvals[k]);
+		}	
 		Ntwk.runForwardProblem(dt);
 		for(int i=0; i<M+1; i++)
 		{
-			double r=0;
-			for(int k = 0; k<Ntwk.Nedges; k++)
-			{r += Ntwk.channels[k]->getAveGradH(i);}
+			double r = dt*Ntwk.getAveGradH(i);
 			J(i,j) = (r-r0[i])/mydelta;
 		}
 		x[j] -= mydelta;	

@@ -23,7 +23,7 @@ int find_nth(std::vector<int> values,  int desired, int n_ordinal, int N)
 
 
 Network::Network(int Nnodes_, std::vector<int> conns_, int Nedges_, std::vector<int> Ns, std::vector<double> ws, std::vector<double> Ls, 
-		std::vector<double> S0s, std::vector<double> Mrs, std::vector<double> a0s, std::vector<double> q0s, int M_,  int channeltype_):
+		std::vector<double> S0s, std::vector<double> Mrs, std::vector<double> a0s, std::vector<double> q0s, int M_,  int channeltype_, double a):
 	        Nnodes(Nnodes_), Nedges(Nedges_), M(M_), channeltype(channeltype_)
 {
 	
@@ -44,8 +44,8 @@ Network::Network(int Nnodes_, std::vector<int> conns_, int Nedges_, std::vector<
 	//fill channels with data from Ns, ws, Ls, etc
 	for(int i = 0; i<Nedges; i++)
 	{	
-		if(channeltype==0){channels.push_back(new Cuniform(Ns[i], ws[i], Ls[i],M));}
-		else{channels.push_back(new Cpreiss(Ns[i], ws[i], Ls[i],M));}
+		if(channeltype==0){channels.push_back(new Cuniform(Ns[i], ws[i], Ls[i],M,a));}
+		else{channels.push_back(new Cpreiss(Ns[i], ws[i], Ls[i],M,a));}
 		channels[i]->setq(a0s[i],q0s[i]);
 		channels[i]->setq0(a0s[i], q0s[i]);
 		channels[i]->Mr = Mrs[i];
@@ -118,14 +118,15 @@ Network::Network(int Nnodes_, std::vector<int> conns_, int Nedges_, std::vector<
 Network::Network(const Network &N_old):Nnodes(N_old.Nnodes), Nedges(N_old.Nedges), M(N_old.M)
 	      {
 	nn = 0;
+	double a = N_old.channels[0]->a;
 	channeltype = N_old.channeltype;
 	for( int i =0; i<Nedges*2; i++){conns.push_back(N_old.conns[i]);}
 	for(int i =0; i<Nedges*2; i++){nodeTypes.push_back(N_old.nodeTypes[i]);}
      	for(int i = 0; i<Nedges; i++)
 	{	
 		int Ni = N_old.channels[i]->N;
-		if(N_old.channeltype ==0){channels.push_back(new Cuniform(Ni, N_old.channels[i]->w, N_old.channels[i]->L,M));}
-		else{channels.push_back(new Cpreiss(Ni, N_old.channels[i]->w, N_old.channels[i]->L,M));}
+		if(N_old.channeltype ==0){channels.push_back(new Cuniform(Ni, N_old.channels[i]->w, N_old.channels[i]->L,M,a));}
+		else{channels.push_back(new Cpreiss(Ni, N_old.channels[i]->w, N_old.channels[i]->L,M,a));}
 		for(int k=0; k<2*Ni; k++){
 			channels[i]->q[k] = N_old.channels[i]->q[k];
 			channels[i]->q0[k] = N_old.channels[i]->q0[k];
@@ -288,11 +289,15 @@ void Network::stepRK3_SSP(double dt)
 void Network::runForwardProblem(double dt)
 {
 	nn = 0;
+	int Mi = M<500?1:M/500;
 	for(int i=0; i<M; i++)
 	{
-	
-		printf("current time is = %f s\n", (double)nn*dt);
-		
+			
+		if(i%Mi==0)
+		{
+			printf("current time is = %f s ", (double)nn*dt);
+			printf("Average Gradient is %f \n", getAveGradH(i));	
+		}
 		nn ++;
 		stepRK3_SSP(dt);
 		//EulerStep(dt);
@@ -309,12 +314,12 @@ double Network::getTotalVolume()
 	return v;
 }
 
-double Network::getAveGradH(double dt)
+double Network::getAveGradH(int i)
 {
 	double dhdx= 0.;
 	for(unsigned int j = 0; j <channels.size(); j++)
 	{
-		dhdx += channels[j]->getAveGradH(dt); 
+		dhdx += channels[j]->getAveGradH(i); 
 	}
 	return dhdx;
 }

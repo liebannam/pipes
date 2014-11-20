@@ -134,7 +134,7 @@ public:
     void compute_p2();
 
     // void load(const char *fname); // fixme
-    virtual void dump();
+    virtual void dump(FILE *fp = stdout);
     void report_r(FILE *fp = stdout);
 
     // 0 by default, calls dump() each time a step is accepted
