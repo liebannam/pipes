@@ -98,6 +98,7 @@ public:
 				q0[i].push_back(Ntwk_i.channels[i]->q0[j+Ni]);
 			}
 		}
+		bvals.resize(M+1);
 		//all of this information needs to be standardized/automated!
 		mydelta = 1e-6;
 		for (int i=0; i<n; i++)
@@ -106,7 +107,6 @@ public:
 			x[i] = x0[i];
 			printf("i = %d, x0 = %f\n ", i,x0[i]);
 		}
-		//cout<<"here?\n";	
 		getTimeSeries(bvals, x0, n,M,T,modetype);
 		//printf("T = %f, n = %d, M = %d, modetype = %d", T,n,M,modetype);
 		Ntwk.junction1s[whichnode]->setbVal(bvals);
@@ -125,52 +125,70 @@ void bc_opt_dh::compute_r()
 	}
 	Ntwk.nn = 0;
 	getTimeSeries(bvals, x, n,M,T,modetype);
-//	for(int i =0; i<bvals.size(); i++){
-//		cout<<bvals[i]<<endl;
-//	}
+	
+	cout<<"here?\n";
+	for(int i=0;i<n; i++){
+		cout<<x[i]<<endl;
+	}
+	cout<<"OR HERE?!"<<endl;	
+	for(int i =0; i<bvals.size(); i++){
+		cout<<bvals[i]<<endl;
+	}
 	Ntwk.junction1s[whichnode]->setbVal(bvals);
 	
 	Ntwk.runForwardProblem(dt);
 	for(int i=0; i<M+1; i++)
 	{
-		r[i] = 0;
-		for(int k = 0; k<Ntwk.Nedges; k++)
-		{
-			r[i] += dt*Ntwk.getAveGradH(i);
-		}
+		r[i] = dt*Ntwk.getAveGradH(i);
+	//	printf("r[%d] = %f\n", i, r[i]);
 	}
+		//r[i] = 0;
+		//for(int k = 0; k<Ntwk.Nedges; k++)
+		//{r[i] += dt*Ntwk.channels[k]->getAveGradH(i);}
+	
 }
 
 void bc_opt_dh::compute_J()
 {
 	J.reset_values(0.0);
-	compute_r();
-	vector<Real> r0(r);
+
+	vector<Real> rp(M+1);
+	vector<Real> rm(M+1);
+//	compute_r();
 	//Ntwk.junction1s[0]->setbVal(x);
 	//printf("bvals are [%f, %f]\n",Ntwk.junction1s[0]->bval[0],Ntwk.junction1s[1]->bval[0]);
 	for(int j = 0; j<n; j++)
 	{
 		
 		x[j]+=mydelta;
+		compute_r();
+		rp.swap(r);
+		x[j] -=2*mydelta;
+		compute_r();
+		rm.swap(r);
 
-		for(int i=0; i<Ntwk.Nedges; i++)
-		{
-			Ntwk.channels[i]->setq(a0[i],q0[i]);
-			Ntwk.channels[i]->n = 0;
-		}
-		Ntwk.nn = 0;
-		getTimeSeries(bvals, x, n,M,T,modetype);	
-		Ntwk.junction1s[whichnode]->setbVal(bvals);	
-		Ntwk.runForwardProblem(dt);
+	//	for(int i=0; i<Ntwk.Nedges; i++)
+	//	{
+	//		Ntwk.channels[i]->setq(a0[i],q0[i]);
+	//		Ntwk.channels[i]->n = 0;
+	//	}
+	//	Ntwk.nn = 0;
+	//	getTimeSeries(bvals, x, n,M,T,modetype);	
+	//	Ntwk.junction1s[whichnode]->setbVal(bvals);	
+	//	Ntwk.runForwardProblem(dt);
 		for(int i=0; i<M+1; i++)
 		{
-			double r=0;
-			for(int k = 0; k<Ntwk.Nedges; k++)
-			{r += dt*Ntwk.getAveGradH(i);}
-			J(i,j) = (r-r0[i])/mydelta;
+			//double r=0;
+			//for(int k = 0; k<Ntwk.Nedges; k++)
+			//{r += dt*Ntwk.channels[k]->getAveGradH(i);}	
+	//		double r = dt*Ntwk.getAveGradH(i);
+
+			//printf("r[%d] = %f r0[%d] = %f\n", i, rp[i],i, rm[i]);
+			J(i,j) = (rp[i]-rm[i])/(2.*mydelta);
 		}
-		x[j] -= mydelta;	
+		x[j] += mydelta;	
 	}	
+	compute_r();
 }
 	
 

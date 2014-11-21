@@ -50,8 +50,8 @@ int main(int argc, char *argv[] )
 	cout<<"M = "<<M<<endl;
 
 	int ndof = 16;   // degrees of freedom (in Fourier or Hermite modes)
-	int modetype = 1;
-	int whichnode = 0;
+	int modetype = 0;
+	int whichnode = 1;
 	double b0 = Ntwk.junction1s[whichnode]->bval[0];
 	double Dt = T/(ndof/2-1); //hermite interpolation spacing
 	vector<double> h(M+1);
@@ -83,7 +83,7 @@ int main(int argc, char *argv[] )
 	end_t = clock();
 	double chkt = (end_t-start_t)/(double)CLOCKS_PER_SEC;
 	start_t = clock();
-//	test1.solve();
+	test1.solve();
 	end_t = clock();
 	test1.compute_f();
 	double fnew = test1.f;
@@ -94,6 +94,15 @@ int main(int argc, char *argv[] )
 	double solvet = (end_t-start_t)/(double)CLOCKS_PER_SEC;
 	vector <Real> bf(M+1);
 	getTimeSeries(bf, test1.x, ndof,M,T,modetype);
+	FILE *fb = fopen("boundaryvals.txt", "w");
+	//fprintf(fb, "t        Q(Junction %d)  Q(Junction %d)\n", 1,2);
+	fprintf(fb, "t        Q(Junction %d)  \n", whichnode);
+	for (int j = 0; j<M+1; j++){
+		fprintf(fb, "%f   %f\n", dt*(double)j, bf[j]);
+	}
+	fclose(fb);
+	
+
 	for(int k = 0;k<ndof;k++)cout<<test1.x[k]<<"  "<<x0[k]<<endl;
 	cout<<"\n\n";
 //	for (int k =0;k<M+1;k++)cout<<bf[k]<<endl;
