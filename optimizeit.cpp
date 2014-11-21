@@ -51,7 +51,7 @@ int main(int argc, char *argv[] )
 
 	int ndof = 16;   // degrees of freedom (in Fourier or Hermite modes)
 	int modetype = 0;
-	int whichnode = 1;
+	int whichnode = 0;
 	double b0 = Ntwk.junction1s[whichnode]->bval[0];
 	double Dt = T/(ndof/2-1); //hermite interpolation spacing
 	vector<double> h(M+1);

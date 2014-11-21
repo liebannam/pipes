@@ -9,6 +9,7 @@
 *///////////////////
 #include "levmar.h"
 #include "setupandrun.h"
+#include "basic_time_series.h"
 
 double getTheta2(double A, double D)
 {
@@ -119,7 +120,7 @@ void testallthiscrap() //print out all the crap I'm computing to see if it makes
 	
 }
 
-namespace setup{
+//namespace setup{
 
 int main(int argc, char *argv[] )	
 {
@@ -160,9 +161,12 @@ int main(int argc, char *argv[] )
 //	}
 	printf("Elapsed real time is %f\n", (end_t-start_t)/(double)CLOCKS_PER_SEC);	
 	printf("Elapsed simulation time is %f\n", dt*(double)(M));
+	double f = 0;
+	for (int i=0; i<M+1; i++)f+=pow(dt*Ntwk.getAveGradH(i),2)/2.;
 	double V = Ntwk.getTotalVolume();
 	cout<<"initial volume "<<V0<< "    "<<"Final Volume " <<V<< endl;
 	cout<<"dV = "<<V-V0<<endl;
+	cout<<"f = "<<f<<endl;
 	cout<<"maximum wave speed is "<<Ntwk.channels[0]->Cgrav(PI*.25/4.,false)<<endl;
 	//
 //printf("t    H(valve)  h(valve-phys)  Q(reservoir)\n");   
@@ -192,7 +196,7 @@ double times[1] = {T};
 int which[1] = {1};
 
 //}
-writeOutputTarga(Ntwk, M, Mi,T, writelogs);
+writeOutputTarga(Ntwk, M, Mi,T, 0);
 
 Ntwk.channels[0]->quickWrite(places1, which, 1,T,100); 
 Ntwk.channels[2]->quickWrite(places1, which, 1,T,100); 
@@ -203,7 +207,7 @@ writeOutputText(Ntwk, M, Mi);
 
 //for(int i = 0; i<Ntwk.channels[0]->Ncheb+1; i++)
 //printf("%d   %.15f    %.15f    %.15f    %.15f    %.15f   \n", i, coeffs_h[i],coeffs_p1[i],coeffs_p2[i], Ntwk.channels[0]->coeffs_a1[i],coeffs_a2[i]);
-}}
+}//}
 
 
 //optimization crap	
@@ -246,6 +250,7 @@ Network setupNetwork(char *finp, char *fconfig, int &M, int &Mi, double &T, int 
 {
 	//first open .inp file and process information about network layout and components
 	ifstream file1(finp);
+	char BC_filename[50];
 	string stuff;
 	vector<int> jIDs, pIDs, conns;
 	vector<double> lengths, diams, Mrs, S0s, xcoords, ycoords, elevs;
@@ -347,6 +352,9 @@ Network setupNetwork(char *finp, char *fconfig, int &M, int &Mi, double &T, int 
 	vector<int> Ns;
 	vector<double> h0s;
 	vector<double> q0s;
+	vector <Real > xbval;
+	int whichnode;
+	int modetype;
 	while (getline(file2, morestuff, '\n')) 
 	{
 		 if (morestuff[0]==';')
@@ -413,6 +421,58 @@ Network setupNetwork(char *finp, char *fconfig, int &M, int &Mi, double &T, int 
 
 			}
 		 }
+		 if(strncmp(morestuff.c_str(),"[BC_FILENAME]",13)==0)
+		 {
+			string tmp(morestuff.c_str());
+			int L = tmp.length()/sizeof(tmp[0]);
+			cout<<"L="<<L<<endl;
+			int go = 0;
+			int count  =0;
+			for (int i = 0; i<L; i++){
+				if (go>0){
+					if(tmp[i]==' ')
+					{
+						count ++;
+					}
+					else{
+						BC_filename[i-count] = tmp[i];
+					}
+				}
+				else{
+					count++;
+//					char tmp2 = tmp[i];
+					if (tmp[i]==']'){
+						cout<<"yay\n";
+						go=1;
+					}
+				}
+			}
+			cout<<"BC Filename is:"<<BC_filename<<endl;
+			string evenmorestuff;
+			ifstream fbc(BC_filename);
+			string trash;
+			//ifstream fbc("../indata/bcs2.txt");
+			while (getline(fbc, evenmorestuff, '\n'))
+				{
+					stringstream ss(evenmorestuff);
+					if(strncmp(evenmorestuff.c_str(),"modetype",8)==0)
+					{
+						ss>>trash>>modetype;
+						cout<<"modetype = "<<modetype<<endl;
+					}
+					if(strncmp(evenmorestuff.c_str(),"whichnode",9)==0)
+					{
+						ss>>trash>>whichnode;
+						cout<<"whichnode = "<<whichnode<<endl;
+					}
+					else{
+						ss>>appendTo(xbval);
+					}
+					//cout<<evenmorestuff;
+				}	
+			fbc.close();
+		}
+
 	 }
 	cout<<"Junction Info:\njunction ID     elevation\n";
 	for(int k= 0; k<jIDs.size(); k++)
@@ -463,6 +523,19 @@ Network setupNetwork(char *finp, char *fconfig, int &M, int &Mi, double &T, int 
 		Ntwk.junction3s[k]->j2_12.offset = offset12s[k];
 		Ntwk.junction3s[k]->j2_21.offset = offset12s[k];
 	}
+	if (xbval.size()>0){
+		printf("Setting boundary values for node %d using %s modes:\n",whichnode, (modetype?"Fourier":"Hermite"));
+		for (int ii = 0; ii<xbval.size();ii++)cout<<"i = "<<ii<<" m[i]= "<<xbval[ii]<<endl;
+		vector<Real> bvals(M+1);
+		getTimeSeries(bvals, xbval, xbval.size(), M, T, modetype);
+	//	for(int ii= 0; ii<bvals.size(); ii++)
+	//	{
+	//		printf("%f  %f\n", ii*T/M,bvals[ii]);
+	//	}
+		Ntwk.junction1s[whichnode]->setbVal(bvals);	
+
+	}
+
 	
 	char mdata[] = "../output_data/mapdata.txt";
 	FILE *fm = fopen(mdata, "w");
