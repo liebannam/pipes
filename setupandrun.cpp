@@ -9,9 +9,19 @@
 *///////////////////
 #include "setupandrun.h"
 
-
-void getTimeSeries(vector<Real> & bvals, vector<Real> &x, const int m, const int M, double T, int Fourier)
-       	
+//void getTimeSeries(vector< vector <Real> > & bvals, vector< vector <Real> > &x, const int m, const int M, double T, int Fourier)
+//same thing as getTimeSeries, only now does it for multiple nodes.
+//
+//{
+//	vector<Real> tmp_b(M+1);
+//	int K = xbvals.size();
+//	for (int k = 0; k<K; k++)
+//	{
+//		vector<Real> tmp_x(x[k]);
+//		getTimeSeries(tmp_b, tmp_x, m, M, T, Fourier);
+//	}
+//}
+void getTimeSeries(vector<Real> & bvals, vector<Real> &x, const int m, const int M, double T, int Fourier)     	
 //bvals is time series of M+1 values at t =0, T/M, ...T
 //x is a length m vector. either contains Fourier modes (Fourier==1) or of Hermite spline components (Fourier ==0)
 //we have m/2 values in Fourier series or m/2 spline interpolation points. Interpolation dt = 1/(m/2-1)
@@ -56,7 +66,7 @@ void getTimeSeries(vector<Real> & bvals, vector<Real> &x, const int m, const int
 			t= nn*dt;
 			int j = int((t)/Dt);
 			t = t/Dt-j; 
-		      // cout<<Dt<<endl;	
+		        cout<<Dt<<endl;	
 			if(j>m+1 || j<0) printf("warning! t=%f out of range!!, Dt = %f, T = %d, m = %d\n",t,Dt,T,m);
 			// Calculate square and cube, and pointer to the values to use
 			double t2=t*t,t3=t2*t;
@@ -166,8 +176,9 @@ Network setupNetwork(char *finp, char *fconfig, int &M, int &Mi, double &T, int 
 	first = 0;
 	int tflag = 0;
 	vector<int> bvaltypes;
-	vector<double>bvals;
-	vector<double>reflects;
+	vector<double> bvals;
+	vector< vector<Real> > bvalsfancy;
+	vector<double> reflects;
 	vector<double> offsets;
 	vector<double> valveopens;
 	vector<double> offset01s;
@@ -176,9 +187,9 @@ Network setupNetwork(char *finp, char *fconfig, int &M, int &Mi, double &T, int 
 	vector<int> Ns;
 	vector<double> h0s;
 	vector<double> q0s;
-	vector <Real > xbval;
-	int whichnode;
-	int modetype;
+	vector < vector <Real > > xbval;
+	vector <int> whichnode;
+	vector <int> modetype;
 	while (getline(file2, morestuff, '\n')) 
 	{
 		 if (morestuff[0]==';')
@@ -276,26 +287,28 @@ Network setupNetwork(char *finp, char *fconfig, int &M, int &Mi, double &T, int 
 			string evenmorestuff;
 			ifstream fbc(BC_filename);
 			string trash;
+			vector <Real> tmp_x;
 			//ifstream fbc("../indata/bcs2.txt");
 			while (getline(fbc, evenmorestuff, '\n'))
 				{
 					stringstream ss(evenmorestuff);
 					if(strncmp(evenmorestuff.c_str(),"modetype",8)==0)
 					{
-						ss>>trash>>modetype;
-						cout<<"modetype = "<<modetype<<endl;
+						ss>>trash>>appendTo(modetype);
+						cout<<"modetype = "<<modetype[0]<<endl;
 					}
 					if(strncmp(evenmorestuff.c_str(),"whichnode",9)==0)
 					{
-						ss>>trash>>whichnode;
-						cout<<"whichnode = "<<whichnode<<endl;
+						ss>>trash>>appendTo(whichnode);
+						cout<<"whichnode = "<<whichnode[0]<<endl;
 					}
 					else{
-						ss>>appendTo(xbval);
+						ss>>appendTo(tmp_x);
 					}
 					//cout<<evenmorestuff;
 				}	
 			fbc.close();
+			xbval.push_back(tmp_x);
 		}
 
 	 }
@@ -349,18 +362,19 @@ Network setupNetwork(char *finp, char *fconfig, int &M, int &Mi, double &T, int 
 		Ntwk.junction3s[k]->j2_21.offset = offset12s[k];
 	}
 	if (xbval.size()>0){
-		printf("Setting boundary values for node %d using %s modes:\n",whichnode, (modetype?"Fourier":"Hermite"));
-		for (int ii = 0; ii<xbval.size();ii++)cout<<"i = "<<ii<<" m[i]= "<<xbval[ii]<<endl;
-		vector<Real> bvals(M+1);
-		int mm = xbval.size();
-		
+		printf("Setting boundary values for using %s modes:\n", (modetype[0]?"Fourier":"Hermite"));
+	//	for (int ii = 0; ii<xbval.size();ii++)cout<<"i = "<<ii<<" m[i]= "<<xbval[ii]<<endl;
+		int mm = xbval[0].size();
+		vector<Real> bvalsfancy(M+1,0.);
 		cout<<"m = "<<mm<<"T= "<<T<<endl;;
-		getTimeSeries(bvals, xbval, mm, M, T, modetype);
-	//	for(int ii= 0; ii<bvals.size(); ii++)
-	//	{
-	//		printf("%f  %f\n", ii*T/M,bvals[ii]);
-	//	}
-		Ntwk.junction1s[whichnode]->setbVal(bvals);	
+		for(int ii= 0; ii<xbval.size(); ii++)
+		{
+			getTimeSeries(bvalsfancy, xbval[ii], mm, M, T, modetype[0]);
+			Ntwk.junction1s[whichnode[ii]]->setbVal(bvalsfancy);
+			cout<<"Setting bvals for node"<<whichnode[ii]<<endl;
+			for (int kk = 0; kk<bvalsfancy.size(); kk++)
+				cout<<bvalsfancy[ii]<<endl;	
+		}
 
 	}
 

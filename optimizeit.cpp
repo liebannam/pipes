@@ -59,7 +59,7 @@ int main(int argc, char *argv[] )
 			x0[2*k-1] = 0.;
 		}
 	}
-	bc_opt_dh test1(ndof, M, x0, Ntwk, modetype, T, whichnode);
+	bc1_opt_dh test1(ndof, M, x0, Ntwk, modetype, T, whichnode);
 	cout<<"Made it?\n";
 //	cout<<T<<endl;
 	double places[] = {T};
