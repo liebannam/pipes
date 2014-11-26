@@ -2,8 +2,8 @@
 #define SETUPANDRUN_H
 
 
-
 #include "network.h"
+
 /*
 class Coords{
 	public: 
@@ -27,7 +27,7 @@ class Coords{
 };
 */
 
-
+void getTimeSeries(vector<Real> & bvals, vector<Real> &x, const int m, const int M, double T, int Fourier);
 //for writing output to labeled .tga files for use in POVRAY
 void w3d_targa_output_surface(const char* filename,double *fld,int m,int n,double zmin,double zmax);
 Network setupNetwork(char *finp, char *fconfig, int &M, int &Mi, double &T, int channeltype_);

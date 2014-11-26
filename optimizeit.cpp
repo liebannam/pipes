@@ -7,13 +7,8 @@
 *TO DO: make this program check everything out to ensure the .inp and .config files match!
 *
 *///////////////////
-//#include "network.h"
-#include "levmar.h"
-#include "optdetritus.h"
-#include "setupandrun.h"
+#include "optimizeit.h"
 //
-
-
 
 
 int main(int argc, char *argv[] )	

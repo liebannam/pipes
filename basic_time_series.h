@@ -1,7 +1,7 @@
 #ifndef BASIC_TIME_SERIES_H
 #define BASIC_TIME_SERIES_H
 
-void getTimeSeries(vector<Real> & bvals, vector<Real> &x, int m, int M, double T, int Fourier)
+void getTimeSeries(vector<Real> & bvals, vector<Real> &x, const int m, const int M, double T, int Fourier)
        	
 //bvals is time series of M+1 values at t =0, T/M, ...T
 //x is a length m vector. either contains Fourier modes (Fourier==1) or of Hermite spline components (Fourier ==0)
@@ -48,7 +48,7 @@ void getTimeSeries(vector<Real> & bvals, vector<Real> &x, int m, int M, double T
 			int j = int((t)/Dt);
 			t = t/Dt-j; 
 		      // cout<<Dt<<endl;	
-			if(j>m+1 || j<0) printf("warning! t=%f out of range!!, Dt = %f, T = %d\n",t,Dt,T);
+			if(j>m+1 || j<0) printf("warning! t=%f out of range!!, Dt = %f, T = %d, m = %d\n",t,Dt,T,m);
 			// Calculate square and cube, and pointer to the values to use
 			double t2=t*t,t3=t2*t;
 			// Calculate the value of the spline function
