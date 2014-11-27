@@ -47,19 +47,26 @@ int main(int argc, char *argv[] )
 	int ndof = 16;   // degrees of freedom (in Fourier or Hermite modes)
 	int modetype = 0;
 	int whichnode = 0;
-	double b0 = Ntwk.junction1s[whichnode]->bval[0];
-	double Dt = T/(ndof/2-1); //hermite interpolation spacing
-	vector<double> h(M+1);
-	vector<Real> x0(ndof+1,0);
-	if (modetype)x0[0] = 2*b0;
-	else{
-		for(int k = 0;k<(ndof)/2+1;k++)
-		{
-			x0[2*k] = b0;
-			x0[2*k-1] = 0.;
+	int Nn = 2;// number of nodes varied
+	vector <int> whichnodes(Nn);
+	whichnodes[0] = 1;
+	whichnodes[1] = 2;
+	vector<Real> x0(Nn*(ndof+1),0);
+	for (int i = 0; i<2;i++){
+		double b0 = Ntwk.junction1s[whichnodes[i]]->bval[0];
+		double Dt = T/(ndof/2-1); //hermite interpolation spacing
+		vector<double> h(M+1);
+		if (modetype)x0[i*(ndof+1)] = 2*b0;
+		else{
+			for(int k = 0;k<(ndof)/2+1;k++)
+			{
+				x0[i*(ndof+1)+2*k] = b0;
+				x0[i*(ndof+1)+2*k-1] = 0.;
+			}
 		}
 	}
-	bc1_opt_dh test1(ndof, M, x0, Ntwk, modetype, T, whichnode);
+//	bc1_opt_dh test1(ndof, M, x0, Ntwk, modetype, T, whichnode);
+	bc_opt_dh test1(ndof*Nn, M, x0, Ntwk, modetype, T, whichnodes);
 	cout<<"Made it?\n";
 //	cout<<T<<endl;
 	double places[] = {T};
@@ -78,7 +85,7 @@ int main(int argc, char *argv[] )
 	end_t = clock();
 	double chkt = (end_t-start_t)/(double)CLOCKS_PER_SEC;
 	start_t = clock();
-	test1.solve();
+//	test1.solve();
 	end_t = clock();
 	test1.compute_f();
 	double fnew = test1.f;
@@ -88,12 +95,22 @@ int main(int argc, char *argv[] )
 	fclose(fp);
 	double solvet = (end_t-start_t)/(double)CLOCKS_PER_SEC;
 	vector <Real> bf(M+1);
-	getTimeSeries(bf, test1.x, ndof,M,T,modetype);
+	vector <Real> xfake(ndof+1);
 	FILE *fb = fopen("boundaryvals.txt", "w");
-	//fprintf(fb, "t        Q(Junction %d)  Q(Junction %d)\n", 1,2);
-	fprintf(fb, "t        Q(Junction %d)  \n", whichnode);
-	for (int j = 0; j<M+1; j++){
-		fprintf(fb, "%f   %f\n", dt*(double)j, bf[j]);
+	
+	for (int i = 0; i<Nn; i++)
+	{	
+		for (int k = 0; k<ndof+1; k++)
+		{
+			xfake[k] = test1.x[i*(ndof+1)+k];
+		}
+		getTimeSeries(bf, xfake, ndof,M,T,modetype);
+		fprintf (fb, "node is %d\n", whichnodes[i]);
+		//fprintf(fb, "t        Q(Junction %d)  Q(Junction %d)\n", 1,2);
+		fprintf(fb, "t        Q(Junction %d)  \n", whichnodes[i]);
+		for (int j = 0; j<M+1; j++){
+			fprintf(fb, "%f   %f\n", dt*(double)j, bf[j]);
+		}
 	}
 	fclose(fb);
 	
@@ -105,7 +122,7 @@ int main(int argc, char *argv[] )
 	printf("fold = %f\n fnew = %f\n",f0, fnew);
 	printf("a0 = %f, q0 = %f\n", test1.a0[0][0], test1.q0[0][0]);
 	printf("dt = %f , dx = %f, CFL = %f\n",dt, dx, dt/dx*test1.Ntwk.channels[0]->a);
-	
+	printf("number of nodes is %d\n", Nn);	
 	writeOutputText(test1.Ntwk, M, Mi);
 //
 //////////////
