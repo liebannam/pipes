@@ -66,7 +66,7 @@ void getTimeSeries(vector<Real> & bvals, vector<Real> &x, const int m, const int
 			t= nn*dt;
 			int j = int((t)/Dt);
 			t = t/Dt-j; 
-		        cout<<Dt<<endl;	
+		       // cout<<Dt<<endl;	
 			if(j>m+1 || j<0) printf("warning! t=%f out of range!!, Dt = %f, T = %d, m = %d\n",t,Dt,T,m);
 			// Calculate square and cube, and pointer to the values to use
 			double t2=t*t,t3=t2*t;

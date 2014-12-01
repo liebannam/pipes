@@ -51,7 +51,7 @@ int main(int argc, char *argv[] )
 	vector <int> whichnodes(Nn);
 	whichnodes[0] = 1;
 	whichnodes[1] = 2;
-	vector<Real> x0(Nn*(ndof+1),0);
+	vector<Real> x0(Nn*(ndof),0);
 	for (int i = 0; i<2;i++){
 		double b0 = Ntwk.junction1s[whichnodes[i]]->bval[0];
 		double Dt = T/(ndof/2-1); //hermite interpolation spacing
@@ -60,8 +60,8 @@ int main(int argc, char *argv[] )
 		else{
 			for(int k = 0;k<(ndof)/2+1;k++)
 			{
-				x0[i*(ndof+1)+2*k] = b0;
-				x0[i*(ndof+1)+2*k-1] = 0.;
+				x0[i*(ndof)+2*k] = b0;
+				x0[i*(ndof)+2*k-1] = 0.;
 			}
 		}
 	}
@@ -85,7 +85,7 @@ int main(int argc, char *argv[] )
 	end_t = clock();
 	double chkt = (end_t-start_t)/(double)CLOCKS_PER_SEC;
 	start_t = clock();
-//	test1.solve();
+	test1.solve();
 	end_t = clock();
 	test1.compute_f();
 	double fnew = test1.f;
@@ -94,8 +94,8 @@ int main(int argc, char *argv[] )
 	test1.dump(fp);
 	fclose(fp);
 	double solvet = (end_t-start_t)/(double)CLOCKS_PER_SEC;
-	vector <Real> bf(M+1);
-	vector <Real> xfake(ndof+1);
+	vector <Real> bf(M+1,0.);
+	vector <Real> xfake(ndof+1,0.);
 	FILE *fb = fopen("boundaryvals.txt", "w");
 	
 	for (int i = 0; i<Nn; i++)
@@ -115,13 +115,13 @@ int main(int argc, char *argv[] )
 	fclose(fb);
 	
 
-	for(int k = 0;k<ndof;k++)cout<<test1.x[k]<<"  "<<x0[k]<<endl;
+	for(int k = 0;k<x0.size();k++)cout<<test1.x[k]<<"  "<<x0[k]<<endl;
 	cout<<"\n\n";
 //	for (int k =0;k<M+1;k++)cout<<bf[k]<<endl;
 	printf("chkder time = %f s and solve time = %f s\n",chkt, solvet);
 	printf("fold = %f\n fnew = %f\n",f0, fnew);
 	printf("a0 = %f, q0 = %f\n", test1.a0[0][0], test1.q0[0][0]);
-	printf("dt = %f , dx = %f, CFL = %f\n",dt, dx, dt/dx*test1.Ntwk.channels[0]->a);
+	printf("T = %f, dt = %f , dx = %f, CFL = %f\n",T, dt, dx, dt/dx*test1.Ntwk.channels[0]->a);
 	printf("number of nodes is %d\n", Nn);	
 	writeOutputText(test1.Ntwk, M, Mi);
 //
