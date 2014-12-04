@@ -1,5 +1,7 @@
 cc     = gcc
 CC     = g++
+#using a different version of g++ to enable openmp
+CC = g++-4.9 -fopenmp
 NVCC   = nvcc
 MPICC  = mpic++
 
@@ -20,4 +22,4 @@ LA     = -llapack -lblas  -lcblas
 #LIBS   = -L. -L/opt/local/lib -L$(ROOT)/lib -lcla $(LA) -lqd -lfftw3 -lm
 #LIBS   = -L. -L/opt/local/lib -L//usr/lib $(LA) -lqd -lfftw3 -lm
 #LIBS   = -L. -L//usr/lib $(LA) -lqd -lfftw3 -lm
-LIBS   = -L. -L$(ROOT)/lib -lcla $(LA) -lqd -lfftw3 -lm
+LIBS   = -L. -L$(ROOT)/lib -lcla $(LA) -lqd -lfftw3 -lm 

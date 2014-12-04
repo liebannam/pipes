@@ -1158,10 +1158,10 @@ void Cpreiss::speedsHLL(double q1m, double q1p, double q2m, double q2p, double *
 		um = q2m/q1m;
 		up = q2p/q1p;
 		//cout<<"um = "<<um<< "up = " <<up<<endl;
-		//if (max(q1p,q1m)<0.75*Af){
-			Astar = (q1m+q1p)/2.*(1+(um-up)/(PhiofA(q1p,Pp)+PhiofA(q1m,Pm))); //this verstion uses depth positivity condition
+	//	if (max(q1p,q1m)<0.7*Af){
+			Astar = (q1m+q1p)/2.*(1+(um-up)/(PhiofA(q1p,Pp)+PhiofA(q1m,Pm)));//} //this verstion uses depth positivity condition
 		//	printf("Astar = %f um = %f, up = %f intphim = %f intphip = %f\n",Astar, um, up, intPhi(q1m), intPhi(q1p));
-			Astar = (q1m+q1p)/2.*(1+( (cbar>1e-6)? (um-up)/(2.*cbar): 0));  //this is linearized version
+		//	else{	Astar = (q1m+q1p)/2.*(1+( (cbar>1e-6)? (um-up)/(2.*cbar): 0));}  //this is linearized version
 			if(Astar<0){Astar = (q1p+q1m)/2;}
 		//	printf("Linear Atsar = %f with q1m = %f and q1p = %f, um =%f, up = %f\n",Astar, cm, cp, um, up);
 		//}

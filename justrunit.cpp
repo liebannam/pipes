@@ -1,4 +1,15 @@
+/*Driver for main simulation
+*command line syntax is ../setupandrun example.inp example.config
+*where:
+*       example.inp is an EPANET-style file containing network layout information 
+*       example.config is a custom configuration file with run-time parameters (e.g. number of cells, ICs, BCs)
+*TO DO: make this program check everything out to ensure the .inp and .config files match!
+*
+*/////////////
+
+
 #include "setupandrun.h"
+#include "omp.h"
 
 double getTheta2(double A, double D)
 {
@@ -6,6 +17,21 @@ double getTheta2(double A, double D)
 	ftheta th(A,D);
 	double theta =::ridders(th, -.1, 2*PI+1, &count,1e-15, 1e-15);
 	return theta;
+}
+
+void testcopyconstructor(Network Nk)
+{
+	Network Nj(Nk);
+	
+	for (int k = 0; k<Nk.junction1s.size(); k ++)
+	{
+		printf("Junction %d\n", k);
+		for (int i = 0; i<Nk.M; i++)
+		{
+			if (Nj.junction1s[k]->bval[i]-Nk.junction1s[k]->bval[i]>0)
+				printf("bvals disagree at time step %d!\n", i);
+		}
+	}
 }
 
 void testallthiscrap() //print out all the crap I'm computing to see if it makes any bloody sense
@@ -137,7 +163,9 @@ int main(int argc, char *argv[] )
 //	}
 	printf("h = .014, A = %.10f\n",Ntwk.channels[1]->HofA(0.4,false));
 	printf("h = .008, A = %.10f\n",Ntwk.channels[0]->HofA(0.45,false));
+	double t1 = omp_get_wtime();
 	Ntwk.runForwardProblem(dt);
+	double t2 = omp_get_wtime();
 	end_t = clock();
 //	for(int k=0; k<Nedges; k++){
 	//	Ntwk.channels[k]->showGeom();
@@ -147,7 +175,7 @@ int main(int argc, char *argv[] )
 //	{ 
 //		printf("%d   %f\n", k, Ntwk.channels[0]->fakehofA(Ntwk.channels[0]->q[(Ntwk.channels[0]->idx(0,k))], true));
 //	}
-	printf("Elapsed real time is %f\n", (end_t-start_t)/(double)CLOCKS_PER_SEC);	
+	printf("Elapsed processor time is %f and elapsed real time is %f\n", (end_t-start_t)/(double)CLOCKS_PER_SEC, t2-t1);	
 	printf("Elapsed simulation time is %f\n", dt*(double)(M));
 	double f = 0;
 	for (int i=0; i<M+1; i++)f+=pow(dt*Ntwk.getAveGradH(i),2)/2.;
@@ -168,8 +196,8 @@ int main(int argc, char *argv[] )
 //}
 
 
-printf("h = 150, A = %.10f\n",Ntwk.channels[0]->AofH(150,false));
-printf("h = 1, A = %.10f\n",Ntwk.channels[0]->AofH(1,false));
+printf("h = 20, A = %.10f\n",Ntwk.channels[0]->AofH(20,false));
+printf("h = 10, A = %.10f\n",Ntwk.channels[0]->AofH(10,false));
 printf("Af is %f\n", Ntwk.channels[0]->At);
 printf("dt = %f , dx = %f, CFL = %f\n",dt, dx, dt/dx*Ntwk.channels[0]->a);
 /*for (int i=0;i<Ntwk.channels[0]->N; i++){
@@ -181,56 +209,32 @@ printf("dt = %f , dx = %f, CFL = %f\n",dt, dx, dt/dx*Ntwk.channels[0]->a);
 double places0[1] = {0};
 double places1[1] = {2.75};
 double times[1] = {T};
-int which[1] = {1};
+int which[1] = {0};
 
 //}
 writeOutputTarga(Ntwk, M, Mi,T, 0);
 
-Ntwk.channels[0]->quickWrite(places1, which, 1,T,100); 
-Ntwk.channels[2]->quickWrite(places1, which, 1,T,100); 
-Ntwk.channels[2]->quickWrite(times, which, 1,T,100); 
+//Ntwk.channels[0]->quickWrite(places1, which, 1,T,100); 
+//Ntwk.channels[2]->quickWrite(places1, which, 1,T,100); 
+//Ntwk.channels[2]->quickWrite(times, which, 1,T,100); 
+for(int i = 0; i<Ntwk.channels.size(); i++)
+{
+	Ntwk.channels[i]->quickWrite(times, which, 1,T,1);
+}
+if (Ntwk.channels.size()>3)
+{
+	double places2[1] = {5.0};
+	int which2[1] = {1};
+//	Ntwk.channels[3]->quickWrite(places2,which2,1,T,50);
+}
 writeOutputText(Ntwk, M, Mi);
 //testallthiscrap();
 //printf("Coefficients!!\n");
 
 //for(int i = 0; i<Ntwk.channels[0]->Ncheb+1; i++)
 //printf("%d   %.15f    %.15f    %.15f    %.15f    %.15f   \n", i, coeffs_h[i],coeffs_p1[i],coeffs_p2[i], Ntwk.channels[0]->coeffs_a1[i],coeffs_a2[i]);
+//testcopyconstructor(Ntwk);
 }//}
-
-
-//optimization crap	
-//	int ndof = 16;   // degrees of freedom (in Fourier or Hermite modes)
-////	int modetype;
-////	double Dt = T/(ndof/2-1); //hermite interpolation spacing
-////	vector<double> h(M+1);
-////	vector<Real> x0(ndof, 0.);
-////	vector<Real> bvals(M+1,0);
-//////////////
-//
-//	
-//	//Ntwk.channels[0]->showVals(1);
-//	for(int j=0;j<Nedges; j++)
-//	{
-//		for(int k =0; k<Ns[j]; k++){cout<<lengths[j]/Ns[j]*k<<"   "<<Ntwk.channels[j]->hofA(Ntwk.channels[j]->q[k])<<endl;}
-//		for(int k =0; k<N; k++){cout<<dx*k<<"   "<<Ntwk.channels[j]->q[k]<<endl;}
-//	}
-//	for(int j=0;j<Nedges; j++){
-//		for(int k =0; k<N; k++){
-//			cout<<dx*k<<"   "<<Ntwk.channels[j]->hofA(Ntwk.channels[j]->q[k])<<" "<<Ntwk.channels[j]->q[k+N]<<endl;
-//			//cout<<dx*k<<"   "<<(Ntwk.channels[j]->q[k])<<endl;
-//		}
-//	}
-//	cout<<"Number of 1 junctions is "<<Ntwk.junction1s.size()<<endl;
-//	cout<<"Number of 2 junctions is "<<Ntwk.junction2s.size()<<endl;
-//	cout<<"Number of 3 junctions is "<<Ntwk.junction3s.size()<<endl;
-//	cout<<"Number of edges is "<<Nedges<<endl;
-//
-//
-//
-////	cout<<"Final volume distribution ="<<Ntwk.channels[0]->getTheGoddamnVolume()<<" "<<Ntwk.channels[1]->getTheGoddamnVolume()<<" "<<Ntwk.channels[2]->getTheGoddamnVolume()<<endl; 
-//	printf("triple juncton values are A0 = %f, A1 = %f, A2 = %f\n", Ntwk.channels[0]->q[Ns[0]-1], Ntwk.channels[1]->q[0], Ntwk.channels[2]->q[0]);
-//
-//
 
 
 

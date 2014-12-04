@@ -113,16 +113,18 @@ Network::Network(int Nnodes_, std::vector<int> conns_, int Nedges_, std::vector<
 	}
 }
 
-///WELCOME TO THE COPY CONSTRUCTOR! IT'S A GODDAMN SHITSHOW. 
+///WELCOME TO THE COPY CONSTRUCTOR! IT'S A...work in progress 
 //
 Network::Network(const Network &N_old):Nnodes(N_old.Nnodes), Nedges(N_old.Nedges), M(N_old.M)
 	      {
 	nn = 0;
 	double a = N_old.channels[0]->a;
 	channeltype = N_old.channeltype;
+	//copy nodes and connectivity info
 	for( int i =0; i<Nedges*2; i++){conns.push_back(N_old.conns[i]);}
 	for(int i =0; i<Nedges*2; i++){nodeTypes.push_back(N_old.nodeTypes[i]);}
-     	for(int i = 0; i<Nedges; i++)
+     	//copy channels, their values and their parameters N, w, L, M, a, M, S0
+	for(int i = 0; i<Nedges; i++)
 	{	
 		int Ni = N_old.channels[i]->N;
 		if(N_old.channeltype ==0){channels.push_back(new Cuniform(Ni, N_old.channels[i]->w, N_old.channels[i]->L,M,a));}
@@ -142,15 +144,15 @@ Network::Network(const Network &N_old):Nnodes(N_old.Nnodes), Nedges(N_old.Nedges
 		{
 			int idx =find_nth(conns, j, 1, 2*Nedges);
 	//		printf(" index is %d, row is %d, column is %d\n", idx, idx/2, idx%2);
-			printf("\njunction1!!!\n edge is %d and whichend is %d\n ", idx/2, idx%2); 
+	//		printf("\njunction1!!!\n edge is %d and whichend is %d\n ", idx/2, idx%2); 
 		        junction1s.push_back(new Junction1(*channels[idx/2], idx%2 ,0.,1)); //row in conns corresponds to edge; column corresponds to left or right end.
 		}
 		else if(nodeTypes[j] ==2)
 		{
 			int idx1 =find_nth(conns, j, 1, 2*Nedges);
 			int idx2 =find_nth(conns, j, 2, 2*Nedges);
-			printf("\njunction2!!! index1 is %d, edge0 is %d, which0 is %d\n", idx1, idx1/2, idx1%2);
-			printf(" index2 is %d, edge1 is %d, which1 is %d\n", idx2, idx2/2, idx2%2);
+			//printf("\njunction2!!! index1 is %d, edge0 is %d, which0 is %d\n", idx1, idx1/2, idx1%2);
+			//printf(" index2 is %d, edge1 is %d, which1 is %d\n", idx2, idx2/2, idx2%2);
 			junction2s.push_back(new Junction2(*channels[idx1/2], *channels[idx2/2], idx1%2, idx2%2, 1.0));
 		}
 
@@ -159,9 +161,9 @@ Network::Network(const Network &N_old):Nnodes(N_old.Nnodes), Nedges(N_old.Nedges
 			int idx1 =find_nth(conns, j, 1, 2*Nedges);
 			int idx2 =find_nth(conns, j, 2, 2*Nedges);
 			int idx3 =find_nth(conns, j, 3, 2*Nedges);
-			printf("\njunction3!!!\n index1 is %d, row is %d, column is %d\n", idx1, idx1/2, idx1%2);
-			printf(" index2 is %d, row is %d, column is %d\n", idx2, idx2/2, idx2%2);	
-			printf(" index3 is %d, row is %d, column is %d\n", idx3, idx3/2, idx3%2);
+	///		printf("\njunction3!!!\n index1 is %d, row is %d, column is %d\n", idx1, idx1/2, idx1%2);
+	//		printf(" index2 is %d, row is %d, column is %d\n", idx2, idx2/2, idx2%2);	
+	//		printf(" index3 is %d, row is %d, column is %d\n", idx3, idx3/2, idx3%2);
 			//set it up so that either you have [end0, end1, end2] = [1,0,0] or = [0,1,1];
 			//[0,1,1] case
 			if(idx1%2+idx2%2+idx3%2 ==2){
@@ -192,20 +194,18 @@ Network::Network(const Network &N_old):Nnodes(N_old.Nnodes), Nedges(N_old.Nedges
 		else {printf("Well, then I have no idea. --Keanu Reeves  (nodetypes[j] = %d)\n", nodeTypes[j]);}
 
 	}
-	
+	//copy other junction info
 	for(int k = 0; k<junction1s.size(); k++)
 	{
 		junction1s[k]->bvaltype = N_old.junction1s[k]->bvaltype;
-		junction1s[k]->setbVal(N_old.junction1s[k]->bval[0]);
-		cout<<junction1s[k]->bval[0]<<"yupgoddamnitfuckyou\n";
+		junction1s[k]->setbVal(N_old.junction1s[k]->bval);
+		//cout<<junction1s[k]->bval[0]<<"yupgoddamnitfuckyou\n";
 		junction1s[k]->reflect = N_old.junction1s[k]->reflect;
 	}
 	for(int k = 0; k<junction2s.size(); k++)
 	{
 		junction2s[k]->offset = N_old.junction2s[k]->offset;
 		junction2s[k]->valveopen = N_old.junction2s[k]->valveopen;
-
-
 	}
 	
 	for(int k = 0; k<junction3s.size(); k++)
@@ -221,7 +221,8 @@ Network::Network(const Network &N_old):Nnodes(N_old.Nnodes), Nedges(N_old.Nedges
 
 Network:: ~Network()
 {
-	for(unsigned int k=0; k<channels.size(); k++){delete channels[k];}
+//#pragma omp parallel for
+	for(unsigned int k=0; k<channels.size(); k++){delete channels[k];}	
 	for(unsigned int k=0; k<junction1s.size(); k++){delete junction1s[k];}
 	for(unsigned int k=0; k<junction2s.size(); k++){delete junction2s[k];}
 	for(unsigned int k=0; k<junction3s.size(); k++){delete junction3s[k];}

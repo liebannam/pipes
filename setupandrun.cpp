@@ -1,26 +1,13 @@
 /////////////////////////
-/*Driver for main simulation
-*command line syntax is ../setupandrun example.inp example.config
-*where:
-*       example.inp is an EPANET-style file containing network layout information 
-*       example.config is a custom configuration file with run-time parameters (e.g. number of cells, ICs, BCs)
-*TO DO: make this program check everything out to ensure the .inp and .config files match!
-*
+/* Various useful functions for running networks and optimizing over BCs:
+ * 	--read in network data from .inp file and .config files
+ *	--get time series from Hermite or Fourier Coefficients
+ *	--write output to targa files
+ *	--write output to text files
 *///////////////////
 #include "setupandrun.h"
 
-//void getTimeSeries(vector< vector <Real> > & bvals, vector< vector <Real> > &x, const int m, const int M, double T, int Fourier)
-//same thing as getTimeSeries, only now does it for multiple nodes.
-//
-//{
-//	vector<Real> tmp_b(M+1);
-//	int K = xbvals.size();
-//	for (int k = 0; k<K; k++)
-//	{
-//		vector<Real> tmp_x(x[k]);
-//		getTimeSeries(tmp_b, tmp_x, m, M, T, Fourier);
-//	}
-//}
+
 void getTimeSeries(vector<Real> & bvals, vector<Real> &x, const int m, const int M, double T, int Fourier)     	
 //bvals is time series of M+1 values at t =0, T/M, ...T
 //x is a length m vector. either contains Fourier modes (Fourier==1) or of Hermite spline components (Fourier ==0)
@@ -78,6 +65,19 @@ void getTimeSeries(vector<Real> & bvals, vector<Real> &x, const int m, const int
 }
 
 
+void getCoeffSeries(vector< vector <Real> > & bvals, vector< vector <Real> > &x, const int m, const int M, double T, int Fourier)
+// in an ideal world this is the inverse of getTimeSeries...
+{
+	if (Fourier){printf("Whoops! not implemented yet");}
+	else//Hermite Spline Coeffs (holy shit how do I do this!?)
+	{
+//		for (int j=0; j<m/2; j++)
+//		{
+//			x[2*j] = ;
+//			x[2*j+1] = ;
+//		}
+	}
+}
 
 
 Network setupNetwork(char *finp, char *fconfig, int &M, int &Mi, double &T, int channeltype_)
@@ -287,7 +287,8 @@ Network setupNetwork(char *finp, char *fconfig, int &M, int &Mi, double &T, int 
 			string evenmorestuff;
 			ifstream fbc(BC_filename);
 			string trash;
-			vector <Real> tmp_x;
+			vector <Real> tmp_x(100);
+			int count2 = 0;
 			//ifstream fbc("../indata/bcs2.txt");
 			while (getline(fbc, evenmorestuff, '\n'))
 				{
@@ -304,10 +305,14 @@ Network setupNetwork(char *finp, char *fconfig, int &M, int &Mi, double &T, int 
 					}
 					else{
 						ss>>appendTo(tmp_x);
+						cout<<tmp_x[count2]<<endl;
+						count2 ++;
 					}
 					//cout<<evenmorestuff;
 				}	
 			fbc.close();
+			tmp_x.resize(count2-1);
+			cout<<"size is!"<<tmp_x.size()<<endl;
 			xbval.push_back(tmp_x);
 		}
 

@@ -85,7 +85,9 @@ int main(int argc, char *argv[] )
 	end_t = clock();
 	double chkt = (end_t-start_t)/(double)CLOCKS_PER_SEC;
 	start_t = clock();
+	double ompstart = omp_get_wtime();
 	test1.solve();
+	double ompend = omp_get_wtime();
 	end_t = clock();
 	test1.compute_f();
 	double fnew = test1.f;
@@ -118,7 +120,7 @@ int main(int argc, char *argv[] )
 	for(int k = 0;k<x0.size();k++)cout<<test1.x[k]<<"  "<<x0[k]<<endl;
 	cout<<"\n\n";
 //	for (int k =0;k<M+1;k++)cout<<bf[k]<<endl;
-	printf("chkder time = %f s and solve time = %f s\n",chkt, solvet);
+	printf("chkder time = %f s; CPU solve time = %f s, real solve time = %f\n",chkt, solvet, ompend-ompstart);
 	printf("fold = %f\n fnew = %f\n",f0, fnew);
 	printf("a0 = %f, q0 = %f\n", test1.a0[0][0], test1.q0[0][0]);
 	printf("T = %f, dt = %f , dx = %f, CFL = %f\n",T, dt, dx, dt/dx*test1.Ntwk.channels[0]->a);
