@@ -363,20 +363,20 @@ Network setupNetwork(char *finp, char *fconfig, int &M, int &Mi, double &T, int 
 			cout<<"m = "<<Nmodes<<"T= "<<T<<endl;
 			vector<Real> bvalsfancy(M+1,0.);
 			printf("Setting boundary values for using %s modes:\n", (modetype[0]?"Fourier":"Hermite"));
-			cout<<"damn! M ="<<M<<endl;
+		//	cout<<"damn! M ="<<M<<endl;
 			int DAMN = xbval[whichnode[ii]].size();
 			vector <Real>xfake(DAMN);
 			if(DAMN>0){
 			for (int damn =0; damn<DAMN;damn++){
 				//cout<<"damn?"<<endl;
-				cout<<xbval[whichnode[ii]][damn]<<endl;
+			//	cout<<xbval[whichnode[ii]][damn]<<endl;
 			        xfake[damn] = xbval[whichnode[ii]][damn];
 			}
 			getTimeSeries(bvalsfancy, xfake, Nmodes, M, T, modetype[ii]);
 			Ntwk.junction1s[whichnode[ii]]->setbVal(bvalsfancy);
-			cout<<"Setting bvals for node"<<whichnode[ii]<<endl;
-			for (int kk = 0; kk<bvalsfancy.size(); kk++)
-				cout<<bvalsfancy[kk]<<endl;	
+			cout<<"Setting bvals for node "<<whichnode[ii]<<endl;
+			//for (int kk = 0; kk<bvalsfancy.size(); kk++)
+			//	cout<<Ntwk.junction1s[whichnode[ii]]->bval[kk]<<endl;	
 		}
 		}
 	

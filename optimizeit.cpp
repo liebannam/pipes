@@ -42,9 +42,8 @@ int main(int argc, char *argv[] )
 	cout<<"dV = "<<V-V0<<endl;
 	
 //optimization time! at last!
-	cout<<"M = "<<M<<endl;
-
-	int ndof = 16;   // degrees of freedom (in Fourier or Hermite modes)
+	cout<<"M = "<<M<<endl;	
+	int ndof = 32;   // degrees of freedom (in Fourier or Hermite modes)
 	int modetype = 0;
 	int whichnode = 0;
 	int Nn = 2;// number of nodes varied
@@ -64,6 +63,7 @@ int main(int argc, char *argv[] )
 				x0[i*(ndof)+2*k-1] = 0.;
 			}
 		}
+//		for(int k = 0; k<ndof; k++){x0[k] = x02[k];}
 	}
 //	bc1_opt_dh test1(ndof, M, x0, Ntwk, modetype, T, whichnode);
 	bc_opt_dh test1(ndof*Nn, M, x0, Ntwk, modetype, T, whichnodes);
@@ -89,12 +89,13 @@ int main(int argc, char *argv[] )
 	test1.solve();
 	double ompend = omp_get_wtime();
 	end_t = clock();
-	test1.compute_f();
-	double fnew = test1.f;
-	test1.dump();
 	FILE *fp = fopen("test1dump.txt","w");
 	test1.dump(fp);
 	fclose(fp);
+
+	test1.dump();
+	test1.compute_f();
+	double fnew = test1.f;
 	double solvet = (end_t-start_t)/(double)CLOCKS_PER_SEC;
 	vector <Real> bf(M+1,0.);
 	vector <Real> xfake(ndof+1,0.);

@@ -157,6 +157,9 @@ int main(int argc, char *argv[] )
 	int Nedges = Ntwk.Nedges;
 	double V0=Ntwk.getTotalVolume();
 	start_t = clock();
+	cout<<"bvals??"<<endl;
+	for(int i=0; i<M+1; i++)
+		cout<<i<< " "<<Ntwk.junction1s[1]->bval[i]<<endl;
 //	for(int k=0; k<Nedges; k++){
 	//	Ntwk.channels[k]->showGeom();
 //		Ntwk.channels[k]->showp();
@@ -178,7 +181,7 @@ int main(int argc, char *argv[] )
 	printf("Elapsed processor time is %f and elapsed real time is %f\n", (end_t-start_t)/(double)CLOCKS_PER_SEC, t2-t1);	
 	printf("Elapsed simulation time is %f\n", dt*(double)(M));
 	double f = 0;
-	for (int i=0; i<M+1; i++)f+=pow(dt*Ntwk.getAveGradH(i),2)/2.;
+	for (int i=0; i<M+1; i++)f+=pow(dt*Ntwk.getAveGradH(i),2.)/2.;
 	double V = Ntwk.getTotalVolume();
 	cout<<"initial volume "<<V0<< "    "<<"Final Volume " <<V<< endl;
 	cout<<"dV = "<<V-V0<<endl;
@@ -225,7 +228,7 @@ if (Ntwk.channels.size()>3)
 {
 	double places2[1] = {5.0};
 	int which2[1] = {1};
-//	Ntwk.channels[3]->quickWrite(places2,which2,1,T,50);
+	Ntwk.channels[3]->quickWrite(places2,which2,1,T,Mi);
 }
 writeOutputText(Ntwk, M, Mi);
 //testallthiscrap();
