@@ -53,13 +53,17 @@ void getTimeSeries(vector<Real> & bvals, vector<Real> &x, const int m, const int
 			t= nn*dt;
 			int j = int((t)/Dt);
 			t = t/Dt-j; 
-		       // cout<<Dt<<endl;	
+		     //   cout<<"Dt = "<<Dt<<" t = "<<t<<"  j ="<<j<<endl;	
+		//	cout<<x[0]<<x[1]<<endl;
 			if(j>m+1 || j<0) printf("warning! t=%f out of range!!, Dt = %f, T = %d, m = %d\n",t,Dt,T,m);
 			// Calculate square and cube, and pointer to the values to use
 			double t2=t*t,t3=t2*t;
 			// Calculate the value of the spline function
 			if(j==m){bvals[nn] = x[2*j];}
-			else{bvals[nn] = x[2*j]*(2*t3-3*t2+1)+x[2*j+1]*(t3-2*t2+t)*Dt+x[2*j+2]*(-2*t3+3*t2)+x[2*j+3]*(t3-t2)*Dt;}
+			else{
+				bvals[nn] = x[2*j]*(2*t3-3*t2+1)+x[2*j+1]*(t3-2*t2+t)*Dt+x[2*j+2]*(-2*t3+3*t2)+x[2*j+3]*(t3-t2)*Dt;
+			//	cout<<"bvals[nn]= "<<bvals[nn]<<endl;
+			}
 		}
 	}
 }
@@ -84,7 +88,6 @@ Network setupNetwork(char *finp, char *fconfig, int &M, int &Mi, double &T, int 
 {
 	//first open .inp file and process information about network layout and components
 	ifstream file1(finp);
-	char BC_filename[50];
 	string stuff;
 	vector<int> jIDs, pIDs, conns;
 	vector<double> lengths, diams, Mrs, S0s, xcoords, ycoords, elevs;
@@ -170,11 +173,12 @@ Network setupNetwork(char *finp, char *fconfig, int &M, int &Mi, double &T, int 
 	//now read  .config file to set run parameters
 	ifstream file2(fconfig);
 	string morestuff;
-
+	int Nmodes = 0;
 	jflag =0;
 	pflag = 0;
 	first = 0;
 	int tflag = 0;
+	int count2 = 0;
 	vector<int> bvaltypes;
 	vector<double> bvals;
 	vector< vector<Real> > bvalsfancy;
@@ -187,7 +191,7 @@ Network setupNetwork(char *finp, char *fconfig, int &M, int &Mi, double &T, int 
 	vector<int> Ns;
 	vector<double> h0s;
 	vector<double> q0s;
-	vector < vector <Real > > xbval;
+	vector < vector <Real > > xbval(jIDs.size(),vector<Real> (0,0));
 	vector <int> whichnode;
 	vector <int> modetype;
 	while (getline(file2, morestuff, '\n')) 
@@ -260,60 +264,45 @@ Network setupNetwork(char *finp, char *fconfig, int &M, int &Mi, double &T, int 
 		 if(strncmp(morestuff.c_str(),"[BC_FILENAME]",13)==0)
 		 {
 			string tmp(morestuff.c_str());
-			int L = tmp.length()/sizeof(tmp[0]);
-			cout<<"L="<<L<<endl;
-			int go = 0;
-			int count  =0;
-			for (int i = 0; i<L; i++){
-				if (go>0){
-					if(tmp[i]==' ')
-					{
-						count ++;
-					}
-					else{
-						BC_filename[i-count] = tmp[i];
-					}
-				}
-				else{
-					count++;
-//					char tmp2 = tmp[i];
-					if (tmp[i]==']'){
-						cout<<"yay\n";
-						go=1;
-					}
-				}
-			}
+			char BC_filename[200];
+			strcpy(BC_filename,morestuff.c_str()+13);
 			cout<<"BC Filename is:"<<BC_filename<<endl;
+			cout<<strncmp(BC_filename,"../indata/bcs2.txt",18)<<"FUCK YOU"<<endl;
+			cout<<sizeof(BC_filename)/sizeof(BC_filename[0])<<endl;
 			string evenmorestuff;
-			ifstream fbc(BC_filename);
 			string trash;
-			vector <Real> tmp_x(100);
-			int count2 = 0;
-			//ifstream fbc("../indata/bcs2.txt");
+			vector <Real> tmp_x;
+			count2++;
+			//ifstream fbc("../indata/bcs2.txt");	
+			ifstream fbc(BC_filename);
+			if (!fbc){cout<<"Never mind! I don't feel like opening"<<BC_filename<<endl;}
+			else{
 			while (getline(fbc, evenmorestuff, '\n'))
 				{
+					cout<<evenmorestuff<<endl;
 					stringstream ss(evenmorestuff);
 					if(strncmp(evenmorestuff.c_str(),"modetype",8)==0)
 					{
 						ss>>trash>>appendTo(modetype);
 						cout<<"modetype = "<<modetype[0]<<endl;
 					}
-					if(strncmp(evenmorestuff.c_str(),"whichnode",9)==0)
+					else if(strncmp(evenmorestuff.c_str(),"whichnode",9)==0)
 					{
 						ss>>trash>>appendTo(whichnode);
 						cout<<"whichnode = "<<whichnode[0]<<endl;
-					}
+											}
 					else{
 						ss>>appendTo(tmp_x);
-						cout<<tmp_x[count2]<<endl;
-						count2 ++;
 					}
-					//cout<<evenmorestuff;
 				}	
 			fbc.close();
-			tmp_x.resize(count2-1);
-			cout<<"size is!"<<tmp_x.size()<<endl;
-			xbval.push_back(tmp_x);
+			Nmodes = tmp_x.size();
+			for (int jj = 0; jj<tmp_x.size();jj++){
+				xbval[whichnode[count2-1]].push_back(tmp_x[jj]);
+			}
+			cout<<"hmmm"<<count2-1<<endl;
+			cout<<"tmp_x.size = "<<tmp_x.size()<<"  xbval.size() ="<<xbval.size()<<endl;
+			}
 		}
 
 	 }
@@ -366,23 +355,30 @@ Network setupNetwork(char *finp, char *fconfig, int &M, int &Mi, double &T, int 
 		Ntwk.junction3s[k]->j2_12.offset = offset12s[k];
 		Ntwk.junction3s[k]->j2_21.offset = offset12s[k];
 	}
-	if (xbval.size()>0){
-		printf("Setting boundary values for using %s modes:\n", (modetype[0]?"Fourier":"Hermite"));
 	//	for (int ii = 0; ii<xbval.size();ii++)cout<<"i = "<<ii<<" m[i]= "<<xbval[ii]<<endl;
-		int mm = xbval[0].size();
-		vector<Real> bvalsfancy(M+1,0.);
-		cout<<"m = "<<mm<<"T= "<<T<<endl;;
-		for(int ii= 0; ii<xbval.size(); ii++)
+	cout<<"number of specified boundaries is "<<whichnode.size()<<endl;
+	for(int ii= 0; ii<whichnode.size(); ii++)
 		{
-			getTimeSeries(bvalsfancy, xbval[ii], mm, M, T, modetype[0]);
+
+			cout<<"m = "<<Nmodes<<"T= "<<T<<endl;
+			vector<Real> bvalsfancy(M+1,0.);
+			printf("Setting boundary values for using %s modes:\n", (modetype[0]?"Fourier":"Hermite"));
+			cout<<"damn! M ="<<M<<endl;
+			int DAMN = xbval[whichnode[ii]].size();
+			vector <Real>xfake(DAMN);
+			if(DAMN>0){
+			for (int damn =0; damn<DAMN;damn++){
+				//cout<<"damn?"<<endl;
+				cout<<xbval[whichnode[ii]][damn]<<endl;
+			        xfake[damn] = xbval[whichnode[ii]][damn];
+			}
+			getTimeSeries(bvalsfancy, xfake, Nmodes, M, T, modetype[ii]);
 			Ntwk.junction1s[whichnode[ii]]->setbVal(bvalsfancy);
 			cout<<"Setting bvals for node"<<whichnode[ii]<<endl;
 			for (int kk = 0; kk<bvalsfancy.size(); kk++)
-				cout<<bvalsfancy[ii]<<endl;	
+				cout<<bvalsfancy[kk]<<endl;	
 		}
-
-	}
-
+		}
 	
 	char mdata[] = "../output_data/mapdata.txt";
 	FILE *fm = fopen(mdata, "w");
