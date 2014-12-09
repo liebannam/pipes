@@ -45,7 +45,7 @@ int main(int argc, char *argv[] )
 	cout<<"M = "<<M<<endl;	
 	int ndof = 8;   // degrees of freedom (in Fourier or Hermite modes)
 	srand (time(NULL));
-	int Nrounds = 10;//how many times to adjust the thing
+	int Nrounds = 0;//how many times to adjust the thing
 	int modetype = 0;
 	int whichnode = 0;
 	int Nn = 2;// number of nodes varied
@@ -70,7 +70,7 @@ int main(int argc, char *argv[] )
 	for(int dd = 0; dd<Nrounds; dd++)
 	{
 //	bc1_opt_dh test1(ndof, M, x0, Ntwk, modetype, T, whichnode);
-	bc_opt_dh test1(ndof*Nn, M, x0, Ntwk, modetype, T, whichnodes);
+	bc_opt_dh test1(ndof*Nn, M, x0, Ntwk, modetype, T, whichnodes,10);
 	cout<<"Made it?\n";
 //	cout<<T<<endl;
 	double places[] = {T};
