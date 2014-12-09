@@ -43,7 +43,7 @@ int main(int argc, char *argv[] )
 	
 //optimization time! at last!
 	cout<<"M = "<<M<<endl;	
-	int ndof = 32;   // degrees of freedom (in Fourier or Hermite modes)
+	int ndof = 16;   // degrees of freedom (in Fourier or Hermite modes)
 	int modetype = 0;
 	int whichnode = 0;
 	int Nn = 2;// number of nodes varied
@@ -63,7 +63,8 @@ int main(int argc, char *argv[] )
 				x0[i*(ndof)+2*k-1] = 0.;
 			}
 		}
-//		for(int k = 0; k<ndof; k++){x0[k] = x02[k];}
+		srand (time(NULL));
+		for(int k = 0; k<Nn*ndof; k++){x0[k] = ((double)rand()/RAND_MAX)-.5;}
 	}
 //	bc1_opt_dh test1(ndof, M, x0, Ntwk, modetype, T, whichnode);
 	bc_opt_dh test1(ndof*Nn, M, x0, Ntwk, modetype, T, whichnodes);
@@ -103,9 +104,9 @@ int main(int argc, char *argv[] )
 	
 	for (int i = 0; i<Nn; i++)
 	{	
-		for (int k = 0; k<ndof+1; k++)
+		for (int k = 0; k<ndof; k++)
 		{
-			xfake[k] = test1.x[i*(ndof+1)+k];
+			xfake[k] = test1.x[i*(ndof)+k];
 		}
 		getTimeSeries(bf, xfake, ndof,M,T,modetype);
 		fprintf (fb, "node is %d\n", whichnodes[i]);
