@@ -305,6 +305,8 @@ class Junction2
 		double offset; //change in elevation as you go from pipe 1 to pipe 0. positive value means pipe 0 is above pipe 1. initialized to zero.
 		int whichend0, whichend1;
 		Junction2(Channel &a_ch0, Channel &a_ch1, int a_which1, int a_which2, double a_valveopen);
+	//	void setValveOpen(valarray<Real>x);
+	//	void setValveOpen(vector<Real>x);
 		void boundaryFluxes(); // assign boundary fluxes to last cell of pipeleft and first cell of pipe left	
 };
 

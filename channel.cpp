@@ -950,7 +950,7 @@ void Cpreiss::setGeom(double a_)
 
 {
 
-	printf("Ncheb = %d\n", Ncheb);
+//	printf("Ncheb = %d\n", Ncheb);
 	a = a_;
 	int count;
 
@@ -970,16 +970,16 @@ void Cpreiss::setGeom(double a_)
 //	At = D*D*(tt-sin(tt))/8.;
 //	At = .99999*Af;
 //	yt = HofA(At,false);	
-	cout<<"D= "<<D<<endl;
+//	cout<<"D= "<<D<<endl;
 //	tt = 2*asin(G*D*2*PI/(8*a*a));// theta such that c(A(theta)) = a
 	
 	double yt2 = HofA(At, false);
-	cout<<"At = "<<At<<" Ts ="<<Ts<<endl;
-	printf("difference between At and Af is  %e\n", At-PI*D*D/4.);
-	printf("slot gravity wavespeed c  = %f\n", sqrt(D*D*PI/4.*G/Ts));
-	printf("yt = %.16f,At = %.16f, fAt = %.16f AofH(At)-At = %.16f\n",yt, At, AofH(yt,false)-At);
+//	cout<<"At = "<<At<<" Ts ="<<Ts<<endl;
+//	printf("difference between At and Af is  %e\n", At-PI*D*D/4.);
+//	printf("slot gravity wavespeed c  = %f\n", sqrt(D*D*PI/4.*G/Ts));
+//	printf("yt = %.16f,At = %.16f, fAt = %.16f AofH(At)-At = %.16f\n",yt, At, AofH(yt,false)-At);
         	
-	char fname1[30];
+/*	char fname1[30];
 	clock_t time1 = clock();
 	int duh = (int)time1;
 	sprintf(fname1,"geomconfirm%3d.txt",1);
@@ -1018,7 +1018,7 @@ void Cpreiss::setGeom(double a_)
 		 	fprintf(fg2, "%.16f   %.16f   %e   \n", aa, h, aa-D*D*PI/4.);
 		} 
 	}
-	fclose(fg2);
+	fclose(fg2);*/
 }
 
 	
@@ -1293,7 +1293,7 @@ Junction1::Junction1(Channel &a_ch0, int a_which, double a_bval, int a_bvaltype)
 	bval = new double[ch0.M+1];
 	for(int i=0;i<ch0.M+1; i++){bval[i] = a_bval;}
 
-	printf("bval[0] = %f\n", bval[0]);
+//	printf("bval[0] = %f\n", bval[0]);
 	bvaltype = a_bvaltype;
 	whichend = a_which;
 	w = ch0.w;
@@ -1625,6 +1625,7 @@ Junction2::Junction2(Channel &a_ch0, Channel &a_ch1, int a_which0, int a_which1,
 		N1 = 0;
 		Ns1= 0;
 	}
+//	valveopen.resize(ch0.M+1);
 	valveopen = a_valveopen;
 	offset =0;	
 }
@@ -1644,6 +1645,11 @@ Junction2::Junction2(Channel &a_ch0, Channel &a_ch1, int a_which0, int a_which1,
 *           | 
 * channel 0 |channel 1
 * */
+/*void Junction2::setValveOpen(valarray<Real> x);
+{
+
+}
+*/
 
 void Junction2::boundaryFluxes(){	
 	double q1m, q1p, q2m, q2p, q1mfake, q1pfake;

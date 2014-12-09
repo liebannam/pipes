@@ -43,7 +43,9 @@ int main(int argc, char *argv[] )
 	
 //optimization time! at last!
 	cout<<"M = "<<M<<endl;	
-	int ndof = 16;   // degrees of freedom (in Fourier or Hermite modes)
+	int ndof = 8;   // degrees of freedom (in Fourier or Hermite modes)
+	srand (time(NULL));
+	int Nrounds = 10;//how many times to adjust the thing
 	int modetype = 0;
 	int whichnode = 0;
 	int Nn = 2;// number of nodes varied
@@ -63,9 +65,10 @@ int main(int argc, char *argv[] )
 				x0[i*(ndof)+2*k-1] = 0.;
 			}
 		}
-		srand (time(NULL));
-		for(int k = 0; k<Nn*ndof; k++){x0[k] = ((double)rand()/RAND_MAX)-.5;}
+	//	for(int k = 0; k<Nn*ndof; k++){x0[k] = ((double)rand()/RAND_MAX)-.5;}
 	}
+	for(int dd = 0; dd<Nrounds; dd++)
+	{
 //	bc1_opt_dh test1(ndof, M, x0, Ntwk, modetype, T, whichnode);
 	bc_opt_dh test1(ndof*Nn, M, x0, Ntwk, modetype, T, whichnodes);
 	cout<<"Made it?\n";
@@ -90,7 +93,9 @@ int main(int argc, char *argv[] )
 	test1.solve();
 	double ompend = omp_get_wtime();
 	end_t = clock();
-	FILE *fp = fopen("test1dump.txt","w");
+	char file0[15];
+	sprintf(file0,"test%3ddump.txt",dd); 
+	FILE *fp = fopen(file0,"w");
 	test1.dump(fp);
 	fclose(fp);
 
@@ -100,8 +105,10 @@ int main(int argc, char *argv[] )
 	double solvet = (end_t-start_t)/(double)CLOCKS_PER_SEC;
 	vector <Real> bf(M+1,0.);
 	vector <Real> xfake(ndof+1,0.);
-	FILE *fb = fopen("boundaryvals.txt", "w");
-	
+	char file1[19];
+       	sprintf(file1, "boundaryvals%3d.txt",dd);
+	FILE *fb = fopen(file1, "w");
+	fprintf(fb,"f is %f\n",fnew);
 	for (int i = 0; i<Nn; i++)
 	{	
 		for (int k = 0; k<ndof; k++)
@@ -117,8 +124,8 @@ int main(int argc, char *argv[] )
 		}
 	}
 	fclose(fb);
-	
-
+	printf("Round %d finished, f = %f\n", dd, fnew);	
+	cout<<"x     x0"<<endl;
 	for(int k = 0;k<x0.size();k++)cout<<test1.x[k]<<"  "<<x0[k]<<endl;
 	cout<<"\n\n";
 //	for (int k =0;k<M+1;k++)cout<<bf[k]<<endl;
@@ -127,7 +134,13 @@ int main(int argc, char *argv[] )
 	printf("a0 = %f, q0 = %f\n", test1.a0[0][0], test1.q0[0][0]);
 	printf("T = %f, dt = %f , dx = %f, CFL = %f\n",T, dt, dx, dt/dx*test1.Ntwk.channels[0]->a);
 	printf("number of nodes is %d\n", Nn);	
-	writeOutputText(test1.Ntwk, M, Mi);
+	for(int k = 0; k<x0.size(); k++)
+	{
+		x0[k] = test1.x[k]+((double)rand()/(double)RAND_MAX)*.01-.005;
+	}
+	}
+//	writeOutputText(test1.Ntwk, M, Mi);
+	
 //
 //////////////
 //
