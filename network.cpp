@@ -211,6 +211,7 @@ Network::Network(const Network &N_old):Nnodes(N_old.Nnodes), Nedges(N_old.Nedges
 	{
 		junction2s[k]->offset = N_old.junction2s[k]->offset;
 		junction2s[k]->valveopen = N_old.junction2s[k]->valveopen;
+		junction2s[k]->setValveTimes(N_old.junction2s[k]->valvetimes);
 	}
 	
 	for(int k = 0; k<junction3s.size(); k++)

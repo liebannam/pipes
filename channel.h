@@ -302,12 +302,14 @@ class Junction2
 		Channel &ch0, &ch1;
 		int N0, N1, Ns0, Ns1; //to find and store boundary values correctly depending on which end we're at
 		double valveopen; // set to 1 for open, 0 for closed (default is open)
+		vector<double>valvetimes;//time series of valve timings
 		double offset; //change in elevation as you go from pipe 1 to pipe 0. positive value means pipe 0 is above pipe 1. initialized to zero.
 		int whichend0, whichend1;
 		Junction2(Channel &a_ch0, Channel &a_ch1, int a_which1, int a_which2, double a_valveopen);
-	//	void setValveOpen(valarray<Real>x);
-	//	void setValveOpen(vector<Real>x);
-		void boundaryFluxes(); // assign boundary fluxes to last cell of pipeleft and first cell of pipe left	
+		void setValveTimes(valarray<Real>x);
+		void setValveTimes(vector<Real>x);
+		void boundaryFluxes(); // assign boundary fluxes to last cell of pipeleft and first cell of pipe left
+		double getFlowThrough();//compute total flow from left to right 	
 };
 
 //////

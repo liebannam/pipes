@@ -1625,8 +1625,10 @@ Junction2::Junction2(Channel &a_ch0, Channel &a_ch1, int a_which0, int a_which1,
 		N1 = 0;
 		Ns1= 0;
 	}
-//	valveopen.resize(ch0.M+1);
+	valvetimes.resize(ch0.M+1);
 	valveopen = a_valveopen;
+	valvetimes.resize(ch0.M+1);
+	for(int i=0; i<ch0.M+1; i++)valvetimes[i]=valveopen;
 	offset =0;	
 }
 
@@ -1645,14 +1647,28 @@ Junction2::Junction2(Channel &a_ch0, Channel &a_ch1, int a_which0, int a_which1,
 *           | 
 * channel 0 |channel 1
 * */
-/*void Junction2::setValveOpen(valarray<Real> x);
-{
 
+
+void Junction2::setValveTimes(vector<Real>x)
+{
+	for (int i = 0; i<ch0.M+1; i++)
+	{
+		valvetimes[i]= x[i];
+	}
 }
-*/
+
+
+void Junction2::setValveTimes(valarray<Real>x)
+{
+	for (int i = 0; i<ch0.M+1; i++)
+	{
+		valvetimes[i]= x[i];
+	}
+}
 
 void Junction2::boundaryFluxes(){	
 	double q1m, q1p, q2m, q2p, q1mfake, q1pfake;
+	valveopen = valvetimes[ch0.n];
 	q1m = ch0.q[ch0.idx(0,N0)];
 	q2m = ch0.q[ch0.idx(1,N0)];
 	q1p = ch1.q[ch1.idx(0,N1)];
@@ -1704,6 +1720,17 @@ void Junction2::boundaryFluxes(){
 		ch1.q_hist[ch1.idx_t(0,Ns1,ch1.n)] =  q1p;
 		ch1.q_hist[ch1.idx_t(1,Ns1,ch1.n)] =  0.;		
 	}
+}
+
+double Junction2::getFlowThrough()
+{
+
+	double Qt = 0;
+	for (int i = 0; i<ch0.M; i++)
+	{	
+		Qt+=ch0.q_hist[ch0.idx_t(1,Ns0,i)];
+	}
+	return Qt;
 }
 
 Junction3::Junction3(Channel &ch0, Channel &ch1, Channel &ch2, int which0, int which1, int which2): 

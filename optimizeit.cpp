@@ -43,10 +43,10 @@ int main(int argc, char *argv[] )
 	
 //optimization time! at last!
 	cout<<"M = "<<M<<endl;	
-	int ndof = 8;   // degrees of freedom (in Fourier or Hermite modes)
+	int ndof = 16;   // degrees of freedom (in Fourier or Hermite modes)
 	srand (time(NULL));
-	int Nrounds = 0;//how many times to adjust the thing
-	int modetype = 0;
+	int Nrounds = 1;//how many times to adjust the thing
+	int modetype = 1;
 	int whichnode = 0;
 	int Nn = 2;// number of nodes varied
 	vector <int> whichnodes(Nn);
