@@ -13,8 +13,9 @@
 
 int main(int argc, char *argv[] )	
 {
+if(0)//optimization with bc_opt_dh
+{	
 	int writelogs = 0; //change to 1 if the height plots look dull on account of large pressure variations
-
 	//first open .inp file and process information about network layout and components
 	char * finp= argv[1], *fconfig = argv[2];
 	int M, Mi;
@@ -138,31 +139,110 @@ int main(int argc, char *argv[] )
 	{
 		x0[k] = test1.x[k]+((double)rand()/(double)RAND_MAX)*.01-.005;
 	}
+	//writeOutputText(test1.Ntwk, M, Mi);
 	}
-//	writeOutputText(test1.Ntwk, M, Mi);
+}
+
+else// optimization with opt_eq_outflow (hahahahahahaha this isn't gonna work...)
+{
+	char * finp= argv[1], *fconfig = argv[2];
+	int M, Mi;
+	double T;
+	int channeltype = 1;
+	Network Ntwk = setupNetwork(finp, fconfig, M,Mi,T, channeltype);
+	double dt = T/(double)M;
+	double dx = Ntwk.channels[0]->L/(double)Ntwk.channels[0]->N;
+	int Nedges = Ntwk.Nedges;
+	double V0=Ntwk.getTotalVolume();
+	clock_t start_t, end_t;	
+	start_t = clock();
+//	for(int k=0; k<Nedges; k++){
+	//	Ntwk.channels[k]->showGeom();
+//		Ntwk.channels[k]->showp();
+//	}
+
+	printf("T = %f, dt = %f , dx = %f, CFL = %f\n",T, dt, dx, dt/dx*Ntwk.channels[0]->a);
+	Ntwk.runForwardProblem(dt);
+	double times[1] = {T};
+	int which[1] = {0};
+
+	for(int i = 0; i<Ntwk.channels.size(); i++)
+	{
+		Ntwk.channels[i]->quickWrite(times, which, 1,T,1);
+	}
+
+	end_t = clock();
+	printf("Elapsed Time is %f\n",(end_t-start_t)/(double)CLOCKS_PER_SEC);
+	printf("Elapsed simulation time is %f\n", dt*(double)(M));
+	double V = Ntwk.getTotalVolume();
+	cout<<"initial volume "<<V0<< "    "<<"Final Volume " <<V<< endl;
+	cout<<"dV = "<<V-V0<<endl;
+	printf("T = %f, dt = %f , dx = %f, CFL = %f\n",T, dt, dx, dt/dx*Ntwk.channels[0]->a);
+//optimization time! at last!
+	cout<<"M = "<<M<<endl;	
+	int Ndof = 2;   // degrees of freedom (in Fourier or Hermite modes)
+	int Nn = 3;// number of nodes varied
+	int No = 7;//number of outflow nodes where we're measuring
+	vector <int> whichnodes(Nn);
+	vector <int> whichnodes_out(No);
+	whichnodes[0] = 0;
+	whichnodes[1] = 1;
+	whichnodes[2] = 2;
+	whichnodes_out[0] = 1;
+	whichnodes_out[1] = 2;
+	whichnodes_out[2] = 3;
+	whichnodes_out[3] = 4;
+	whichnodes_out[4] = 5;
+	whichnodes_out[5] = 6;
+	whichnodes_out[6] = 7;
+	vector<Real> x0(Nn*(Ndof),0);
+	for(int i= 0; i<Nn; i++)
+	{
+		x0[i*Ndof] = PI;
+		x0[i*Ndof+1] = 0.;//(float)i/2; 
+	}
+	printf("No is %d and Nn is %d and Ndof is %d and I am confused\n",No, Nn, Ndof);
+	opt_eq_outflow test2(Nn*Ndof,No,x0, Ntwk, T, whichnodes, whichnodes_out);
+	test2.compute_f();
+
+	cout<<"Made it?\n";
+	double fold = test2.f;
+	cout<<"f = "<<test2.f<<endl;
+//	test2.solve();
+	cout<<"fold = "<<fold<<endl;
+	cout<<"fnew ="<<test2.f<<endl;
+	test2.dump();	
+	char file0[15];
+	sprintf(file0,"test%3ddump.txt",0); 
+	FILE *fp = fopen(file0,"w");
+	test2.dump(fp);
+	fclose(fp);
+	vector <Real> vt;
+	vector <Real> xfake(Ndof);
+	
+	char file1[19];
+       	sprintf(file1, "boundaryvals%3d.txt",0);
+	FILE *fb = fopen(file1, "w");
+	for(int i = 0; i<Nn; i++)
+	{
+	for (int k = 0; k<Ndof; k++)
+		{
+			xfake[k] = test2.x[i*(Ndof)+k];
+		}
+		test2.evaluateit1(vt, xfake, M,T);
+		fprintf (fb, "node is %d\n", whichnodes[i]);
+		fprintf(fb, "t        Q(Junction %d)  \n", whichnodes[i]);
+		for (int j = 0; j<M+1; j++){
+			fprintf(fb, "%f   %f\n", dt*(double)j, vt[j]);
+		}
+	}
+	
+	fclose(fb);
+
+
 	
 //
-//////////////
-//
-//	
-//	//Ntwk.channels[0]->showVals(1);
-//	for(int j=0;j<Nedges; j++)
-//	{
-//		for(int k =0; k<Ns[j]; k++){cout<<lengths[j]/Ns[j]*k<<"   "<<Ntwk.channels[j]->hofA(Ntwk.channels[j]->q[k])<<endl;}
-//		for(int k =0; k<Ntwk.channels[j]->N; k++){cout<<k<<"   "<<Ntwk.channels[j]->q[k]<<endl;}
-//	}
-//	for(int j=0;j<Nedges; j++){
-//		for(int k =0; k<N; k++){
-//			cout<<dx*k<<"   "<<Ntwk.channels[j]->hofA(Ntwk.channels[j]->q[k])<<" "<<Ntwk.channels[j]->q[k+N]<<endl;
-//			//cout<<dx*k<<"   "<<(Ntwk.channels[j]->q[k])<<endl;
-//		}
-//	}
-//	cout<<"Number of 1 junctions is "<<Ntwk.junction1s.size()<<endl;
-//	cout<<"Number of 2 junctions is "<<Ntwk.junction2s.size()<<endl;
-//	cout<<"Number of 3 junctions is "<<Ntwk.junction3s.size()<<endl;
-//	cout<<"Number of edges is "<<Nedges<<endl;
-//
-//
-//
+
+}
 }
 

@@ -1,7 +1,7 @@
 cc     = gcc
 CC     = g++
 #using a different version of g++ to enable openmp
-CC = g++-4.9 -fopenmp
+#CC = g++-4.9 -fopenmp
 NVCC   = nvcc
 MPICC  = mpic++
 
@@ -13,7 +13,8 @@ CFLAGSD = -g -Wall
 #if on Orinoco
 ROOT   = /Users/lieba
 #if on Macbook Air
-#ROOT   = /Users/anna
+ROOT   = /Users/anna
+
 
 INC    = -I$(ROOT)/include  -I/opt/local/include
 

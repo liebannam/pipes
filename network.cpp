@@ -108,7 +108,9 @@ Network::Network(int Nnodes_, std::vector<int> conns_, int Nedges_, std::vector<
 			
 			
 		}			
-		else {printf("Well, then I have no idea. --Keanu Reeves  (nodetypes[j] = %d)\n", nodeTypes[j]);}
+		else {printf("Well, then I have no idea. --Keanu Reeves  (nodetypes[j] = %d)\n", nodeTypes[j]);
+			for (int k = 0; k<Nedges; k++)cout<<conns[2*k]<<" "<<conns[2*k+1]<<endl;
+		}
 
 	}
 }
@@ -196,7 +198,9 @@ Network::Network(const Network &N_old):Nnodes(N_old.Nnodes), Nedges(N_old.Nedges
 			
 			
 		}			
-		else {printf("Well, then I have no idea. --Keanu Reeves  (nodetypes[j] = %d)\n", nodeTypes[j]);}
+		else {printf("Well, then I have no idea. --Keanu Reeves  (nodetypes[j] = %d)\n", nodeTypes[j]);
+			for (int k = 0; k<Nedges; k++)cout<<conns[2*k]<<" "<<conns[2*k+1]<<endl;
+		}
 
 	}
 	//copy other junction info
@@ -300,10 +304,11 @@ void Network::runForwardProblem(double dt)
 	for(int i=0; i<M; i++)
 	{
 			
-		if(i%Mi==0)
+	//	if(i%Mi==0)
 		{
 	//		printf("current time is = %f s ", (double)nn*dt);
 	//		printf("Average Gradient is %f \n", getAveGradH(i));	
+			printf("%f %d %f \n",0.,i ,getAveGradH(i));	
 		}
 		nn ++;
 		stepRK3_SSP(dt);

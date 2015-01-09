@@ -1563,6 +1563,27 @@ void Junction1::boundaryFluxes()
 	}
 }
 
+double Junction1::getFlowThrough(double dt)
+{
+
+	double Qt = 0;
+	int N0;
+	if (whichend)
+	{
+		N0 = ch0.N-1;	
+	}
+	else
+	{
+		N0 = 0;
+	}
+	for (int i = 0; i<ch0.M+1; i++)
+	{	
+		Qt+=dt*ch0.q_hist[ch0.idx_t(1,N0,i)];
+	}
+	return Qt;
+}
+
+
 /** overloaded functions to set boundary value time series*/
 /** set boundary value to a constant value*/
 void Junction1::setbVal(double bvalnew)
@@ -1669,6 +1690,7 @@ void Junction2::setValveTimes(valarray<Real>x)
 void Junction2::boundaryFluxes(){	
 	double q1m, q1p, q2m, q2p, q1mfake, q1pfake;
 	valveopen = valvetimes[ch0.n];
+//	cout<<"valveopen="<<valveopen<<endl;
 	q1m = ch0.q[ch0.idx(0,N0)];
 	q2m = ch0.q[ch0.idx(1,N0)];
 	q1p = ch1.q[ch1.idx(0,N1)];
@@ -1722,16 +1744,6 @@ void Junction2::boundaryFluxes(){
 	}
 }
 
-double Junction2::getFlowThrough()
-{
-
-	double Qt = 0;
-	for (int i = 0; i<ch0.M; i++)
-	{	
-		Qt+=ch0.q_hist[ch0.idx_t(1,Ns0,i)];
-	}
-	return Qt;
-}
 
 Junction3::Junction3(Channel &ch0, Channel &ch1, Channel &ch2, int which0, int which1, int which2): 
 			ch0(ch0), ch1(ch1), ch2(ch2),j2_01(ch0, ch1, which0, which1, 1), j2_12(ch1, ch2, which1, which2, 1),j2_21(ch2, ch1, which2, which1, 1), j2_20(ch0,ch2, which0, which2, 1)

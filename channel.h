@@ -289,6 +289,7 @@ class Junction1
 		void setbVal(vector<Real> x);
 		~Junction1();
 		void boundaryFluxes();//	
+		double getFlowThrough(double dt);//compute total flow from left to right 	
 	//	int idx(int i_in, int j_in){return (N*i_in+j_in);}
 		int reflect;//=1 means do (A,-Q) at boundary rather than try RI thing
 };
@@ -309,7 +310,6 @@ class Junction2
 		void setValveTimes(valarray<Real>x);
 		void setValveTimes(vector<Real>x);
 		void boundaryFluxes(); // assign boundary fluxes to last cell of pipeleft and first cell of pipe left
-		double getFlowThrough();//compute total flow from left to right 	
 };
 
 //////

@@ -9,7 +9,9 @@
 
 
 #include "setupandrun.h"
-#include "omp.h"
+#ifdef _OPENMP
+	#include "omp.h"
+#endif
 
 double getTheta2(double A, double D)
 {
@@ -166,9 +168,15 @@ int main(int argc, char *argv[] )
 //	}
 	printf("h = .014, A = %.10f\n",Ntwk.channels[1]->HofA(0.4,false));
 	printf("h = .008, A = %.10f\n",Ntwk.channels[0]->HofA(0.45,false));
-	double t1 = omp_get_wtime();
+	double t1=0, t2 =0;
+	#ifdef _OPENMP
+		 t1 = omp_get_wtime();
+	#endif
 	Ntwk.runForwardProblem(dt);
-	double t2 = omp_get_wtime();
+
+	#ifdef _OPENMP
+		t2 = omp_get_wtime();
+	#endif
 	end_t = clock();
 //	for(int k=0; k<Nedges; k++){
 	//	Ntwk.channels[k]->showGeom();
