@@ -161,12 +161,12 @@ int main(int argc, char *argv[] )
 	start_t = clock();
 	cout<<"bvals??"<<endl;
 	for(int i=0; i<M+1; i++)
-		cout<<i<< " "<<Ntwk.junction1s[1]->bval[i]<<endl;
+		cout<<i<< " "<<Ntwk.junction1s[0]->bval[i]<<endl;
 //	for(int k=0; k<Nedges; k++){
 	//	Ntwk.channels[k]->showGeom();
 //		Ntwk.channels[k]->showp();
 //	}
-	printf("h = .014, A = %.10f\n",Ntwk.channels[1]->HofA(0.4,false));
+	printf("h = .014, A = %.10f\n",Ntwk.channels[0]->HofA(0.4,false));
 	printf("h = .008, A = %.10f\n",Ntwk.channels[0]->HofA(0.45,false));
 	double t1=0, t2 =0;
 	#ifdef _OPENMP
