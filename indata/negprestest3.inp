@@ -14,7 +14,7 @@
 
 [PIPES]
 ;ID              	Node1           	Node2           	Length      	Diameter    	Roughness   	MinorLoss   	Status
- 0               	0               	1               	600         	 0.5        	0.015       	0           	Open  	;
+ 0               	0               	1               	600         	 0.5        	0.012       	0           	Open  	;
 
 [PUMPS]
 ;ID              	Node1           	Node2           	Parameters

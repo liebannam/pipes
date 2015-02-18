@@ -130,6 +130,8 @@ Network setupNetwork(char *finp, char *fconfig, int &M, int &Mi, double &T, int 
 			{      	
 				stringstream ss(stuff); 
 				ss>>appendTo(pIDs)>>appendTo(conns)>>appendTo(conns)>>appendTo(lengths)>>appendTo(diams)>>appendTo(Mrs);
+				cout<<"!!!!!!!stuff = " <<stuff<<endl;
+				cout<<"!!!ss = "<<ss<<endl;
 				if(stuff[0] =='[' && first==0){pflag =0;}
 				first = 0;
 			}
@@ -223,18 +225,19 @@ Network setupNetwork(char *finp, char *fconfig, int &M, int &Mi, double &T, int 
 
 			if(jflag)
 			{      	
-				int tmp,type;
+				int tmp,btype;
 				stringstream ss(morestuff); // Insert the string into a stream
-				ss>>tmp>>type;
-				if(type==1)//next three columns matter
+				ss>>tmp>>btype;
+				printf("btype = %d\n",btype);
+				if(btype==1)//next three columns matter
 				{
 					ss>>appendTo(bvaltypes)>>appendTo(bvals)>>appendTo(reflects);
 				}
-				else if(type ==2)//skip next three columns; next 2 matter
+				else if(btype ==2)//skip next three columns; next 2 matter
 				{	
 					ss>>tmp>>tmp>>tmp>>appendTo(offsets)>>appendTo(valveopens);
 				}
-				else if(type ==3)//skip next 5, next 2 matter
+				else if(btype ==3)//skip next 5, next 2 matter
 				{
 					ss>>tmp>>tmp>>tmp>>tmp>>tmp>>appendTo(offset01s)>>appendTo(offset02s)>>appendTo(offset12s);
 				}

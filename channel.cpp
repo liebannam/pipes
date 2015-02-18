@@ -116,7 +116,7 @@ double HofA(double A, double D, double At, double Ts, bool P)
 {
 	double y; 
 	if(A<1e-15){return 0.;}
-	if(A<=At)  //below slot
+	if(A<=At && !P)  //below slot
 	{
 		A = A/(D*D);//normalize by full area;
 		if (A<=PI/8.){
@@ -412,7 +412,12 @@ void Channel::setq0(double *A0, double *Q0)
 		q_hist[idx_t(1,i+1,0)] = Q0[i];
 		P[pj(i)] = A0[i]>=At;
 	}
-	
+	if(A0[0]>=At){
+	P[pj(0)] = true;
+	}
+	if (A0[N-1]>=At){	
+	P[pj(N)] = true;	
+	}
 	q_hist[idx_t(0,0,0)] = A0[0];
 	q_hist[idx_t(0,N+1,0)] = A0[N-1];
 	q_hist[idx_t(1,0,0)] = Q0[0];
@@ -955,8 +960,8 @@ void Cpreiss::setGeom(double a_)
 	int count;
 
 	a = 1200;//desired pressure wave speed
-	a = 120;
-//      a = 9;
+//	a = 120;
+        a = 9;
 	Af = PI*D*D/4.;
 	Ts = G*Af/(a*a);
 //this bit fails epically	
@@ -1024,7 +1029,7 @@ void Cpreiss::setGeom(double a_)
 	
 double Cpreiss::AofH(double h, bool p)
 {
-	if(h<=yt)
+	if(h<=yt && (!p))
 	{	double t = 2.*(acos(1.-h/D*2.));
 		return	 D*D*(t-sin(t))/8.;
 	}

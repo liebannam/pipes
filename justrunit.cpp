@@ -160,8 +160,8 @@ int main(int argc, char *argv[] )
 	double V0=Ntwk.getTotalVolume();
 	start_t = clock();
 	cout<<"bvals??"<<endl;
-	for(int i=0; i<M+1; i++)
-		cout<<i<< " "<<Ntwk.junction1s[0]->bval[i]<<endl;
+//	for(int i=0; i<M+1; i++)
+//		cout<<i<< " "<<Ntwk.junction1s[0]->bval[i]<<endl;
 //	for(int k=0; k<Nedges; k++){
 	//	Ntwk.channels[k]->showGeom();
 //		Ntwk.channels[k]->showp();
@@ -218,14 +218,16 @@ printf("dt = %f , dx = %f, CFL = %f\n",dt, dx, dt/dx*Ntwk.channels[0]->a);
 
 
 double places0[1] = {0};
-double places1[1] = {2.75};
+//double places1[1] = {590};
+double places1[1] = {9.2};
+//double places1[1] = {0};
 double times[1] = {T};
 int which[1] = {0};
-
+int which2[1] = {1}; 
 //}
 writeOutputTarga(Ntwk, M, Mi,T, 0);
 
-//Ntwk.channels[0]->quickWrite(places1, which, 1,T,100); 
+Ntwk.channels[0]->quickWrite(places1, which2, 1,T,Mi); 
 //Ntwk.channels[2]->quickWrite(places1, which, 1,T,100); 
 //Ntwk.channels[2]->quickWrite(times, which, 1,T,100); 
 for(int i = 0; i<Ntwk.channels.size(); i++)
@@ -239,6 +241,9 @@ if (Ntwk.channels.size()>3)
 	Ntwk.channels[3]->quickWrite(places2,which2,1,T,Mi);
 }
 writeOutputText(Ntwk, M, Mi);
+
+printf("h = .014, A = %.10f\n",Ntwk.channels[0]->AofH(0.014,false));
+
 //testallthiscrap();
 //printf("Coefficients!!\n");
 
