@@ -274,6 +274,9 @@ Channel::Channel(int Nin, double win, double Lin, int Min, double a):N(Nin), w(w
 	q0 = new double[2*N];
 	q = new double[2*N];
 	qhat = new double[2*N];
+	bfluxleft = new double[2];
+	bfluxright = new double[2];
+	
 	//assume junctions aren't ventilated unless they're junction1s without reflection
 	P.push_back(false);
 	for(int i = 0; i<N+1; i++){P.push_back(false);}
@@ -314,6 +317,8 @@ Channel::~Channel()
 	delete [] q;
 	delete [] q_hist;
 	delete [] qhat;
+	delete [] bfluxleft;
+	delete [] bfluxright;
 }
 
 //Display geometry info about this pipe
@@ -686,9 +691,10 @@ void Cpreiss::updateExactRS(double q1m, double q1p, double q2m, double q2p, doub
 void Channel::numFluxHLL(double q1m, double q1p, double q2m, double q2p, double *flux, bool Pm, bool Pp)                
 {
     
-	double s[2]={0};
+	double s[2]={0,0};
 	double slow = 1e-5;
 	//estimate speeds (Roe or fancier)
+//	printf("arguments to speeds are (%f,%f,%f,%f,%p,%d,%d", q1m, q1p, q2m, q2p, s, Pm, Pp);
 	speeds(q1m, q1p, q2m, q2p, s, Pm, Pp);
 	// check for near zero speeds
 	if (fabs(s[0])< slow && fabs(s[1])<slow){                                                       
@@ -1151,7 +1157,7 @@ void Cpreiss::speedsRoe(double q1m, double q1p, double q2m, double q2p, double *
 void Cpreiss::speedsHLL(double q1m, double q1p, double q2m, double q2p, double *s, bool Pm, bool Pp) //HLL speeds from Leon 2009 - they seem terrible...
 {
     	double dry = 1e-6*At;;                                                  //pay attention to this!?
-    	double cbar,Astar, ym,yp,cm, cp, um =0 , up= 0;	
+    	double cbar,Astar, ym,yp,cm, cp, um =0 , up= 0, ugh;	
 	//double Astar1, Astar2;
 	ym = HofA(q1m,Pm);
 	yp = HofA(q1p,Pp);
@@ -1552,7 +1558,8 @@ void Junction1::boundaryFluxes()
 	else
 	{
 		
-		ch0.numFlux(Aext, Ain, Qext, Qin, ch0.bfluxleft, ch0.P[0], ch0.P[1]);
+		//ch0.numFlux(Aext, Ain, Qext, Qin, ch0.bfluxleft, ch0.P[0], ch0.P[1]);
+		ch0.numFlux(Ain, Ain, Qin, Qin, ch0.bfluxleft, false, false);
 		ch0.q_hist[ch0.idx_t(0,0,ch0.n)] = Aext;
 		ch0.q_hist[ch0.idx_t(1,0,ch0.n)] = Qext;
 		if(reflect ==-1||reflect ==1){ch0.P[0] =ch0.P[1];}

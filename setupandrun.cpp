@@ -98,6 +98,28 @@ Network setupNetwork(char *finp, char *fconfig, int &M, int &Mi, double &T, int 
 		 if (stuff[0]==';')
 			 continue;
 		 else{ 
+			if(jflag)
+			{      	
+				stringstream ss(stuff); // Insert the string into a stream
+				ss>>appendTo(jIDs)>>appendTo(elevs);
+				if(stuff[0] =='[' && first==0){jflag =0;}
+				first = 0;
+			}
+			if(pflag)
+			{      	
+				stringstream ss(stuff);
+				ss>>appendTo(pIDs)>>appendTo(conns)>>appendTo(conns)>>appendTo(lengths)>>appendTo(diams)>>appendTo(Mrs);
+				if(stuff[0] =='[' && first==0){pflag =0;}
+				first = 0;
+			}
+			if (cflag)
+			{
+				int tmp;
+				stringstream ss(stuff);
+				ss>>tmp>>appendTo(xcoords)>>appendTo(ycoords);
+				if(stuff[0] =='[' && first==0){cflag =0;}
+				first = 0;
+			}
 			if(strncmp(stuff.c_str(), "[JUNCTIONS]", 11 )==0)
 			{	
 				jflag =1;
@@ -119,30 +141,7 @@ Network setupNetwork(char *finp, char *fconfig, int &M, int &Mi, double &T, int 
 				jflag =0;
 				pflag =0;
 			}
-			if(jflag)
-			{      	
-				stringstream ss(stuff); // Insert the string into a stream
-				ss>>appendTo(jIDs)>>appendTo(elevs);
-				if(stuff[0] =='[' && first==0){jflag =0;}
-				first = 0;
-			}
-			if(pflag)
-			{      	
-				stringstream ss(stuff); 
-				ss>>appendTo(pIDs)>>appendTo(conns)>>appendTo(conns)>>appendTo(lengths)>>appendTo(diams)>>appendTo(Mrs);
-				cout<<"!!!!!!!stuff = " <<stuff<<endl;
-				cout<<"!!!ss = "<<ss<<endl;
-				if(stuff[0] =='[' && first==0){pflag =0;}
-				first = 0;
-			}
-			if (cflag)
-			{
-				int tmp;
-				stringstream ss(stuff);
-				ss>>tmp>>appendTo(xcoords)>>appendTo(ycoords);
-				if(stuff[0] =='[' && first==0){cflag =0;}
-				first = 0;
-			}
+
 		 }
 	 }
 	file1.close();
@@ -225,7 +224,7 @@ Network setupNetwork(char *finp, char *fconfig, int &M, int &Mi, double &T, int 
 
 			if(jflag)
 			{      	
-				int tmp,btype;
+				int tmp=0,btype=0;
 				stringstream ss(morestuff); // Insert the string into a stream
 				ss>>tmp>>btype;
 				printf("btype = %d\n",btype);
@@ -309,10 +308,10 @@ Network setupNetwork(char *finp, char *fconfig, int &M, int &Mi, double &T, int 
 		}
 
 	 }
-	cout<<"Junction Info:\njunction ID     elevation\n";
+	cout<<"Junction Info:\njunction ID   elev.  xcoord     ycoord \n";
 	for(int k= 0; k<jIDs.size(); k++)
-	{    cout<< jIDs[k]<<"                "<<elevs[k]<<"   "<<xcoords[k]<<" "<<ycoords[k]<<endl;}
-	cout<<"Pipe Info:\npipe ID   left_end   right_end    length(m)   diam(mm)    manning coeff  slope\n";
+	{    cout<< jIDs[k]<<"                "<<elevs[k]<<"      "<<xcoords[k]<<"     "<<ycoords[k]<<endl;}
+	cout<<"Pipe Info:\npipe ID   left_end   right_end    length(m)   diam(m)    manning coeff    slope    h0        q0\n";
 	for(int k= 0; k<pIDs.size(); k++)
 	{ 
 		printf("%d          %d          %d            %.1f      %.3f        %.4f          %.4f     %.2f    %.2f\n", pIDs[k], conns[2*k], conns[2*k+1],lengths[k], diams[k], Mrs[k], S0s[k], h0s[k], q0s[k]); }

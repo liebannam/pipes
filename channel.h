@@ -57,7 +57,7 @@ template<typename T>
 std::istream& operator>>(std::istream& s, const AppendToVector<T>& app)
 {
     T val;
-    if (s >> val)
+    if (s >> val)  //checks to see if this string can be interpretted as type T
         app.vec.push_back(val);
     return s;
 }
@@ -155,7 +155,7 @@ class Channel
 		int idx_t(int i_in, int j_in, int n_in){return (2*(N+2)*n_in+(N+2)*i_in+j_in);} //accessq^n(i,j)with i,j as above and n = 0,...M-1 (n*dt = t at which this slice is taken)
 
 		int pj(int i){return i+1;} 		    // indexing for pressurization states vector
-		double bfluxleft[2], bfluxright[2];         // left and right boundary fluxes
+		double *bfluxleft, *bfluxright;         // left and right boundary fluxes
 /*****Methods*/
 		Channel (int Nin, double win, double Lin, int Min, double a); // constructor
 		~Channel();
