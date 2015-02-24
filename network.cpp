@@ -308,6 +308,7 @@ void Network::runForwardProblem(double dt)
 		{
 	//		printf("current time is = %f s ", (double)nn*dt);
 	//		printf("Average Gradient is %f \n", getAveGradH(i));	
+	if (WTF)
 			printf("%f %d %f \n",0.,i ,getAveGradH(i));	
 		}
 		nn ++;

@@ -1558,8 +1558,8 @@ void Junction1::boundaryFluxes()
 	else
 	{
 		
-		//ch0.numFlux(Aext, Ain, Qext, Qin, ch0.bfluxleft, ch0.P[0], ch0.P[1]);
-		ch0.numFlux(Ain, Ain, Qin, Qin, ch0.bfluxleft, false, false);
+		ch0.numFlux(Aext, Ain, Qext, Qin, ch0.bfluxleft, ch0.P[0], ch0.P[1]);
+		//ch0.numFlux(Ain, Ain, Qin, Qin, ch0.bfluxleft, false, false);
 		ch0.q_hist[ch0.idx_t(0,0,ch0.n)] = Aext;
 		ch0.q_hist[ch0.idx_t(1,0,ch0.n)] = Qext;
 		if(reflect ==-1||reflect ==1){ch0.P[0] =ch0.P[1];}

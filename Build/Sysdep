@@ -16,7 +16,6 @@ ROOT   = /Users/lieba
 #if on Macbook Air
 #ROOT   = /Users/anna
 
-
 INC    = -I$(ROOT)/include  -I/opt/local/include
 
 LA     = -llapack -lblas  -lcblas

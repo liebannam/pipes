@@ -225,7 +225,17 @@ double times[1] = {T};
 int which[1] = {0};
 int which2[1] = {1}; 
 //}
-writeOutputTarga(Ntwk, M, Mi,T, 0);
+//writeOutputTarga(Ntwk, M, Mi,T, 0);
+//writeOutputText(Ntwk, M, Mi);
+
+//printf("h = .014, A = %.10f\n",Ntwk.channels[0]->AofH(0.014,false));
+
+//testallthiscrap();
+//printf("Coefficients!!\n");
+
+//for(int i = 0; i<Ntwk.channels[0]->Ncheb+1; i++)
+//printf("%d   %.15f    %.15f    %.15f    %.15f    %.15f   \n", i, coeffs_h[i],coeffs_p1[i],coeffs_p2[i], Ntwk.channels[0]->coeffs_a1[i],coeffs_a2[i]);
+//testcopyconstructor(Ntwk);
 
 Ntwk.channels[0]->quickWrite(places1, which2, 1,T,Mi); 
 //Ntwk.channels[2]->quickWrite(places1, which, 1,T,100); 
@@ -240,16 +250,8 @@ if (Ntwk.channels.size()>3)
 	int which2[1] = {1};
 	Ntwk.channels[3]->quickWrite(places2,which2,1,T,Mi);
 }
-writeOutputText(Ntwk, M, Mi);
 
-printf("h = .014, A = %.10f\n",Ntwk.channels[0]->AofH(0.014,false));
 
-//testallthiscrap();
-//printf("Coefficients!!\n");
-
-//for(int i = 0; i<Ntwk.channels[0]->Ncheb+1; i++)
-//printf("%d   %.15f    %.15f    %.15f    %.15f    %.15f   \n", i, coeffs_h[i],coeffs_p1[i],coeffs_p2[i], Ntwk.channels[0]->coeffs_a1[i],coeffs_a2[i]);
-//testcopyconstructor(Ntwk);
 }//}
 
 

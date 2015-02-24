@@ -49,8 +49,7 @@ class Network{
 	int nn;  //which timestep we're currently at...
 	int channeltype; //0 for uniform, 1 for Preissman slot
 	//constructor
-	Network(int Nnodes_, std::vector<int> conns_, int Nedges_, std::vector<int> Ns, std::vector<double> ws, std::vector<double> Ls, 
-			std::vector<double> S0s, std::vector<double> Mrs, std::vector<double> a0s, std::vector<double> q0s, int M_,  int channeltype_, double a = 1200.);
+	Network(int Nnodes_, std::vector<int> conns_, int Nedges_, std::vector<int> Ns, std::vector<double> ws, std::vector<double> Ls, std::vector<double> S0s, std::vector<double> Mrs, std::vector<double> a0s, std::vector<double> q0s, int M_,  int channeltype_, double a = 1200.);
 	//copy constructor goddamnit, I have to do this now, and do it perfectly :(
 	Network(const Network &N_old);
 	//destructor

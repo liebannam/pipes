@@ -31,6 +31,10 @@ using namespace std;
 using std::max;
 using std::min;
 
+//
+//WTF defined as true prints lots of miscellanious debug info...sigh
+#define WTF false
+//#define WTF true
 
 ///////
 //horrifying macros for easily changing numerical flux routines
