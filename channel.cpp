@@ -1175,14 +1175,15 @@ void Cpreiss::speedsHLL(double q1m, double q1p, double q2m, double q2p, double *
 		//	else{
 				Astar = (q1m+q1p)/2.*(1+( (cbar>1e-6)? (um-up)/(2.*cbar): 0));//}  //this is linearized version
 			if(Astar<0){Astar = (q1p+q1m)/2;}
-		//	printf("Linear Atsar = %f with q1m = %f and q1p = %f, um =%f, up = %f\n",Astar, cm, cp, um, up);
+		if (WTF)
+			printf("Atsar = %f with q1m = %f and q1p = %f, um =%f, up = %f\n",Astar, cm, cp, um, up);
 		//}
 		//else{
 
 		//}
 		bool Ps = (Pm && Pp);
 		s[0] = um - findOmega(Astar, q1m, Ps, Pm);
-		s[1] = up + findOmega(Astar, q1p, Ps, Pm);
+		s[1] = up + findOmega(Astar, q1p, Ps, Pp);
 	}
 	else{
 		if(fmax(ym,yp)<dry)     // Both sides dry - both stay dry
@@ -1216,8 +1217,8 @@ void Cpreiss::speedsHLL(double q1m, double q1p, double q2m, double q2p, double *
 	}
 	if(isnan(s[0]) || isnan(s[1])) //check for NaNs
 	{
-		printf("Error!nan speeds! with y1 = %f, y2 = %f\n", ym, yp);
-		printf("q1p is %f and q2p is %f, um is %f, up is %f", q1p, q2p, um, q2p);
+		printf("Error!nan speeds!s[0] = %f, s[1] = %f, with y1 = %f, y2 = %f\n", s[0], s[1],ym, yp);
+		printf("q1p is %f and q2p is %f, um is %f, up is %f\n", q1p, q2p, um, q2p);
 		exit (1);
 	}
 	if(s[0]>s[1]) 	//check that HLL speeds have s0<s1; really, this should never bloody happen!
@@ -1536,7 +1537,7 @@ void Junction1::boundaryFluxes()
 			//Qext = (Qin/Ain+sign*Phi(Ain,ch0.w, ch0.At, ch0.Ts, Pin) - sign*Phi(Aext, ch0.w, ch0.At, ch0.Ts, Pext))*Aext;
 			Qext = (Qin/Ain+sign*ch0.PhiofA(Ain,Pin) - sign*ch0.PhiofA(Aext,Pext))*Aext;
 			//Qext = (Qin/Ain+sign*2.*sqrt(G*Ain/w) - sign*2.*sqrt(G*Aext/w))*Aext;
-		//	printf("end %d has Qext is %f and Aext is %f\n", whichend, Qext, Aext);
+		//	printf("end %d has Qext is %f and Aext is %f and cgrav =%f\n", whichend, Qext, Aext, ch0.Cgrav(Aext, Pext));
 		}
 	}	
 	//compute the fluxes using numFlux
