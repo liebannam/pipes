@@ -5,7 +5,6 @@
 
 #include "network.h"
 
-
 int find_nth(std::vector<int> values,  int desired, int n_ordinal, int N)
 {
 	int retval = -1;
@@ -21,9 +20,23 @@ int find_nth(std::vector<int> values,  int desired, int n_ordinal, int N)
 	}		
 }
 
-
-Network::Network(int Nnodes_, std::vector<int> conns_, int Nedges_, std::vector<int> Ns, std::vector<double> ws, std::vector<double> Ls, 
+Network_params::Network_params(std::vector<int> Ns_, std::vector<double> ws_, std::vector<double> Ls_, 
+					std::vector<double> S0s_, std::vector<double> Mrs_, std::vector<double> 
+					a0s_, std::vector<double> q0s_,double a_):a(a_)
+{ 
+	Ns = Ns_;
+	ws = ws_;
+	Ls = Ls_;
+	S0s = S0s_;
+	Mrs = Mrs_;
+	a0s = a0s_;
+	q0s = q0s_;
+			
+}
+/*Network::Network(int Nnodes_, std::vector<int> conns_, int Nedges_, std::vector<int> Ns, std::vector<double> ws, std::vector<double> Ls, 
 		std::vector<double> S0s, std::vector<double> Mrs, std::vector<double> a0s, std::vector<double> q0s, int M_,  int channeltype_, double a):
+	        Nnodes(Nnodes_), Nedges(Nedges_), M(M_), channeltype(channeltype_)*/
+Network::Network(int Nnodes_, std::vector<int> conns_, int Nedges_, int M_,  int channeltype_, Network_params p):
 	        Nnodes(Nnodes_), Nedges(Nedges_), M(M_), channeltype(channeltype_)
 {
 	
@@ -44,12 +57,12 @@ Network::Network(int Nnodes_, std::vector<int> conns_, int Nedges_, std::vector<
 	//fill channels with data from Ns, ws, Ls, etc
 	for(int i = 0; i<Nedges; i++)
 	{	
-		if(channeltype==0){channels.push_back(new Cuniform(Ns[i], ws[i], Ls[i],M,a));}
-		else{channels.push_back(new Cpreiss(Ns[i], ws[i], Ls[i],M,a));}
-		channels[i]->setq(a0s[i],q0s[i]);
-		channels[i]->setq0(a0s[i], q0s[i]);
-		channels[i]->Mr = Mrs[i];
-		channels[i]->S0 = S0s[i];
+		if(channeltype==0){channels.push_back(new Cuniform(p.Ns[i], p.ws[i], p.Ls[i],M,p.a));}
+		else{channels.push_back(new Cpreiss(p.Ns[i], p.ws[i], p.Ls[i],M,p.a));}
+		channels[i]->setq(p.a0s[i],p.q0s[i]);
+		channels[i]->setq0(p.a0s[i], p.q0s[i]);
+		channels[i]->Mr = p.Mrs[i];
+		channels[i]->S0 = p.S0s[i];
 	//	channels[i]->showGeom();
 	}
 

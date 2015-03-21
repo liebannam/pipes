@@ -87,6 +87,7 @@ void getCoeffSeries(vector< vector <Real> > & bvals, vector< vector <Real> > &x,
 Network setupNetwork(char *finp, char *fconfig, int &M, int &Mi, double &T, int channeltype_)
 {
 	//first open .inp file and process information about network layout and components
+	double default_a = 120.; //pressure wave speed if not specified in INP file
 	ifstream file1(finp);
 	string stuff;
 	vector<int> jIDs, pIDs, conns;
@@ -172,6 +173,7 @@ Network setupNetwork(char *finp, char *fconfig, int &M, int &Mi, double &T, int 
 	}
 
 	//now read  .config file to set run parameters
+	double a = 0;
 	ifstream file2(fconfig);
 	string morestuff;
 	int Nmodes = 0;
@@ -255,7 +257,8 @@ Network setupNetwork(char *finp, char *fconfig, int &M, int &Mi, double &T, int 
 			if(tflag)
 			{
 				stringstream ss(morestuff);	
-				ss>>T>>M>>Mi;
+				ss>>T>>M>>Mi>>a;
+				if (a ==0) a = default_a;
 				cout<<morestuff<<endl;
 				cout<<"T = "<<T<<" tflag ="<<tflag<<endl;
 				if(first==0){tflag =0;}
@@ -324,8 +327,10 @@ Network setupNetwork(char *finp, char *fconfig, int &M, int &Mi, double &T, int 
 
 	double dt = T/(double)M;
 	cout<<"T = "<<T<<" M = "<<M<<endl;
+	cout<<"a = "<<a<<endl;
 	//make the damn return network
-	Network Ntwk(Nnodes, conns, Nedges, Ns, diams, lengths, S0s, Mrs, h0s, q0s, M, channeltype);
+	Network_params params(Ns, diams, lengths, S0s, Mrs, h0s, q0s,a);
+	Network Ntwk(Nnodes, conns, Nedges, M, channeltype, params);
 	
 	
 	cout<<"Number of 1 junctions is "<<Ntwk.junction1s.size()<<endl;

@@ -163,3 +163,10 @@ cdef class PyNetwork:
 		del self.thisptr
 	def runForwardProblem(self,double dt):
 		self.runForwardProblem(dt)
+
+cdef extern from "setupandrun.h":
+	cdef Network setupNetwork(char *, char *, int &, int &, double &, int)
+
+#def PyNetwork PysetupNetwork(char * finp, char* fconfig, int &M, int &Mi, double &T, int channeltype):
+#	Network N = setupNetwork(finp, fconfig, M, Mi, T, channeltype)
+
