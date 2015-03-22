@@ -277,6 +277,8 @@ cdef class PyNetwork:
 			Ni = self.Ns[i]
 			for j in range(Ni):
 				print "%f    %f" %(l[j], l[j+Ni])
+	def getAveGradH(self,i):
+		return self.thisptr.getAveGradH(i)
 	property conn:
 		def __get__(self): return self.conn
 	property nodeTypes:
