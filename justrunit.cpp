@@ -153,11 +153,11 @@ int main(int argc, char *argv[] )
 	int M, Mi;
 	double T;
 	int channeltype = 1;
-	Network Ntwk = setupNetwork(finp, fconfig, M,Mi,T, channeltype);
+	Network * Ntwk = setupNetwork(finp, fconfig, M,Mi,T, channeltype);
 	double dt = T/(double)M;
-	double dx = Ntwk.channels[0]->L/(double)Ntwk.channels[0]->N;
-	int Nedges = Ntwk.Nedges;
-	double V0=Ntwk.getTotalVolume();
+	double dx = Ntwk->channels[0]->L/(double)Ntwk->channels[0]->N;
+	int Nedges = Ntwk->Nedges;
+	double V0=Ntwk->getTotalVolume();
 	start_t = clock();
 	cout<<"bvals??"<<endl;
 //	for(int i=0; i<M+1; i++)
@@ -166,13 +166,13 @@ int main(int argc, char *argv[] )
 	//	Ntwk.channels[k]->showGeom();
 //		Ntwk.channels[k]->showp();
 //	}
-	printf("h = .014, A = %.10f\n",Ntwk.channels[0]->HofA(0.4,false));
-	printf("h = .008, A = %.10f\n",Ntwk.channels[0]->HofA(0.45,false));
+	printf("h = .014, A = %.10f\n",Ntwk->channels[0]->HofA(0.4,false));
+	printf("h = .008, A = %.10f\n",Ntwk->channels[0]->HofA(0.45,false));
 	double t1=0, t2 =0;
 	#ifdef _OPENMP
 		 t1 = omp_get_wtime();
 	#endif
-	Ntwk.runForwardProblem(dt);
+	Ntwk->runForwardProblem(dt);
 
 	#ifdef _OPENMP
 		t2 = omp_get_wtime();
@@ -189,12 +189,12 @@ int main(int argc, char *argv[] )
 	printf("Elapsed processor time is %f and elapsed real time is %f\n", (end_t-start_t)/(double)CLOCKS_PER_SEC, t2-t1);	
 	printf("Elapsed simulation time is %f\n", dt*(double)(M));
 	double f = 0;
-	for (int i=0; i<M+1; i++)f+=pow(dt*Ntwk.getAveGradH(i),2.)/2.;
-	double V = Ntwk.getTotalVolume();
+	for (int i=0; i<M+1; i++)f+=pow(dt*Ntwk->getAveGradH(i),2.)/2.;
+	double V = Ntwk->getTotalVolume();
 	cout<<"initial volume "<<V0<< "    "<<"Final Volume " <<V<< endl;
 	cout<<"dV = "<<V-V0<<endl;
 	cout<<"f = "<<f<<endl;
-	cout<<"maximum wave speed is "<<Ntwk.channels[0]->Cgrav(PI*.25/4.,false)<<endl;
+	cout<<"maximum wave speed is "<<Ntwk->channels[0]->Cgrav(PI*.25/4.,false)<<endl;
 	//
 //printf("t    H(valve)  h(valve-phys)  Q(reservoir)\n");   
 //for (int k = 0; k<M/Mi; k++)
@@ -207,10 +207,10 @@ int main(int argc, char *argv[] )
 //}
 
 
-printf("h = 20, A = %.10f\n",Ntwk.channels[0]->AofH(20,false));
-printf("h = 10, A = %.10f\n",Ntwk.channels[0]->AofH(10,false));
-printf("Af is %f\n", Ntwk.channels[0]->At);
-printf("dt = %f , dx = %f, CFL = %f\n",dt, dx, dt/dx*Ntwk.channels[0]->a);
+printf("h = 20, A = %.10f\n",Ntwk->channels[0]->AofH(20,false));
+printf("h = 10, A = %.10f\n",Ntwk->channels[0]->AofH(10,false));
+printf("Af is %f\n", Ntwk->channels[0]->At);
+printf("dt = %f , dx = %f, CFL = %f\n",dt, dx, dt/dx*Ntwk->channels[0]->a);
 /*for (int i=0;i<Ntwk.channels[0]->N; i++){
 	//printf("%f   %f   \n",i*Ntwk.channels[0]->dx, Ntwk.channels[0]->fakehofA(Ntwk.channels[0]->q[Ntwk.channels[0]->idx(0,i)],Ntwk.channels[0]->P[i+1]));
 	printf("%f   %f   \n",i*Ntwk.channels[0]->dx, Ntwk.channels[0]->fakehofA(Ntwk.channels[0]->q[Ntwk.channels[0]->idx(0,i)],Ntwk.channels[0]->P[i+1]));
@@ -237,18 +237,18 @@ int which2[1] = {1};
 //printf("%d   %.15f    %.15f    %.15f    %.15f    %.15f   \n", i, coeffs_h[i],coeffs_p1[i],coeffs_p2[i], Ntwk.channels[0]->coeffs_a1[i],coeffs_a2[i]);
 //testcopyconstructor(Ntwk);
 
-Ntwk.channels[0]->quickWrite(places1, which2, 1,T,Mi); 
+Ntwk->channels[0]->quickWrite(places1, which2, 1,T,Mi); 
 //Ntwk.channels[2]->quickWrite(places1, which, 1,T,100); 
 //Ntwk.channels[2]->quickWrite(times, which, 1,T,100); 
-for(int i = 0; i<Ntwk.channels.size(); i++)
+for(int i = 0; i<Ntwk->channels.size(); i++)
 {
-	Ntwk.channels[i]->quickWrite(times, which, 1,T,1);
+	Ntwk->channels[i]->quickWrite(times, which, 1,T,1);
 }
-if (Ntwk.channels.size()>3)
+if (Ntwk->channels.size()>3)
 {
 	double places2[1] = {5.0};
 	int which2[1] = {1};
-	Ntwk.channels[3]->quickWrite(places2,which2,1,T,Mi);
+	Ntwk->channels[3]->quickWrite(places2,which2,1,T,Mi);
 }
 
 

@@ -84,10 +84,10 @@ void getCoeffSeries(vector< vector <Real> > & bvals, vector< vector <Real> > &x,
 }
 
 
-Network setupNetwork(char *finp, char *fconfig, int &M, int &Mi, double &T, int channeltype_)
+Network* setupNetwork(char *finp, char *fconfig, int &M, int &Mi, double &T, int channeltype_)
 {
 	//first open .inp file and process information about network layout and components
-	double default_a = 120.; //pressure wave speed if not specified in INP file
+	double default_a = 12.; //pressure wave speed if not specified in INP file
 	ifstream file1(finp);
 	string stuff;
 	vector<int> jIDs, pIDs, conns;
@@ -272,7 +272,8 @@ Network setupNetwork(char *finp, char *fconfig, int &M, int &Mi, double &T, int 
 			char BC_filename[200];
 			strcpy(BC_filename,morestuff.c_str()+13);
 			cout<<"BC Filename is:"<<BC_filename<<endl;
-			cout<<strncmp(BC_filename,"../indata/bcs2.txt",18)<<"FUCK YOU"<<endl;
+			//cout<<strncmp(BC_filename,"../indata/bcs2.txt",18)<<"FUCK YOU"<<endl;
+			cout<<strncmp(BC_filename,"indata/bcs2.txt",18)<<"FUCK YOU"<<endl;
 			cout<<sizeof(BC_filename)/sizeof(BC_filename[0])<<endl;
 			string evenmorestuff;
 			string trash;
@@ -330,37 +331,37 @@ Network setupNetwork(char *finp, char *fconfig, int &M, int &Mi, double &T, int 
 	cout<<"a = "<<a<<endl;
 	//make the damn return network
 	Network_params params(Ns, diams, lengths, S0s, Mrs, h0s, q0s,a);
-	Network Ntwk(Nnodes, conns, Nedges, M, channeltype, params);
+	Network *Ntwk = new Network (Nnodes, conns, Nedges, M, channeltype, params);
 	
 	
-	cout<<"Number of 1 junctions is "<<Ntwk.junction1s.size()<<endl;
-	cout<<"Number of 2 junctions is "<<Ntwk.junction2s.size()<<endl;
-	cout<<"Number of 3 junctions is "<<Ntwk.junction3s.size()<<endl;
+	cout<<"Number of 1 junctions is "<<Ntwk->junction1s.size()<<endl;
+	cout<<"Number of 2 junctions is "<<Ntwk->junction2s.size()<<endl;
+	cout<<"Number of 3 junctions is "<<Ntwk->junction3s.size()<<endl;
 	cout<<"Number of edges is "<<Nedges<<endl;
-	for(int k = 0; k<Ntwk.channels.size(); k++)
+	for(int k = 0; k<Ntwk->channels.size(); k++)
 	{
-		double a0 = Ntwk.channels[k]->AofH(h0s[k],false);
-		printf("h0 = %f, a0 = %.10f, h(a0) = %f\n", h0s[k],a0, Ntwk.channels[k]->HofA(a0,false) );
-		Ntwk.channels[k]->setq(a0, q0s[k]);
-		Ntwk.channels[k]->setq0(a0, q0s[k]);
+		double a0 = Ntwk->channels[k]->AofH(h0s[k],false);
+		printf("h0 = %f, a0 = %.10f, h(a0) = %f\n", h0s[k],a0, Ntwk->channels[k]->HofA(a0,false) );
+		Ntwk->channels[k]->setq(a0, q0s[k]);
+		Ntwk->channels[k]->setq0(a0, q0s[k]);
 	}	
-	for(int k = 0; k<Ntwk.junction1s.size(); k++)
+	for(int k = 0; k<Ntwk->junction1s.size(); k++)
 	{
-		Ntwk.junction1s[k]->bvaltype = bvaltypes[k];
-		Ntwk.junction1s[k]->setbVal(bvals[k]);
-		Ntwk.junction1s[k]->reflect = reflects[k];
+		Ntwk->junction1s[k]->bvaltype = bvaltypes[k];
+		Ntwk->junction1s[k]->setbVal(bvals[k]);
+		Ntwk->junction1s[k]->reflect = reflects[k];
 	}
-	for(int k = 0; k<Ntwk.junction2s.size(); k++)
+	for(int k = 0; k<Ntwk->junction2s.size(); k++)
 	{
-		Ntwk.junction2s[k]->offset = offsets[k];
-		Ntwk.junction2s[k]->valveopen = valveopens[k];
+		Ntwk->junction2s[k]->offset = offsets[k];
+		Ntwk->junction2s[k]->valveopen = valveopens[k];
 	}
-	for(int k = 0; k<Ntwk.junction3s.size(); k++)
+	for(int k = 0; k<Ntwk->junction3s.size(); k++)
 	{
-		Ntwk.junction3s[k]->j2_01.offset = offset01s[k];
-		Ntwk.junction3s[k]->j2_20.offset = offset02s[k];
-		Ntwk.junction3s[k]->j2_12.offset = offset12s[k];
-		Ntwk.junction3s[k]->j2_21.offset = offset12s[k];
+		Ntwk->junction3s[k]->j2_01.offset = offset01s[k];
+		Ntwk->junction3s[k]->j2_20.offset = offset02s[k];
+		Ntwk->junction3s[k]->j2_12.offset = offset12s[k];
+		Ntwk->junction3s[k]->j2_21.offset = offset12s[k];
 	}
 	//	for (int ii = 0; ii<xbval.size();ii++)cout<<"i = "<<ii<<" m[i]= "<<xbval[ii]<<endl;
 	cout<<"number of specified boundaries is "<<whichnode.size()<<endl;
@@ -380,14 +381,16 @@ Network setupNetwork(char *finp, char *fconfig, int &M, int &Mi, double &T, int 
 			        xfake[damn] = xbval[whichnode[ii]][damn];
 			}
 			getTimeSeries(bvalsfancy, xfake, Nmodes, M, T, modetype[ii]);
-			Ntwk.junction1s[whichnode[ii]]->setbVal(bvalsfancy);
+			Ntwk->junction1s[whichnode[ii]]->setbVal(bvalsfancy);
 			cout<<"Setting bvals for node "<<whichnode[ii]<<endl;
 			//for (int kk = 0; kk<bvalsfancy.size(); kk++)
 			//	cout<<Ntwk.junction1s[whichnode[ii]]->bval[kk]<<endl;	
 		}
 		}
 	
-	char mdata[] = "../output_data/mapdata.txt";
+	//printf("are we there yet!?!?\n");
+	char mdata[] = "output_data/mapdata.txt";
+	//char mdata[] = "../output_data/mapdata.txt";
 	FILE *fm = fopen(mdata, "w");
 	if(fm==NULL)
 	{
@@ -397,9 +400,9 @@ Network setupNetwork(char *finp, char *fconfig, int &M, int &Mi, double &T, int 
 
 	////warning mess with the following line at your peril because the plot script will epically *&%^ up...
 	fprintf(fm, "%f\n", T);
-	for(int k =0; k<Nedges; k++){fprintf(fm, "%d   %d   ", Ntwk.conns[2*k], Ntwk.conns[2*k+1]);}
+	for(int k =0; k<Nedges; k++){fprintf(fm, "%d   %d   ", Ntwk->conns[2*k], Ntwk->conns[2*k+1]);}
 	fprintf(fm, "\n");
-	for(int k = 0; k<Nedges; k++){fprintf(fm, "%f  ", (Ntwk.channels[k]->w)/2.);}	
+	for(int k = 0; k<Nedges; k++){fprintf(fm, "%f  ", (Ntwk->channels[k]->w)/2.);}	
 	fprintf(fm, "\n");
 	for(int k =0; k<Nnodes; k++){
 		fprintf(fm, "%d   %f    %f    %lf\n  ",jIDs[k], xcoords[k], ycoords[k],elevs[k]);
@@ -413,7 +416,8 @@ Network setupNetwork(char *finp, char *fconfig, int &M, int &Mi, double &T, int 
 ////output heightfields and a textfile "runinfo.txt" of maxvalues to accompany them.
 void writeOutputTarga(Network &Ntwk, int M, int Mi, double T, int writelogs)
 {
-	char sdata[] = "../output_data/scalings.txt";
+	//char sdata[] = "../output_data/scalings.txt";
+	char sdata[] = "output_data/scalings.txt";
 	int Nedges = Ntwk.Nedges;
 	int Nnodes = Ntwk.Nnodes;
 	FILE *fp = fopen(sdata, "w");
@@ -430,7 +434,8 @@ void writeOutputTarga(Network &Ntwk, int M, int Mi, double T, int writelogs)
 		for(int kk = 0; kk<Nedges;kk++)
 		{
 			char filename[100];
-			sprintf(filename,"../output_data/out%d_%03d.tga", kk,ii/Mi);
+			sprintf(filename,"output_data/out%d_%03d.tga", kk,ii/Mi);
+			//sprintf(filename,"../output_data/out%d_%03d.tga", kk,ii/Mi);
 			int mm = Ntwk.channels[kk]->N;                        //x direction
 			int nn = mm/2;	                        //y direction
 			double myfld[mm*nn];
@@ -488,7 +493,8 @@ void writeOutputText(Network &Ntwk, int M, int Mi)
 	{
 		double val;
 		char fname[100];
-		sprintf(fname,"../output_data/txt_out%03d.txt",ii/Mi);		
+		sprintf(fname,"output_data/txt_out%03d.txt",ii/Mi);		
+		//sprintf(fname,"../output_data/txt_out%03d.txt",ii/Mi);		
 		FILE *fd = fopen(fname, "w");
 		if(fd==NULL)
 		{
