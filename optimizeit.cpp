@@ -13,7 +13,7 @@
 
 int main(int argc, char *argv[] )	
 {
-if(0)//optimization with bc_opt_dh
+if(1)//optimization with bc_opt_dh
 {	
 	int writelogs = 0; //change to 1 if the height plots look dull on account of large pressure variations
 	//first open .inp file and process information about network layout and components
@@ -21,11 +21,11 @@ if(0)//optimization with bc_opt_dh
 	int M, Mi;
 	double T;
 	int channeltype = 1;
-	Network Ntwk = setupNetwork(finp, fconfig, M,Mi,T, channeltype);
+	Network *Ntwk = setupNetwork(finp, fconfig, M,Mi,T, channeltype);
 	double dt = T/(double)M;
-	double dx = Ntwk.channels[0]->L/(double)Ntwk.channels[0]->N;
-	int Nedges = Ntwk.Nedges;
-	double V0=Ntwk.getTotalVolume();
+	double dx = Ntwk->channels[0]->L/(double)Ntwk->channels[0]->N;
+	int Nedges = Ntwk->Nedges;
+	double V0=Ntwk->getTotalVolume();
 	clock_t start_t, end_t;	
 	start_t = clock();
 //	for(int k=0; k<Nedges; k++){
@@ -38,7 +38,7 @@ if(0)//optimization with bc_opt_dh
 	end_t = clock();
 	printf("Elapsed Time is %f\n",(end_t-start_t)/(double)CLOCKS_PER_SEC);
 	printf("Elapsed simulation time is %f\n", dt*(double)(M));
-	double V = Ntwk.getTotalVolume();
+	double V = Ntwk->getTotalVolume();
 	cout<<"initial volume "<<V0<< "    "<<"Final Volume " <<V<< endl;
 	cout<<"dV = "<<V-V0<<endl;
 	
@@ -55,7 +55,7 @@ if(0)//optimization with bc_opt_dh
 	whichnodes[1] = 2;
 	vector<Real> x0(Nn*(ndof),0);
 	for (int i = 0; i<2;i++){
-		double b0 = Ntwk.junction1s[whichnodes[i]]->bval[0];
+		double b0 = Ntwk->junction1s[whichnodes[i]]->bval[0];
 		double Dt = T/(ndof/2-1); //hermite interpolation spacing
 		vector<double> h(M+1);
 		if (modetype)x0[i*(ndof+1)] = 2*b0;
@@ -70,8 +70,8 @@ if(0)//optimization with bc_opt_dh
 	}
 	for(int dd = 0; dd<Nrounds; dd++)
 	{
-//	bc1_opt_dh test1(ndof, M, x0, Ntwk, modetype, T, whichnode);
-	bc_opt_dh test1(ndof*Nn, M, x0, Ntwk, modetype, T, whichnodes,10);
+	bc1_opt_dh test1(ndof, M, x0, Ntwk, modetype, T, whichnode);
+//	bc_opt_dh test1(ndof*Nn, M, x0, Ntwk, modetype, T, whichnodes,10);
 	cout<<"Made it?\n";
 //	cout<<T<<endl;
 	double places[] = {T};
@@ -90,9 +90,10 @@ if(0)//optimization with bc_opt_dh
 	end_t = clock();
 	double chkt = (end_t-start_t)/(double)CLOCKS_PER_SEC;
 	start_t = clock();
-	double ompstart = omp_get_wtime();
+	double ompstart=0, ompend =0;
+	//ompstart= omp_get_wtime();
 	test1.solve();
-	double ompend = omp_get_wtime();
+	//ompend = omp_get_wtime();
 	end_t = clock();
 	char file0[15];
 	sprintf(file0,"test%3ddump.txt",dd); 
@@ -149,11 +150,11 @@ else// optimization with opt_eq_outflow (hahahahahahaha this isn't gonna work...
 	int M, Mi;
 	double T;
 	int channeltype = 1;
-	Network Ntwk = setupNetwork(finp, fconfig, M,Mi,T, channeltype);
+	Network *Ntwk = setupNetwork(finp, fconfig, M,Mi,T, channeltype);
 	double dt = T/(double)M;
-	double dx = Ntwk.channels[0]->L/(double)Ntwk.channels[0]->N;
-	int Nedges = Ntwk.Nedges;
-	double V0=Ntwk.getTotalVolume();
+	double dx = Ntwk->channels[0]->L/(double)Ntwk->channels[0]->N;
+	int Nedges = Ntwk->Nedges;
+	double V0=Ntwk->getTotalVolume();
 	clock_t start_t, end_t;	
 	start_t = clock();
 //	for(int k=0; k<Nedges; k++){
@@ -161,23 +162,23 @@ else// optimization with opt_eq_outflow (hahahahahahaha this isn't gonna work...
 //		Ntwk.channels[k]->showp();
 //	}
 
-	printf("T = %f, dt = %f , dx = %f, CFL = %f\n",T, dt, dx, dt/dx*Ntwk.channels[0]->a);
-	Ntwk.runForwardProblem(dt);
+	printf("T = %f, dt = %f , dx = %f, CFL = %f\n",T, dt, dx, dt/dx*Ntwk->channels[0]->a);
+	Ntwk->runForwardProblem(dt);
 	double times[1] = {T};
 	int which[1] = {0};
 
-	for(int i = 0; i<Ntwk.channels.size(); i++)
+	for(int i = 0; i<Ntwk->channels.size(); i++)
 	{
-		Ntwk.channels[i]->quickWrite(times, which, 1,T,1);
+		Ntwk->channels[i]->quickWrite(times, which, 1,T,1);
 	}
 
 	end_t = clock();
 	printf("Elapsed Time is %f\n",(end_t-start_t)/(double)CLOCKS_PER_SEC);
 	printf("Elapsed simulation time is %f\n", dt*(double)(M));
-	double V = Ntwk.getTotalVolume();
+	double V = Ntwk->getTotalVolume();
 	cout<<"initial volume "<<V0<< "    "<<"Final Volume " <<V<< endl;
 	cout<<"dV = "<<V-V0<<endl;
-	printf("T = %f, dt = %f , dx = %f, CFL = %f\n",T, dt, dx, dt/dx*Ntwk.channels[0]->a);
+	printf("T = %f, dt = %f , dx = %f, CFL = %f\n",T, dt, dx, dt/dx*Ntwk->channels[0]->a);
 //optimization time! at last!
 	cout<<"M = "<<M<<endl;	
 	int Ndof = 2;   // degrees of freedom (in Fourier or Hermite modes)

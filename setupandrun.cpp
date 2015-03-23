@@ -389,8 +389,8 @@ Network* setupNetwork(char *finp, char *fconfig, int &M, int &Mi, double &T, int
 		}
 	
 	//printf("are we there yet!?!?\n");
-	char mdata[] = "output_data/mapdata.txt";
-	//char mdata[] = "../output_data/mapdata.txt";
+//	char mdata[] = "output_data/mapdata.txt";
+	char mdata[] = "../output_data/mapdata.txt";
 	FILE *fm = fopen(mdata, "w");
 	if(fm==NULL)
 	{
@@ -416,8 +416,8 @@ Network* setupNetwork(char *finp, char *fconfig, int &M, int &Mi, double &T, int
 ////output heightfields and a textfile "runinfo.txt" of maxvalues to accompany them.
 void writeOutputTarga(Network &Ntwk, int M, int Mi, double T, int writelogs)
 {
-	//char sdata[] = "../output_data/scalings.txt";
-	char sdata[] = "output_data/scalings.txt";
+	char sdata[] = "../output_data/scalings.txt";
+	//char sdata[] = "output_data/scalings.txt";
 	int Nedges = Ntwk.Nedges;
 	int Nnodes = Ntwk.Nnodes;
 	FILE *fp = fopen(sdata, "w");

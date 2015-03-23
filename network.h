@@ -70,6 +70,7 @@ class Network{
 	//copy constructor goddamnit, I have to do this now, and do it perfectly :(
 	Network(int Nnodes_, std::vector<int> conns_, int Nedges_, int M_,  int channeltype_, Network_params p);
 	Network(const Network &N_old);
+	Network(Network *N_old);
 	//destructor
 	~Network();
 	//other handy functions coming soon...

@@ -964,10 +964,6 @@ void Cpreiss::setGeom(double a_)
 //	printf("Ncheb = %d\n", Ncheb);
 	a = a_;
 	int count;
-
-	a = 1200;//desired pressure wave speed
-//	a = 120;
-        a = 9;
 	Af = PI*D*D/4.;
 	Ts = G*Af/(a*a);
 //this bit fails epically	

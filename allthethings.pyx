@@ -150,6 +150,8 @@ cdef extern from "Network.cpp":
 		int channeltype;
 		double T;
 		void runForwardProblem(double dt);
+		double getAveGradH(int i);	
+		double getTotalVolume();
 	cdef void quickWrite(double *where, int *which, int K, double T, int skip)
 
 cdef extern from "setupandrun.h":
@@ -191,7 +193,8 @@ cdef class PyNetwork:
 		number of time steps
 	nn: int
 		number of time steps taken since initialization
-	
+	a: np.ndarray
+		array of gravity wavespeeds in all the pipes
 	Methods:
 	-------------
 	runForwardProblem(double dt): void
@@ -201,17 +204,22 @@ cdef class PyNetwork:
 		handy way to call this is in Python:
 		q = [n1.q(i) for i in range(n1.Nedges)]
 		the ith element of list q is an np.ndarrays pointing at the data in pipe i  (this was unintended but kind of handy?)
-	def setIC(self, i,a0,q0): void
+	setIC(i,a0,q0): void
 		set initial conditions in pipe i 
 		a0 and q0 are np.ndarrays of size (Ns[i]x1) 
 		this will probably mess up if they're the wrong size
-	def setBC(self, i, ): void
+	setBC(self, i, q0) UNDER CONSTRUCTION(!)
 		set time series for boundaries of junction1s
 	showLayout(): void
 		print out a table of pipes and what nodes they're connected to
 	showCurrentPipeData(): void
 		print out the current state of pipe data
+	getAveGradH(i):
+		return average gradient at ith time step
+	getTotalVolume(self):
+		return current total system volume
 	'''
+
 	cdef Network *thisptr
 	cdef np.ndarray conn 
 	cdef np.ndarray Ns   
@@ -260,7 +268,9 @@ cdef class PyNetwork:
 	def setIC(self, i,a0,q0):
 		for j in range(self.Ns[i]):
 			self.thisptr.channels[i].q[j] = a0[j]
+			self.thisptr.channels[i].q0[j] = a0[j]
 			self.thisptr.channels[i].q[j+self.Ns[i]] = q0[j]
+			self.thisptr.channels[i].q0[j+self.Ns[i]] = q0[j]
 	def showLayout(self):
 		print "   pipe | start node | end node\n"+"-"*35
 		for i in range(self.Nedges):
@@ -279,6 +289,8 @@ cdef class PyNetwork:
 				print "%f    %f" %(l[j], l[j+Ni])
 	def getAveGradH(self,i):
 		return self.thisptr.getAveGradH(i)
+	def getTotalVolume(self):
+		return self.thisptr.getTotalVolume()
 	property conn:
 		def __get__(self): return self.conn
 	property nodeTypes:
@@ -298,6 +310,28 @@ cdef class PyNetwork:
 		def __set__(self,T): self.T = T
 	property nn:
 		def __get__(self): return self.thisptr.nn
-	
+	property a:
+		def __get__(self): return [self.thisptr.channels[i].a for i in range(self.Nedges)]
+
+cdef extern from "lapack.h":
+	void dgemm(char, char , int , int , int , double ,double *, int, double *, int, double, double, int);
+#cdef extern from "levmar.h":
+#	pass
+#cdef extern from "mp_mat.h":
+#	pass
+#	cdef cppclass mp_mat[T]:
+#		mp_mat()
+#		mp_mat(int,int)
+#	vector[double] dgesvd(char , char , mp_mat[double]& ,void *U, void *VT );
+cdef extern from "optimizeit.h":
+	cdef cppclass bc_opt_dh:
+		vector [int] whichnodes; 
+		Network Ntwk;
+		int M;              
+		int modetype;         #1 - Fourier   0- Hermite interpolation 
+		double T;
+		double dt;
+		double mydelta; 
+		bc_opt_dh(int , int , vector[double], Network, int , double , vector[int], int )
 
 
