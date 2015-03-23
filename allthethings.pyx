@@ -313,16 +313,6 @@ cdef class PyNetwork:
 	property a:
 		def __get__(self): return [self.thisptr.channels[i].a for i in range(self.Nedges)]
 
-cdef extern from "lapack.h":
-	void dgemm(char, char , int , int , int , double ,double *, int, double *, int, double, double, int);
-#cdef extern from "levmar.h":
-#	pass
-#cdef extern from "mp_mat.h":
-#	pass
-#	cdef cppclass mp_mat[T]:
-#		mp_mat()
-#		mp_mat(int,int)
-#	vector[double] dgesvd(char , char , mp_mat[double]& ,void *U, void *VT );
 cdef extern from "optimizeit.h":
 	cdef cppclass bc_opt_dh:
 		vector [int] whichnodes; 

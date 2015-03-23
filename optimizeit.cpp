@@ -15,7 +15,7 @@ int main(int argc, char *argv[] )
 {
 if(1)//optimization with bc_opt_dh
 {	
-	int writelogs = 0; //change to 1 if the height plots look dull on account of large pressure variations
+//	int writelogs = 0; //change to 1 if the height plots look dull on account of large pressure variations
 	//first open .inp file and process information about network layout and components
 	char * finp= argv[1], *fconfig = argv[2];
 	int M, Mi;
@@ -24,7 +24,7 @@ if(1)//optimization with bc_opt_dh
 	Network *Ntwk = setupNetwork(finp, fconfig, M,Mi,T, channeltype);
 	double dt = T/(double)M;
 	double dx = Ntwk->channels[0]->L/(double)Ntwk->channels[0]->N;
-	int Nedges = Ntwk->Nedges;
+//	int Nedges = Ntwk->Nedges;
 	double V0=Ntwk->getTotalVolume();
 	clock_t start_t, end_t;	
 	start_t = clock();
@@ -56,7 +56,7 @@ if(1)//optimization with bc_opt_dh
 	vector<Real> x0(Nn*(ndof),0);
 	for (int i = 0; i<2;i++){
 		double b0 = Ntwk->junction1s[whichnodes[i]]->bval[0];
-		double Dt = T/(ndof/2-1); //hermite interpolation spacing
+//		double Dt = T/(ndof/2-1); //hermite interpolation spacing
 		vector<double> h(M+1);
 		if (modetype)x0[i*(ndof+1)] = 2*b0;
 		else{
@@ -74,8 +74,8 @@ if(1)//optimization with bc_opt_dh
 //	bc_opt_dh test1(ndof*Nn, M, x0, Ntwk, modetype, T, whichnodes,10);
 	cout<<"Made it?\n";
 //	cout<<T<<endl;
-	double places[] = {T};
-	int which[] = {0};
+//	double places[] = {T};
+//	int which[] = {0};
 	test1.compute_f();
 //	for (int k = 0; k<3; k++)
 //	test1.Ntwk.channels[k]->quickWrite(places, which, 1, T,1);
@@ -153,7 +153,7 @@ else// optimization with opt_eq_outflow (hahahahahahaha this isn't gonna work...
 	Network *Ntwk = setupNetwork(finp, fconfig, M,Mi,T, channeltype);
 	double dt = T/(double)M;
 	double dx = Ntwk->channels[0]->L/(double)Ntwk->channels[0]->N;
-	int Nedges = Ntwk->Nedges;
+//	int Nedges = Ntwk->Nedges;
 	double V0=Ntwk->getTotalVolume();
 	clock_t start_t, end_t;	
 	start_t = clock();

@@ -428,7 +428,7 @@ void Network::stepRK3_SSP(double dt)
 void Network::runForwardProblem(double dt)
 {
 	nn = 0;
-	int Mi = M<500?1:M/500;
+	//int Mi = M<500?1:M/500;
 	for(int i=0; i<M; i++)
 	{
 			

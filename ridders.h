@@ -26,7 +26,7 @@ double ridders(F fcn, double xl, double xr, int *count,
     
     if (fl==0) return xl;
     if (fr==0) return xr;
-    if (fl>0 && fr>0 || fl<0 && fr<0) {
+    if ((fl>0 && fr>0) || (fl<0 && fr<0)) {
 	printf("xl = %f, xr = %f, fl = %f, fr = %f\n",
 	       xl, xr, fl, fr);
 	throw gen_err("root not bracketed in ridders");
@@ -65,12 +65,12 @@ double ridders(F fcn, double xl, double xr, int *count,
 	if (fnew == 0.0) return xnew;
 	
 	// discard half of the interval
-	if (fm>0 && fl<0 || fm<0 && fl>0) {xr = xm; fr = fm;}
-	if (fm>0 && fr<0 || fm<0 && fr>0) {xl=xm; fl = fm;}
+	if ((fm>0 && fl<0) || (fm<0 && fl>0)) {xr = xm; fr = fm;}
+	if ((fm>0 && fr<0) || (fm<0 && fr>0)) {xl=xm; fl = fm;}
 	if (xnew<xl || xnew>xr) {printf("error1 in ridders\n"); exit(1);}
 	
 	// choose the next interval
-	if (fnew>0 && fl<0 || fnew<0 && fl>0) {
+	if ((fnew>0 && fl<0) || (fnew<0 && fl>0)) {
 	    if (standard || xnew-xl <= 2*(xr-xnew) || xr-xnew==0) {
 		xr=xnew; fr=fnew; // usual ridders' method
 	    }
@@ -78,7 +78,7 @@ double ridders(F fcn, double xl, double xr, int *count,
 		xtrial = xr-2*(xr-xnew);
 		ftrial = fcn(xtrial); if (count) ++*count;
 		if (ftrial==0) return xtrial;
-		if (ftrial>0 && fr<0 || ftrial<0 && fr>0) {
+		if ((ftrial>0 && fr<0 )|| (ftrial<0 && fr>0)) {
 		    xl=xtrial; fl=ftrial; // my approach
 		    xnew_is_xm = true;
 		}
@@ -88,7 +88,7 @@ double ridders(F fcn, double xl, double xr, int *count,
 		}
 	    }
 	}
-	else if (fnew>0 && fr<0 || fnew<0 && fr>0) {
+	else if ((fnew>0 && fr<0) || (fnew<0 && fr>0)) {
 	    if (standard || xr-xnew <= 2*(xnew-xl) || xnew-xl==0) {
 		xl=xnew; fl=fnew; // usual ridders' method
 	    }
@@ -96,7 +96,7 @@ double ridders(F fcn, double xl, double xr, int *count,
 		xtrial = xl+2*(xnew-xl);
 		ftrial = fcn(xtrial); if (count) ++*count;
 		if (ftrial==0) return xtrial;
-		if (ftrial>0 && fl<0 || ftrial<0 && fl>0) {
+		if ((ftrial>0 && fl<0) ||( ftrial<0 && fl>0)) {
 		    xr=xtrial; fr=ftrial; // my approach
 		    xnew_is_xm = true;
 		}

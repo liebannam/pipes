@@ -55,7 +55,7 @@ void getTimeSeries(vector<Real> & bvals, vector<Real> &x, const int m, const int
 			t = t/Dt-j; 
 		     //   cout<<"Dt = "<<Dt<<" t = "<<t<<"  j ="<<j<<endl;	
 		//	cout<<x[0]<<x[1]<<endl;
-			if(j>m+1 || j<0) printf("warning! t=%f out of range!!, Dt = %f, T = %d, m = %d\n",t,Dt,T,m);
+			if(j>m+1 || j<0) printf("warning! t=%f out of range!!, Dt = %f, T = %f, m = %d\n",t,Dt,T,m);
 			// Calculate square and cube, and pointer to the values to use
 			double t2=t*t,t3=t2*t;
 			// Calculate the value of the spline function
@@ -273,7 +273,7 @@ Network* setupNetwork(char *finp, char *fconfig, int &M, int &Mi, double &T, int
 			strcpy(BC_filename,morestuff.c_str()+13);
 			cout<<"BC Filename is:"<<BC_filename<<endl;
 			//cout<<strncmp(BC_filename,"../indata/bcs2.txt",18)<<"FUCK YOU"<<endl;
-			cout<<strncmp(BC_filename,"indata/bcs2.txt",18)<<"FUCK YOU"<<endl;
+			//cout<<strncmp(BC_filename,"~/Dropbox/Research/Network7.0/indata/bcs2.txt",18)<<"FUCK YOU"<<endl;
 			cout<<sizeof(BC_filename)/sizeof(BC_filename[0])<<endl;
 			string evenmorestuff;
 			string trash;
@@ -326,7 +326,7 @@ Network* setupNetwork(char *finp, char *fconfig, int &M, int &Mi, double &T, int
 	int Nnodes = jIDs.size();
 	int Nedges = pIDs.size();
 
-	double dt = T/(double)M;
+//	double dt = T/(double)M;
 	cout<<"T = "<<T<<" M = "<<M<<endl;
 	cout<<"a = "<<a<<endl;
 	//make the damn return network
@@ -388,9 +388,8 @@ Network* setupNetwork(char *finp, char *fconfig, int &M, int &Mi, double &T, int
 		}
 		}
 	
-	//printf("are we there yet!?!?\n");
-//	char mdata[] = "output_data/mapdata.txt";
-	char mdata[] = "../output_data/mapdata.txt";
+	char mdata[] = "output_data/mapdata.txt";
+//	char mdata[] = "~/Dropbox/Research/Network7.0/output_data/mapdata.txt";
 	FILE *fm = fopen(mdata, "w");
 	if(fm==NULL)
 	{
@@ -398,6 +397,7 @@ Network* setupNetwork(char *finp, char *fconfig, int &M, int &Mi, double &T, int
 		throw;
 	}
 
+	//printf("are we there yet!?!?\n");
 	////warning mess with the following line at your peril because the plot script will epically *&%^ up...
 	fprintf(fm, "%f\n", T);
 	for(int k =0; k<Nedges; k++){fprintf(fm, "%d   %d   ", Ntwk->conns[2*k], Ntwk->conns[2*k+1]);}
@@ -416,10 +416,10 @@ Network* setupNetwork(char *finp, char *fconfig, int &M, int &Mi, double &T, int
 ////output heightfields and a textfile "runinfo.txt" of maxvalues to accompany them.
 void writeOutputTarga(Network &Ntwk, int M, int Mi, double T, int writelogs)
 {
-	char sdata[] = "../output_data/scalings.txt";
+	char sdata[] = "~/Dropbox/Research/Network7.0/output_data/scalings.txt";
 	//char sdata[] = "output_data/scalings.txt";
 	int Nedges = Ntwk.Nedges;
-	int Nnodes = Ntwk.Nnodes;
+	//int Nnodes = Ntwk.Nnodes;
 	FILE *fp = fopen(sdata, "w");
 		if(fp==NULL)
 		{

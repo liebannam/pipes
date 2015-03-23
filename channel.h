@@ -416,7 +416,6 @@ public:
 	double operator()(double x) 
 	{
 		double Phi;	
-		double t;
 		if(x<0){return lhs;}
 		else if (x<=At)
 		{
@@ -441,12 +440,14 @@ class flr{
 public:
 	double D, Ts, At, Ak;
 	bool Pk, Px;
+	
+	double eps;
 	flr(double D_, double Ts_, double At_, double Ak_, bool Pk_, bool Px_):D(D_), Ts(Ts_), At(At_), Ak(Ak_), Pk(Pk_), Px(Px_)
 	{
+		eps = 1e-8;
 	}
 	~flr(){
 	}
-	double eps = 1e-8;
 	double operator()(double x)
 	{
 		if(x<=Ak)
@@ -476,7 +477,7 @@ class f_exactRS{
 public:
 	double D, At, Ts, ul, ur;
 	flr fl, fr;
-	f_exactRS(flr fl_, flr fr_, double ul_, double ur_):fl(fl_),fr(fr_),ul(ul_), ur(ur_)
+	f_exactRS(flr fl_, flr fr_, double ul_, double ur_):ul(ul_),ur(ur_),fl(fl_),fr(fr_)
 	{
 	}
 	~f_exactRS(){
@@ -513,7 +514,7 @@ public:
 	bool P;
 	int sign;
 	fallpurpose(double D_,double At_,double Ts_, double lhs_, double Q_, int sign_, double cq_, double cc_, bool P_):
-		D(D_), At(At_),Ts(Ts_), lhs(lhs_), sign(sign_),Q(Q_), cq(cq_), cc(cc_), P(P_)
+		D(D_), At(At_),Ts(Ts_), lhs(lhs_), Q(Q_), cq(cq_), cc(cc_), P(P_),sign(sign_)
 	{
 	}
 	~fallpurpose(){

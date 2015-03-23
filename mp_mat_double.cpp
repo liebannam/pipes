@@ -105,8 +105,8 @@ vector<double> dgesvd(char jobu, char jobv, mp_mat<double>& A,
     mp_mat<double> *U = (mp_mat<double> *) UU;
     mp_mat<double> *VT = (mp_mat<double> *) VV;
     
-    if ((jobu == 'S' || jobu == 'A') && UU==NULL ||
-	(jobv == 'S' || jobv == 'A') && VV==NULL)
+    if (((jobu == 'S' || jobu == 'A') && UU==NULL) ||
+	((jobv == 'S' || jobv == 'A') && VV==NULL))
 	throw gen_err("dgesvd input error");
 
     int info=-1;

@@ -172,8 +172,8 @@ double AofPhi(double phi, double D, double At, double Ts, bool P)
 	if(phi<phi2m&&!P)
 	{
 		
-		double p1 = 1.;
-		double p2 = 3./5.;
+//		double p1 = 1.;
+//		double p2 = 3./5.;
 		if(phi<phi1m)
 		{	
 			double phat = 2*pow(phi/phi1m,pPhi1)-1.;
@@ -235,7 +235,7 @@ double Cgrav(double A, double D, double At, double Ts, bool P)
 
 double Eta(double A, double D, double At, double Ts, bool P)
 {
-	double Eta,t;
+	double Eta;
 	if (A<At)
 	{
 	//	t = getTheta(A,D);
@@ -269,7 +269,7 @@ double Eta(double A, double D, double At, double Ts, bool P)
 ////
 //
 //Constructor
-Channel::Channel(int Nin, double win, double Lin, int Min, double a):N(Nin), w(win), L(Lin),kn(1.0), M(Min) 
+Channel::Channel(int Nin, double win, double Lin, int Min, double a): kn(1.0),w(win),L(Lin),N(Nin),M(Min) 
 {
 	q0 = new double[2*N];
 	q = new double[2*N];
@@ -335,7 +335,7 @@ void Cpreiss::showGeom()
 {
 	printf("About this channel:\n\n");
 	cout<<"Cross section is Preissman Slot\n";
-	printf("     Ts\n     <->\n     | |\n     | |      \n  \/~~~~~~~\\    ^\n \/         \\   |\n(<----D---->)  |  yt\n \\         \/   |\n  \\_______\/    v\n");	
+	printf("     Ts\n     <->\n     | |\n     | |      \n   /~~~~~~~\\    ^\n  /         \\   |\n(<----D---->)  |  yt\n \\          /   |\n  \\________/    v\n");	
 	printf("D = %.1f %20s width (m) \nN = %d %20s number of grid points \nL = %.1f %20s length (m)\n", w,"",N,"",L,"");
 	printf("Slot width Ts= %1.5f\nTransition height yt= %1.5f\n",Ts,yt);
 	printf("Mr = %1.3f %20s Manning Roughness coeff\nS0 = %1.2f %20s bed slope\n", Mr, "", S0, "");
@@ -963,7 +963,7 @@ void Cpreiss::setGeom(double a_)
 
 //	printf("Ncheb = %d\n", Ncheb);
 	a = a_;
-	int count;
+//	int count;
 	Af = PI*D*D/4.;
 	Ts = G*Af/(a*a);
 //this bit fails epically	
@@ -980,7 +980,7 @@ void Cpreiss::setGeom(double a_)
 //	cout<<"D= "<<D<<endl;
 //	tt = 2*asin(G*D*2*PI/(8*a*a));// theta such that c(A(theta)) = a
 	
-	double yt2 = HofA(At, false);
+//	double yt2 = HofA(At, false);
 //	cout<<"At = "<<At<<" Ts ="<<Ts<<endl;
 //	printf("difference between At and Af is  %e\n", At-PI*D*D/4.);
 //	printf("slot gravity wavespeed c  = %f\n", sqrt(D*D*PI/4.*G/Ts));
@@ -1153,7 +1153,7 @@ void Cpreiss::speedsRoe(double q1m, double q1p, double q2m, double q2p, double *
 void Cpreiss::speedsHLL(double q1m, double q1p, double q2m, double q2p, double *s, bool Pm, bool Pp) //HLL speeds from Leon 2009 - they seem terrible...
 {
     	double dry = 1e-6*At;;                                                  //pay attention to this!?
-    	double cbar,Astar, ym,yp,cm, cp, um =0 , up= 0, ugh;	
+    	double cbar,Astar, ym,yp,cm, cp, um =0 , up= 0;	
 	//double Astar1, Astar2;
 	ym = HofA(q1m,Pm);
 	yp = HofA(q1p,Pp);
@@ -1490,8 +1490,8 @@ void Junction1::boundaryFluxes()
 				//	cout<<"Qext = "<<Qext<<"  lhs = "<<lhs<<"sign ="<<sign<<endl;
 					fallpurpose fp(ch0.w, ch0.At,ch0.Ts, lhs, Qext, sign,1.,0., ch0.Pnow);
 					Aext = ::ridders(fp,0.,ch0.Af*2,&count, 1e-10, 1e-10);
-					double uext = (Aext>0 ?Qext/Aext :0.);
-					double err = fabs(uext +sign*ch0.PhiofA(Aext,Pext)-lhs);
+				//	double uext = (Aext>0 ?Qext/Aext :0.);
+				//	double err = fabs(uext +sign*ch0.PhiofA(Aext,Pext)-lhs);
 				//printf("ridders answer = %.16f, lhs = %f, Qext = %f, RI_ext-RI_n = %f\n", Aext,  lhs,Qext, err);
 					}
 				}

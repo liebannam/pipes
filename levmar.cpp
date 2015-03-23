@@ -550,7 +550,7 @@ int levmar::check_reduction()    // updates x, delta
     // normal if a larger gradient is encountered (even though the
     // Jacobian is lagged)
 
-    if ( fmin < f_tol  ||  abs(df) < df_tol*fmin && stepsJ==0  ||
+    if ( fmin < f_tol  ||  (abs(df) < df_tol*fmin && stepsJ==0)  ||
 	 delta < g_tol ||  max(norm_g0,norm_g_min) < g_tol )
 	return check_reduction_roundoff_regime(rho); // returns 0 or 2
 
