@@ -49,7 +49,8 @@ def main():
 #	wn = np.ndarray(2,dtype = int)
 #	wn[0] = 1;
 #	wn[1] = 2;
-	wn = np.array([0,1])
+	wn = np.array([0])
 	opt1 = PyBC_opt_dh(fi, fc, ndof, x0, 1, wn)
+	opt1.solve()
 if __name__ == "__main__":
 	main()

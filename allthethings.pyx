@@ -312,9 +312,12 @@ cdef class PyNetwork:
 		def __get__(self): return self.thisptr.nn
 	property a:
 		def __get__(self): return [self.thisptr.channels[i].a for i in range(self.Nedges)]
+cdef extern from "levmar.h":
+	cdef cppclass levmar:
+		void solve(int)
 
 cdef extern from "optimizeit.h":
-	cdef cppclass bc_opt_dh:
+	cdef cppclass bc_opt_dh(levmar):
 		vector [int] whichnodes; 
 		Network Ntwk;
 		int M;              
@@ -341,6 +344,9 @@ cdef class PyBC_opt_dh:
 		print whichnodes
 		print vwhichnodes
 		self.thisptr = new bc_opt_dh(ndof, M, vx0, Ntwk_i, modetype, T, vwhichnodes, skip)
+
+	def solve(self):
+		self.thisptr.solve(0)
 
 
 

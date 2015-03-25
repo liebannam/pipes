@@ -302,14 +302,14 @@ void levmar::solve(int skipJ)
 {
     nfev = 0;
     nJev = 0;
+
     num_steps = 0;
     // 2 means set delta0 to delta on 2nd call of check_reduction()
     update_delta0_counter = 2;
- cout<<"Damn."<<endl;
+    cout<<"Damn."<<endl;
     compute_f(); nfev++;
     old_x = x;
 
-    cout<<"Damn 2."<<endl;
     int flag = 1;
     while (flag) {
 	if (!skipJ) {
@@ -318,16 +318,22 @@ void levmar::solve(int skipJ)
 	    cout<<nJev<<endl;
 	}
 	skipJ = 0;
+	
+    	cout<<"Damn 1."<<endl;
 	flag = take_step(); // update x, compute new r
 	norm_r = compute_norm(r);
     }
+    
     if (report_r_stride>0)
 	report_r();
+    
+
 }
 
 
 void levmar::report_r(FILE *fp)
 {
+    
     fprintf(fp, "\nx =\n");
     for (int i=0; i<n; i++) {
 	if (i%8 != 7 && i<n-1)
@@ -344,6 +350,7 @@ void levmar::report_r(FILE *fp)
 	    fprintf(fp, "%5d %12s\n", i, str(r[i]));
     }
     fflush(fp);
+    cout<<"fuck?1"<<endl;
 }
 
 
@@ -372,15 +379,16 @@ int levmar::take_step()
     MPI_Barrier(MPI_COMM_WORLD);
     scaJq->svd( scaUU, scaVT, &Sig[0] ); // destroys Jq
 #else
+
     UU.resize(m,n);
     VT.resize(n,n);
     Lam.resize(n);
     D.resize(n);
     p2.resize(n);
     copy(J.p, J.p + m*n, UU.p); // Jq remains valid in this version
-
     if (m<n) throw gen_err("need m>=n in levmar::take_step");
-    Sig = dgesvd('O', 'S', UU, NULL, &VT);
+    cout<<"Damn! need m>=n, we have m = "<<m<<"n = "<<n<<endl;
+    Sig = dgesvd('O', 'S', UU, NULL, &VT);  //THIS IS THE PROBLEM LINE --throws segfault here...
 #endif
 
     for (int i=0; i<n; i++)
@@ -389,6 +397,7 @@ int levmar::take_step()
 
     compute_diag(n);
     
+    cout<<"Damn 1.8"<<endl;
     if (verbose>1) {
 	printf("\n%12s %12s\n", "Sig", "D");
 	for (int j=0; j<n; j++)
@@ -430,6 +439,7 @@ int levmar::take_step()
 	dgemv('T', n, n, Real(1.0), VT.p, n, &tmp[0], 1, Real(0.0), &p[0], 1);
 #endif
 
+    	cout<<"Damn 2."<<endl;
 	if (stepsJ==0) {
 	    norm_g0 = norm_g; // norm_g0 part of roundoff regime decision
 	    if (verbose)
