@@ -322,6 +322,25 @@ cdef extern from "optimizeit.h":
 		double T;
 		double dt;
 		double mydelta; 
-		bc_opt_dh(int , int , vector[double], Network, int , double , vector[int], int )
+		bc_opt_dh(int , int , vector[double], Network*, int , double , vector[int], int )
+
+cdef class PyBC_opt_dh:
+	cdef bc_opt_dh *thisptr
+	def __cinit__(self, char * fi, char *fc, int ndof, np.ndarray x0, int modetype, np.ndarray whichnodes):
+		cdef int M= 1, Mi = 1, skip =1;
+		cdef double T = 1.;
+		cdef int channeltype = 1
+		cdef vector[double] vx0
+		cdef vector[int] vwhichnodes
+		for i in range(whichnodes.size):
+			vwhichnodes.push_back(whichnodes[i])
+		for i in range(x0.size):
+			vx0.push_back(x0[i])
+		Ntwk_i = setupNetwork(fi, fc, M, Mi, T, channeltype);
+		print vx0
+		print whichnodes
+		print vwhichnodes
+		self.thisptr = new bc_opt_dh(ndof, M, vx0, Ntwk_i, modetype, T, vwhichnodes, skip)
+
 
 
