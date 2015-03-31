@@ -1,7 +1,15 @@
+'''setup for cython module defined in allthethings.pyx 
+Compile with command
+	CXX=g++ python setup.py build_ext -i
+
+Use in python with command:
+	from allthethings import * (so far * can by either *, PyNetwork or PyBC_opt_dh)
+
+Runs on my macbook air and also on orinoco (same dropbox folder...no bloody clue if that's legit...) I'm doing something kind of sketch with the lapack wrapper to get around segfaults that happen if I call the libcla.a library like in the pure C++ code in Build/. by kind of sketch I mean...I copied lapack.c and added it as a dependency, and wrapped the header.
+'''
+
+
 import sys
-#on macbook air (seems to also run on orinoco...no bloody clue if that's legit...)
-# compile with CXX=g++ python setup.py build_ext -i. 
-#I'm doing something kind of sketch with the lapack wrapper to get around segfaults that happen if I call the cla library like in the pure C++ code in Build/. by kind of sketch I mean...I copied lapack.c and added it as a dependency.
 sys.path.append('/Users/anna/anaconda/lib/python2.7/site-packages')
 from distutils.core import setup, Extension
 from Cython.Build import cythonize

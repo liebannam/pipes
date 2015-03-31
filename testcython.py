@@ -54,8 +54,13 @@ def main():
         dt = n1.T/n1.M
         #n1.runForwardProblem(dt)
         #n1. showCurrentData()
-        opt1 = PyBC_opt_dh(fi, fc, ndof, x0, 1, wn)
+       	ndof = 16
+	wn = np.array([1,2])
+	x0 = np.ones(ndof*len(wn))
+	opt1 = PyBC_opt_dh(fi, fc, ndof, x0, 0, wn)
 	opt1.solve()
-	#opt1.dump()
+	opt1.x
+	opt1.r
+	opt1.f
 if __name__ == "__main__":
 	main()

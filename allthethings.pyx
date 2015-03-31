@@ -7,6 +7,13 @@ cimport numpy as np
 import cython
 import sys
 from libcpp.vector cimport vector
+from libc.stdio cimport *
+cdef extern from "stdio.h":
+	FILE *fopen(const char *, const char *)
+	int fclose(FILE *)
+	ssize_t getline(char **, size_t *, FILE *)
+cdef extern from "real_def.h":
+	ctypedef double Real
 
 #if on macbook air
 sys.path.append('/Users/anna/anaconda/lib/python2.7/site-packages')
@@ -317,10 +324,10 @@ cdef extern from "levmar.h":
 	cdef cppclass levmar:
 		levmar(int , int )
 		void solve(int)
-#cdef extern from "lapack.h":
-#	void dgesvd(char jobu, char jobvt, int m, int n, double *A, int lda,
-#	    double *S, double *U, int ldu, double *VT, int ldvt,
-#	    int *info);
+		void dump(FILE *)
+		vector[Real] x
+		vector[Real] r
+
 
 cdef extern from "optimizeit.h":
 	cdef cppclass bc_opt_dh(levmar):
@@ -330,9 +337,11 @@ cdef extern from "optimizeit.h":
 		int modetype;         #1 - Fourier   0- Hermite interpolation 
 		double T;
 		double dt;
-		double mydelta; 
+		double mydelta;
+		double f;
 		bc_opt_dh(int , int , vector[double], Network*, int , double , vector[int], int )
-
+		void compute_f()
+		void compute_g()
 cdef class PyBC_opt_dh:
 	cdef bc_opt_dh *thisptr
 	def __cinit__(self, char * fi, char *fc, int ndof, np.ndarray x0, int modetype, np.ndarray whichnodes):
@@ -356,6 +365,18 @@ cdef class PyBC_opt_dh:
 
 	def solve(self):
 		self.thisptr.solve(0)
+	def dump(self):
+		self.thisptr.dump(stdout)
+	def compute_f(self):
+		self.thisptr.compute_f()
+	property x:
+		def __get__(self): return self.thisptr.x
+	property r:
+		def __get__(self): return self.thisptr.r
+	property f:
+		def __get__(self): return self.thisptr.f
+	
+
 
 
 
