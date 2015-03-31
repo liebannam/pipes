@@ -389,6 +389,7 @@ int levmar::take_step()
     if (m<n) throw gen_err("need m>=n in levmar::take_step");
     cout<<"Damn! need m>=n, we have m = "<<m<<"n = "<<n<<endl;
     Sig = dgesvd('O', 'S', UU, NULL, &VT);  //THIS IS THE PROBLEM LINE --throws segfault here...
+    cout<<"damn?"<<endl;
 #endif
 
     for (int i=0; i<n; i++)

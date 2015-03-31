@@ -45,12 +45,16 @@ def main():
 	fi = "indata/3pipes1.inp"     #location of .inp file
 	fc = "indata/3pipes1.config"  #location of .config file
 	ndof = 16
-	x0 = np.zeros(ndof)
 #	wn = np.ndarray(2,dtype = int)
 #	wn[0] = 1;
 #	wn[1] = 2;
-	wn = np.array([0])
-	opt1 = PyBC_opt_dh(fi, fc, ndof, x0, 1, wn)
+	wn = np.array([1,2])#whichnodes to vary
+	x0 = .1*np.ones(ndof*len(wn))
+        n1 = PyNetwork(fi,fc, 1)
+        dt = n1.T/n1.M
+        #n1.runForwardProblem(dt)
+        #n1. showCurrentData()
+        opt1 = PyBC_opt_dh(fi, fc, ndof, x0, 0, wn)
 	opt1.solve()
 if __name__ == "__main__":
 	main()

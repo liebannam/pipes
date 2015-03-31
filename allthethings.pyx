@@ -8,6 +8,7 @@ import cython
 import sys
 from libcpp.vector cimport vector
 
+#if on macbook air
 sys.path.append('/Users/anna/anaconda/lib/python2.7/site-packages')
 #print sys.path
 np.import_array()
@@ -314,7 +315,12 @@ cdef class PyNetwork:
 		def __get__(self): return [self.thisptr.channels[i].a for i in range(self.Nedges)]
 cdef extern from "levmar.h":
 	cdef cppclass levmar:
+		levmar(int , int )
 		void solve(int)
+#cdef extern from "lapack.h":
+#	void dgesvd(char jobu, char jobvt, int m, int n, double *A, int lda,
+#	    double *S, double *U, int ldu, double *VT, int ldvt,
+#	    int *info);
 
 cdef extern from "optimizeit.h":
 	cdef cppclass bc_opt_dh(levmar):
@@ -331,19 +337,22 @@ cdef class PyBC_opt_dh:
 	cdef bc_opt_dh *thisptr
 	def __cinit__(self, char * fi, char *fc, int ndof, np.ndarray x0, int modetype, np.ndarray whichnodes):
 		cdef int M= 1, Mi = 1, skip =1;
-		cdef double T = 1.;
+		cdef int Nn = len(whichnodes); #number of nodes
 		cdef int channeltype = 1
+		cdef double T=1.
 		cdef vector[double] vx0
 		cdef vector[int] vwhichnodes
-		for i in range(whichnodes.size):
+		for i in range(Nn):
 			vwhichnodes.push_back(whichnodes[i])
 		for i in range(x0.size):
 			vx0.push_back(x0[i])
+
 		Ntwk_i = setupNetwork(fi, fc, M, Mi, T, channeltype);
 		print vx0
+		print "T = %f" %T
 		print whichnodes
 		print vwhichnodes
-		self.thisptr = new bc_opt_dh(ndof, M, vx0, Ntwk_i, modetype, T, vwhichnodes, skip)
+		self.thisptr = new bc_opt_dh(len(x0), M, vx0, Ntwk_i, modetype, T, vwhichnodes, skip)
 
 	def solve(self):
 		self.thisptr.solve(0)

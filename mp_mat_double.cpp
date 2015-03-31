@@ -112,7 +112,7 @@ vector<double> dgesvd(char jobu, char jobv, mp_mat<double>& A,
     int info=-1;
     int min_nm = (A.m < A.n) ? A.m : A.n;
     vector<double> svals(min_nm,0.0);
-    
+   cout<<"svd0\n"<<endl; 
     double *Up = NULL;
     double *VTp = NULL;
     int ldu = 1;
@@ -129,6 +129,7 @@ vector<double> dgesvd(char jobu, char jobv, mp_mat<double>& A,
 	VT->resize( ldv , A.n );
 	VT->reset_values(0.0);
 	VTp = VT->p;
+
     }
     int nzr=A.m, nzc=A.n;
 
@@ -146,11 +147,12 @@ vector<double> dgesvd(char jobu, char jobv, mp_mat<double>& A,
 		if (A(i,nzc-1) != 0.0) break;
 	    if (i<A.m && A(i,nzc-1) != 0.0) break;
 	}
-    // printf("%d %d %d %d\n", A.m, A.n, nzr, nzc);
+     printf("%d %d %d %d\n", A.m, A.n, nzr, nzc);
 
     dgesvd(jobu, jobv, nzr, nzc, A.p, A.m,
 	   &svals[0], Up, ldu, VTp, ldv, &info);
     
+   cout<<"svd3\n"<<endl; 
     if (info != 0)
 	throw gen_err("dgesvd error");
     
