@@ -349,9 +349,9 @@ cdef class PyBC_opt_dh:
 
 		Ntwk_i = setupNetwork(fi, fc, M, Mi, T, channeltype);
 		print vx0
-		print "T = %f" %T
-		print whichnodes
-		print vwhichnodes
+		#print "T = %f" %T
+		#print whichnodes
+		#print vwhichnodes
 		self.thisptr = new bc_opt_dh(len(x0), M, vx0, Ntwk_i, modetype, T, vwhichnodes, skip)
 
 	def solve(self):

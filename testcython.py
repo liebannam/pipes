@@ -54,7 +54,8 @@ def main():
         dt = n1.T/n1.M
         #n1.runForwardProblem(dt)
         #n1. showCurrentData()
-        opt1 = PyBC_opt_dh(fi, fc, ndof, x0, 0, wn)
+        opt1 = PyBC_opt_dh(fi, fc, ndof, x0, 1, wn)
 	opt1.solve()
+	#opt1.dump()
 if __name__ == "__main__":
 	main()
