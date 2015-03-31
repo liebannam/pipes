@@ -1,5 +1,7 @@
 import sys
-#on macbook air
+#on macbook air (seems to also run on orinoco...no bloody clue if that's legit...)
+# compile with CXX=g++ python setup.py build_ext -i. 
+#I'm doing something kind of sketch with the lapack wrapper to get around segfaults that happen if I call the cla library like in the pure C++ code in Build/. by kind of sketch I mean...I copied lapack.c and added it as a dependency.
 sys.path.append('/Users/anna/anaconda/lib/python2.7/site-packages')
 from distutils.core import setup, Extension
 from Cython.Build import cythonize
