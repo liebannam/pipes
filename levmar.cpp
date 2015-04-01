@@ -350,7 +350,6 @@ void levmar::report_r(FILE *fp)
 	    fprintf(fp, "%5d %12s\n", i, str(r[i]));
     }
     fflush(fp);
-    cout<<"fuck?1"<<endl;
 }
 
 

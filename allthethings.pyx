@@ -64,7 +64,7 @@ https://gist.github.com/GaelVaroquaux/1249305  (BDS license)'''
 		self.size = size
 		self.dtype = dtype  #probably should template on this shit 
 	def __array__(self):
-		"""define (use?) the __array__ method called by numpy when it tries to get an array from our opject"""
+		"""define (use?) the __array__ method called by numpy when it tries to get an array from our object"""
 		cdef np.npy_intp shape[1]
 		shape[0] = <np.npy_intp> self.size 
 		ndarray = np.PyArray_SimpleNewFromData(1,shape, self.dtype, self.d_ptr) #create 1D array with [size] elements 
@@ -140,12 +140,11 @@ cdef class PyPipe_ps:
 		def __get__(self): return self.thisptr.cmax
 
 
-
-cdef extern from "Network.cpp":
+cdef extern from "network.h":
 	cdef cppclass Network_params:
-		Network_params(vector[int] Ns_, vector[double] ws_, vector[double] Ls_, vector[double] S0s_, vector[double] Mrs_, vector[double] a0s_, vector[double] q0s_,double a_)
+		Network_params(vector[int], vector[double], vector[double], vector[double], vector[double], vector[double], vector[double],double)
 	cdef cppclass Network:
-		Network(int Nnodes_, vector[int] conns_, int Nedges_, int M_,  int channeltype_, Network_params p);
+		Network(int , vector[int] , int , int,  int , Network_params );
 		int Nnodes, Nedges;   
 		vector[int] nodeTypes; 
 		vector[int] conns;    
@@ -157,10 +156,10 @@ cdef extern from "Network.cpp":
 		int nn;  
 		int channeltype;
 		double T;
-		void runForwardProblem(double dt);
+		void runForwardProblem(double);
 		double getAveGradH(int i);	
 		double getTotalVolume();
-	cdef void quickWrite(double *where, int *which, int K, double T, int skip)
+	cdef void quickWrite(double, int, int, double, int)
 
 cdef extern from "setupandrun.h":
 	cdef Network* setupNetwork(char *, char *, int &, int &, double &, int);
@@ -320,6 +319,9 @@ cdef class PyNetwork:
 		def __get__(self): return self.thisptr.nn
 	property a:
 		def __get__(self): return [self.thisptr.channels[i].a for i in range(self.Nedges)]
+	property cmax:
+		def __get__(self): return [self.thisptr.channels[i].cmax for i in range(self.Nedges)]
+
 cdef extern from "levmar.h":
 	cdef cppclass levmar:
 		levmar(int , int )
@@ -327,6 +329,8 @@ cdef extern from "levmar.h":
 		void dump(FILE *)
 		vector[Real] x
 		vector[Real] r
+		void compute_f()
+		double f
 
 
 cdef extern from "optimizeit.h":
@@ -338,10 +342,7 @@ cdef extern from "optimizeit.h":
 		double T;
 		double dt;
 		double mydelta;
-		double f;
 		bc_opt_dh(int , int , vector[double], Network*, int , double , vector[int], int )
-		void compute_f()
-		void compute_g()
 cdef class PyBC_opt_dh:
 	cdef bc_opt_dh *thisptr
 	def __cinit__(self, char * fi, char *fc, int ndof, np.ndarray x0, int modetype, np.ndarray whichnodes):
@@ -375,7 +376,19 @@ cdef class PyBC_opt_dh:
 		def __get__(self): return self.thisptr.r
 	property f:
 		def __get__(self): return self.thisptr.f
+	property T:
+		def __get__(self): return self.thisptr.T
+	property M:
+		def __get__(self): return self.thisptr.M
+	property modetype:
+		def __get__(self):
+			if self.thisptr.modetype ==0:
+				t= "Hermite"
+			else:
+				t= "Fourier"
+			return t
 	
+
 
 
 
