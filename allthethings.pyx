@@ -15,6 +15,12 @@ cdef extern from "stdio.h":
 cdef extern from "real_def.h":
 	ctypedef double Real
 
+cdef extern from "time.h":
+	ctypedef unsigned long clock_t
+	cdef enum:
+		CLOCKS_PER_SEC
+	cdef clock_t clock()
+
 #if on macbook air
 sys.path.append('/Users/anna/anaconda/lib/python2.7/site-packages')
 #print sys.path
@@ -97,6 +103,7 @@ cdef extern from "channel.h":
 		void geom_init(double, double, double)
 		void setGeom(double)
 		void stepEuler(double)
+		double HofA(double,bool)
 
 cdef class PyPipe_ps:
 	cdef Cpreiss *thisptr
@@ -163,7 +170,7 @@ cdef extern from "network.h":
 
 cdef extern from "setupandrun.h":
 	cdef Network* setupNetwork(char *, char *, int &, int &, double &, int);
-
+	cdef void getTimeSeries(vector[Real] &, vector[Real] &, const int, const int, double, int);
 cdef class PyNetwork:
 	'''Network class with layout and state information.
 	Input parameters:
@@ -234,6 +241,7 @@ cdef class PyNetwork:
 	cdef np.ndarray nodeTypes
 	cdef int Nnodes, Nedges, M, Mi
 	cdef double T
+	cdef double solve_t
 	def __cinit__(self, char *fin, char* fconfig, int channeltype):
 		cdef int M =0, Mi = 0;
 		cdef double T = 0;
@@ -262,12 +270,17 @@ cdef class PyNetwork:
 			NN += self.thisptr.channels[i].N 
 		for i in range(self.Nnodes):
 			self.nodeTypes[i] = self.thisptr.nodeTypes[i]
+		solve_t = 0
 	def __dealloc__(self):
 		del self.thisptr
 	def __str__(self):
 		return "Network at address %s with %d nodes and %d edges\n" % (hex(<long>self.thisptr), self.thisptr.Nnodes, self.thisptr.Nedges)	
 	def runForwardProblem(self,double dt):
-		self.thisptr.runForwardProblem(dt)	
+		cdef clock_t start_t, end_t;
+		start_t = clock();
+		self.thisptr.runForwardProblem(dt);
+		end_t = clock();
+		self.solve_t = (end_t-start_t)/<double>CLOCKS_PER_SEC;
 	def q(self,i):	
 		cdef np.ndarray q
 		q = okArray(self.Ns[i]*2,self.thisptr.channels[i].q)
@@ -298,6 +311,10 @@ cdef class PyNetwork:
 		return self.thisptr.getAveGradH(i)
 	def getTotalVolume(self):
 		return self.thisptr.getTotalVolume()
+	def getHofA(self,i):
+		'''return np.ndarray of heights in pipe i corresponding to elements of array A'''
+		N = self.Ns[i]
+		return np.array([self.thisptr.channels[i].HofA(self.thisptr.channels[i].q[k], False) for k in range(N)])
 	property conn:
 		def __get__(self): return self.conn
 	property nodeTypes:
@@ -321,6 +338,8 @@ cdef class PyNetwork:
 		def __get__(self): return [self.thisptr.channels[i].a for i in range(self.Nedges)]
 	property cmax:
 		def __get__(self): return [self.thisptr.channels[i].cmax for i in range(self.Nedges)]
+	property solve_time:
+		def __get__(self): return self.solve_t
 
 cdef extern from "levmar.h":
 	cdef cppclass levmar:
@@ -345,6 +364,7 @@ cdef extern from "optimizeit.h":
 		bc_opt_dh(int , int , vector[double], Network*, int , double , vector[int], int )
 cdef class PyBC_opt_dh:
 	cdef bc_opt_dh *thisptr
+	cdef int ndof
 	def __cinit__(self, char * fi, char *fc, int ndof, np.ndarray x0, int modetype, np.ndarray whichnodes):
 		cdef int M= 1, Mi = 1, skip =1;
 		cdef int Nn = len(whichnodes); #number of nodes
@@ -356,9 +376,9 @@ cdef class PyBC_opt_dh:
 			vwhichnodes.push_back(whichnodes[i])
 		for i in range(x0.size):
 			vx0.push_back(x0[i])
-
+		self.ndof = ndof
 		Ntwk_i = setupNetwork(fi, fc, M, Mi, T, channeltype);
-		print vx0
+		#print vx0
 		#print "T = %f" %T
 		#print whichnodes
 		#print vwhichnodes
@@ -370,6 +390,15 @@ cdef class PyBC_opt_dh:
 		self.thisptr.dump(stdout)
 	def compute_f(self):
 		self.thisptr.compute_f()
+	def getBCtimeseries(self,i):
+		cdef vector[Real] bvals
+		cdef vector[Real] xfake
+		for k in range(self.M+1):
+			bvals.push_back(0)
+		for k in range(self.ndof):
+			xfake.push_back(self.x[i*self.ndof+k])
+		getTimeSeries(bvals, xfake, self.ndof, self.thisptr.M, self.thisptr.T, self.thisptr.modetype)
+		return bvals
 	property x:
 		def __get__(self): return self.thisptr.x
 	property r:
