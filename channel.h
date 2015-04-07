@@ -521,11 +521,11 @@ public:
 	}
 	double operator()(double x) 
 	{
-		//cout<<"cc = "<<cc<<endl;
 		if (x<1e-15) return lhs;
 		else{
 //		printf("solving %f -(%f*%f/x+(%d*phi(x)+%f*cgrav))=0\n",lhs,cq,Q,sign, cc);
 		//return x*lhs-(cq*Q+x*(sign*PhiofA(x,D,At,Ts,P)+cc*Cgrav(x,D,At,Ts,P)));
+//		printf("x = %f, f(x) = %f phi = %f\n",x,lhs-(cq*Q/x+(sign*PhiofA(x,D,At,Ts,P)+cc*Cgrav(x,D,At,Ts,P))), Cgrav(x,D,At,Ts,P));
 		return lhs-(cq*Q/x+(sign*PhiofA(x,D,At,Ts,P)+cc*Cgrav(x,D,At,Ts,P)));
 		}
 	}

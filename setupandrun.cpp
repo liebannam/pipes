@@ -388,8 +388,8 @@ Network* setupNetwork(char *finp, char *fconfig, int &M, int &Mi, double &T, int
 		}
 		}
 	
-	//char mdata[] = "../output_data/mapdata.txt";
-	char mdata[] = "output_data/mapdata.txt";
+//	char mdata[] = "../output_data/mapdata.txt";
+    char mdata[] = "output_data/mapdata.txt";
 //	char mdata[] = "~/Dropbox/Research/Network7.0/output_data/mapdata.txt";
 	FILE *fm = fopen(mdata, "w");
 	if(fm==NULL)

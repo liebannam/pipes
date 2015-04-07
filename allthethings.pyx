@@ -7,6 +7,7 @@ cimport numpy as np
 import cython
 import sys
 from libcpp.vector cimport vector
+from libcpp cimport bool
 from libc.stdio cimport *
 cdef extern from "stdio.h":
 	FILE *fopen(const char *, const char *)
@@ -100,6 +101,7 @@ cdef extern from "channel.h":
 		double kn, w, L, dx, At, Af, a, Ts, S0, Mr, cmax
 		double bcqleft, bcqright, bcaleft, bcaright
 		double* q, *q0
+		vector [bool] P
 		void geom_init(double, double, double)
 		void setGeom(double)
 		void stepEuler(double)
@@ -143,6 +145,7 @@ cdef class PyPipe_ps:
 				print "attempting to set q0 (size %d) with array of size %d" %(self.Nv,q0.size)
 			for i in range(self.q0.size):
 				self.q0[i] = q0[i] 
+
 	property cmax:
 		def __get__(self): return self.thisptr.cmax
 
@@ -314,7 +317,9 @@ cdef class PyNetwork:
 	def getHofA(self,i):
 		'''return np.ndarray of heights in pipe i corresponding to elements of array A'''
 		N = self.Ns[i]
-		return np.array([self.thisptr.channels[i].HofA(self.thisptr.channels[i].q[k], False) for k in range(N)])
+		return np.array([self.thisptr.channels[i].HofA(self.thisptr.channels[i].q[k], self.thisptr.channels[i].P[k+1]) for k in range(N)])
+	def getP(self,i):
+		return self.thisptr.channels[i].P
 	property conn:
 		def __get__(self): return self.conn
 	property nodeTypes:
