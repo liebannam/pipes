@@ -10,11 +10,13 @@ Runs on my macbook air and also on orinoco (same dropbox folder...no bloody clue
 
 
 import sys
+import os
 sys.path.append('/Users/anna/anaconda/lib/python2.7/site-packages')
 from distutils.core import setup, Extension
 from Cython.Build import cythonize
 import numpy
-
+#os.environ["CC"] = "g++-4.9" 
+#os.environ["CXX"] = "g++-4.9"
 setup(ext_modules = cythonize(Extension(
            "allthethings",                                   # the extesion name 
         sources=["allthethings.pyx", "setupandrun.cpp", "file_output.cc","network.cpp", "levmar.cpp","mp_mat.cpp","str_double.cpp", "mp_mat_double.cpp", "libcla.c"], # the Cython source and additional C++ source files
@@ -23,7 +25,9 @@ setup(ext_modules = cythonize(Extension(
 	   
 	   #on orinoco
         extra_link_args=['-DUSEOMP'],
-        extra_compile_args=['-DUSEOMP'],
+        #extra_link_args=['-fopenmp'],
+        #extra_compile_args=['-DUSEOMP'],
+        extra_compile_args=['-fopenmp'],
 	   #on macbook Air
        include_dirs=[numpy.get_include(),"/Users/lieba", "/usr/local/include"]   #so it can find, e.g. numpy/arrayobject.h
 )))

@@ -783,7 +783,7 @@ void Cpreiss::setGeom(double a_)
 	char fname1[30];
 	clock_t time1 = clock();
 	int duh = (int)time1;
-	sprintf(fname1,"geomconfirm%3d.txt",1);
+	sprintf(fname1,"geomconfirm%d.txt",1);
 	FILE *fg1 = fopen(fname1,"w");
 	int Mp= 500;
 	fprintf(fg1, "#D = %f, cgrav = %f, Ts = %.16f, At = %.16f, yt = %.16f \n",D, a, Ts,At,yt); 
@@ -806,9 +806,9 @@ void Cpreiss::setGeom(double a_)
 	 fclose(fg1);
 
 	char fname2[30];
-       	sprintf(fname2, "geomconfirm%3d.txt", 2);
+       	sprintf(fname2, "geomconfirm%d.txt", 2);
 	FILE *fg2 = fopen(fname2, "w");	
-	fprintf(fg2, "A                   h(A)              A-Af\n");
+	fprintf(fg2, "A                   h(A)       Phi(A)              A(Phi(A))    A-Af\n");
 	
 	for (int i=0; i<2;i++)
 	{
@@ -816,7 +816,7 @@ void Cpreiss::setGeom(double a_)
 		{
 		 	double aa =D*D*PI/4.*(1.+pow(-1.,i+1)*pow(2.,-k-1));
 		 	double h = HofA(aa,pp);
-		 	fprintf(fg2, "%.16f   %.16f  %e %e   \n", aa, h, AofPhi(PhiofA(aa,pp),pp)-aa, aa-D*D*PI/4.);
+		 	fprintf(fg2, "%.16f   %.16f %.16f  %e %e   \n", aa, h, PhiofA(aa,pp),AofPhi(PhiofA(aa,pp),pp)-aa, aa-D*D*PI/4.);
 		} 
 	}
 	fclose(fg2);
@@ -922,6 +922,7 @@ void Cpreiss::speedsHLL(double q1m, double q1p, double q2m, double q2p, double *
 	double dry = 1e-6*At;;                                                  //pay attention to this!?
     double cbar,Astar, ym,yp,cm, cp, um =0 , up= 0;	
 	double Astarp;
+	double sl1, sl2, sr1, sr2;//other wave speed estimates from Sanders 2011
 	ym = HofA(q1m,Pm);
 	yp = HofA(q1p,Pp);
 	cm = Cgrav(q1m, Pm);
@@ -948,7 +949,6 @@ void Cpreiss::speedsHLL(double q1m, double q1p, double q2m, double q2p, double *
 		double Vs, cs, phip, phim;
 		phim = PhiofA(q1m, Pm);
 		phip = PhiofA(q1p, Pp);
-		double sl1, sl2, sr1, sr2;//other wave speed estimates from Sanders 2011
 		bool Pmp = !(!Pp||!Pm);
 		Vs = 0.5*(um+up+phim-phip);
 		double phis = 0.5*(phim+phip+um-up);
@@ -965,8 +965,10 @@ void Cpreiss::speedsHLL(double q1m, double q1p, double q2m, double q2p, double *
 			printf("Atsar = %f, Astard = %f, AstarS = %f\nwith q1m = %f and q1p = %f, um =%f, up = %f\n",Astar, Astarp, Astars, q1m, q1p, um, up);
 			printf("sL = %f, sR = %f, Sanders speeds (vl-cl, vs-cs) = (%f, %f) and (vr+cR, vr+cr) = (%f,%f)",s[0], s[1], sl1, sl2, sr1, sr2);
 		}
-		s[0] = min(sl1,sl2);
-		s[1] = max(sr1,sr2);
+	//	s[0] = min(sl1,sl2);
+    //	s[1] = max(sr1,sr2);
+
+			
 	}
 	else{
 		if(fmax(ym,yp)<dry)     // Both sides dry - both stay dry
@@ -1007,9 +1009,9 @@ void Cpreiss::speedsHLL(double q1m, double q1p, double q2m, double q2p, double *
 	if(s[0]>s[1]) 	//check that HLL speeds have s0<s1; really, this should never bloody happen!
 	{  
 		printf("The hell? s[0]>s[1], with q1m = %f, q2m = %f, q1p =%f, q2p =%f, s[0] = %f, s[1] = %f\n",q1m,q2m,q1p,q2p,s[0],s[1]);
-		double temp = s[1];
-		s[1] = s[0];
-		s[0] = temp;
+		//use Sanders wave speed estimates instead if this happens
+		s[0] = min(sl1,sl2);
+    	s[1] = max(sr1,sr2);
 	}
 	cmax = max(cmax, max(fabs(s[0]),fabs(s[1]))); 		   
 }
@@ -1076,6 +1078,7 @@ Junction1::Junction1(Channel &a_ch0, int a_which, double a_bval, int a_bvaltype)
 void Junction1::boundaryFluxes()
 {
 	double Ain, Qin, Aext, Qext;
+	double Qtol = 1e-5;
 	bool Pin, Pext;
 	int pass = 0;
 	double ctol = 0;//tolerance for trying to solve for characteristic solns
@@ -1120,7 +1123,7 @@ void Junction1::boundaryFluxes()
 				//first use Qext to find values c1min and c1max -- range of c+/_(A, Qext) over A in [0, \infty] 
 				//if c1 = c+/_(Ain, Qin) lies in  [c1min, c1max], then it is feasible to follow a characteristic out of the doman
 				double c1min=0., c1max=0., c1, xs=0.;
-				double uin = (Ain>0. ?Qin/Ain :0. );
+				double uin = (Ain>1e-10 ?Qin/Ain :0. );
 				if(ch0.channeltype ==0) //uniform cross section case is easy
 				{
 					c1 = uin +sign*2.*sqrt(G*Ain/w);
@@ -1136,29 +1139,31 @@ void Junction1::boundaryFluxes()
 						if(Qext<0)//solve for xs s.t. 0 = Q + xs*c(xs).
 						{
 						//	cout<<"Qext"<<Qext<<endl;
-							fallpurpose fcpm(ch0.w, ch0.At, ch0.Ts, 0, Qext, 0,1,1., ch0.Pnow);
-							xs = ::ridders(fcpm, 0,100,&count, 1e-10, 1e-10);	
-							c1max = -Cgrav(xs, ch0.At, ch0.w, ch0.At, Pext)-PhiofA(xs, ch0.At, ch0.w,ch0.At, ch0.Pnow);
-					//		cout<<"c1max = "<<c1max<<endl;
+						//	fallpurpose fcpm(ch0.w, ch0.At, ch0.Ts, 0, Qext, 0,1,1., ch0.Pnow);
+						//	xs = ::ridders(fcpm, 0,100.,&count, 1e-10, 1e-10);	
+						//	c1max = -Cgrav(xs, ch0.At, ch0.w, ch0.At, Pext)-PhiofA(xs, ch0.At, ch0.w,ch0.At, ch0.Pnow);
+							double xs2 = pow(ch0.w/G*Qext*Qext,1./3.);
+							c1max = Qext/xs2 - PhiofA(xs2, ch0.At, ch0.w,ch0.At, ch0.Pnow);
+						//	printf("c1max = %f, estimate = %f",c1max, c1max2);
 						}
 					}
-					else
+					else if(Qext>0) //solve for xs s.t. 0 = Q-xs*c(xs)	
 					{  
-						if(Qext>0)//solve for xs s.t. 0 = Q-xs*c(xs)	
-						{
 						//	cout<<"Qext"<<Qext<<endl;
-							fallpurpose fcpm(ch0.w, ch0.At, ch0.Ts, 0, Qext,0, 1,-1., ch0.Pnow);
-							xs = ::ridders(fcpm,0,100.,&count, 1e-10, 1e-10);	
-							c1min = ch0.Cgrav(xs,ch0.Pnow)+ch0.PhiofA(xs,ch0.Pnow);
-						//	cout<<"c1min = "<<c1min<<endl;
-						}
-					}	
+						//	fallpurpose fcpm(ch0.w, ch0.At, ch0.Ts, 0, Qext,0, 1,-1., ch0.Pnow);
+						//	xs = ::ridders(fcpm,0,100.,&count, 1e-10, 1e-10);	
+						//	c1min = ch0.Cgrav(xs,ch0.Pnow)+ch0.PhiofA(xs,ch0.Pnow);
+							double xs2 = pow(ch0.w/G*Qext*Qext,1./3.);
+							c1min = Qext/xs2 + PhiofA(xs2, ch0.At, ch0.w,ch0.At, ch0.Pnow);
+						//	printf("c1max = %f, estimate = %f",c1min, c1min2);
+				}	
 				}
 				if(whichend ==0 && Qext<0. && c1>c1max-ctol)//make sure left end boundary flux is enforceable 
 				{
 					printf("oops! Qext = %f is too small for c1 = %f\n, setting Aext =Ain= %f\n", Qext, c1,Ain);
 					Aext = Ain;
 					pass =1;
+					/*
 					if(ch0.channeltype==0){bval[ch0.n] = w/G*pow(c1/3.,3.);}
 					else{
 						if(c1<=0)
@@ -1166,7 +1171,7 @@ void Junction1::boundaryFluxes()
 						//solve for x2 s.t. c1 = -c(x)-phi(x)
 						int count;
 						fallpurpose f2(ch0.w, ch0.At, ch0.Ts, c1, 0.,-1., 0.,-1., ch0.Pnow);
-						double x2 = ::ridders(f2,0,100.,&count, 1e-10, 1e-8);	
+						double x2 = ::ridders(f2,0,100.,&count, 1e-10, 1e-10);	
 						bval[ch0.n] = -x2*ch0.Cgrav(ch0.HofA(x2,Pin),Pin);
 						Aext = x2;
 						//cout<<"c1 = "<<c1<<"Phi "<< ch0.intPhi(x2)<<" -c(x)-phi(x) = " <<-ch0.cgrav(ch0.hofA(x2)) -ch0.intPhi(x2)<<endl;
@@ -1175,13 +1180,12 @@ void Junction1::boundaryFluxes()
 							Qext = Qin;
 							Aext = Ain;
 							cout<<"This seems wrong but I'm confused..setting Qext = Qin\n";
-
 						}
 						pass =1;
 					}
 					Qext = bval[ch0.n];
 					printf("Qext increased to min allowed value of %f, Aext = %f, RI = %f\n",Qext, Aext, Qext/Aext -ch0.PhiofA(Aext,Pext));
-				
+				*/
 				}
 				//make sure right end boundary flux is enforceable
 				if(whichend ==1 && Qext>0. && c1<c1min+ctol)
@@ -1189,7 +1193,7 @@ void Junction1::boundaryFluxes()
 					printf("oops! Qext = %f is too large for c1 = %f\nsetting Aext =Ain=%f, Qin = %f\n", Qext,c1, Ain, Qin);
 					pass = 1;
 					Aext =Ain;
-					if(ch0.channeltype==0){bval[ch0.n] = w/G*pow(c1/3.,3.);}
+			/*		if(ch0.channeltype==0){bval[ch0.n] = w/G*pow(c1/3.,3.);}
 					else{
 						//solve for x2 s.t. c1 = c(x)+phi(x)
 						int count;
@@ -1202,7 +1206,7 @@ void Junction1::boundaryFluxes()
 					}
 					Qext = bval[ch0.n];
 					printf("Qext decreased to max allowed value of %f, Aext = %f\n",Qext, Aext);
-					pass = 1;
+					pass = 1;*/
 				}
 				
 				if(ch0.channeltype ==0) //if uniform cross section
@@ -1221,11 +1225,18 @@ void Junction1::boundaryFluxes()
 					double uin = (Ain>0. ?Qin/Ain :0. );
 					double lhs = uin +sign*ch0.PhiofA(Ain,Pin);//solve lhs = Qext/x +sign*phi(x) for x
 				if(WTF)	cout<<"UHHHHHMM reflect = "<<reflect<<" Qext = "<<Qext<<"  lhs = "<<lhs<<"sign ="<<sign<<" Ain="<<Ain<<endl;
-					fallpurpose fp(ch0.w, ch0.At,ch0.Ts, lhs, Qext, sign,1.,0., ch0.Pnow);
-					Aext = ::ridders(fp,0.,ch0.Af*1.2,&count, 1e-10, 1e-8);//this line crashes things quite frequently...
-				//	double uext = (Aext>0 ?Qext/Aext :0.);
-				//	double err = fabs(uext +sign*ch0.PhiofA(Aext,Pext)-lhs);
+					fallpurpose fp(ch0.w, ch0.At,ch0.Ts, lhs, Qext, sign,1.,0.,false);
+					if(sgn(fp(0.)*sgn(fp(ch0.Af*2.0))<0))
+					{
+					Aext = ::ridders(fp,0.,ch0.Af*2.0,&count, 1e-10, 1e-10);//this line crashes things quite frequently...
+					double uext = (Aext>0 ?Qext/Aext :0.);
+					double err = fabs(uext +sign*ch0.PhiofA(Aext,Pext)-lhs);
 				//	printf("ridders answer = %.16f, lhs = %f, Qext = %f, RI_ext-RI_n = %f\n", Aext,  lhs,Qext, err);
+					}
+					else{
+					Aext = Ain;
+					//printf("welp that was doomed to fail, Aext = Ain = %f\n",Aext); 
+					}
 					}
 				}
 			}
@@ -1296,8 +1307,8 @@ void Junction1::boundaryFluxes()
 		else{ch0.P[0] =ch0.P[1];}
 		if(WTF)	{
 			printf("\nin junction routine!Aext =%f, Ain = %f, Qin %f, Qext = %f, bfluxleft = [%f,%f]\n",Aext, Ain, Qin, Qext,ch0.bfluxleft[0],ch0.bfluxleft[1]);}
-//	printf("Aext = %f and Qext = %f \n",Aext, Qext);
 	}
+//	printf("Aext = %f and Qext = %f \n",Aext, Qext);
 }
 
 double Junction1::getFlowThrough(double dt)

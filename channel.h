@@ -505,6 +505,10 @@ class fshock{
 }
 */
 
+template <typename T> int sgn(T val)
+{
+		return (T(0)<val)-(val<T(0));
+}
 /**all purpose function to evaluate things that have zeros of Riemann invariants
  *
  * evaluate lhs - (cq*Qext/x +sign*phi(x)+cc*c(x))  c is wavespeed */
@@ -513,21 +517,23 @@ public:
 	double D, At, Ts, lhs, Q, cq, cc;
 	bool P;
 	int sign;
+	int s;
 	fallpurpose(double D_,double At_,double Ts_, double lhs_, double Q_, int sign_, double cq_, double cc_, bool P_):
 		D(D_), At(At_),Ts(Ts_), lhs(lhs_), Q(Q_), cq(cq_), cc(cc_), P(P_),sign(sign_)
 	{
+		//s = sgn(Q)*sgn(lhs);//if dicates what you want to try to solve
 	}
 	~fallpurpose(){
 	}
 	double operator()(double x) 
 	{
-		if (x<1e-15) return lhs;
-		else{
-//		printf("solving %f -(%f*%f/x+(%d*phi(x)+%f*cgrav))=0\n",lhs,cq,Q,sign, cc);
+		//if (x<1e-15) return x*lhs-(cq*Q+x*(sign*PhiofA(x,D,At,Ts,P)+cc*Cgrav(x,D,At,Ts,P)));
+		//else{
+		//printf("solving %f -(%f*%f+(%d*phi(x)+%f*cgrav))=0\n",lhs,cq,Q,sign, cc);
 		//return x*lhs-(cq*Q+x*(sign*PhiofA(x,D,At,Ts,P)+cc*Cgrav(x,D,At,Ts,P)));
-//		printf("x = %f, f(x) = %f phi = %f\n",x,lhs-(cq*Q/x+(sign*PhiofA(x,D,At,Ts,P)+cc*Cgrav(x,D,At,Ts,P))), Cgrav(x,D,At,Ts,P));
-		return lhs-(cq*Q/x+(sign*PhiofA(x,D,At,Ts,P)+cc*Cgrav(x,D,At,Ts,P)));
-		}
+	//	printf("x = %f, f(x) = %f phi = %f\n",x,-x*lhs+(cq*Q+x*(sign*PhiofA(x,D,At,Ts,P)+cc*Cgrav(x,D,At,Ts,P))), PhiofA(x,D,At,Ts,P));
+		return x*lhs-(cq*Q+x*(sign*PhiofA(x,D,At,Ts,P)+cc*Cgrav(x,D,At,Ts,P)));
+	//	}
 	}
 
 

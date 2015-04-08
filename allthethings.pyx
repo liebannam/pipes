@@ -9,6 +9,10 @@ import sys
 from libcpp.vector cimport vector
 from libcpp cimport bool
 from libc.stdio cimport *
+
+#from cython.parallel cimport parallel
+#cimport openmp
+
 cdef extern from "stdio.h":
 	FILE *fopen(const char *, const char *)
 	int fclose(FILE *)
@@ -106,6 +110,9 @@ cdef extern from "channel.h":
 		void setGeom(double)
 		void stepEuler(double)
 		double HofA(double,bool)
+		double PhiofA(double, bool)
+		double AofPhi(double, bool)
+		double Cgrav(double, bool)
 
 cdef class PyPipe_ps:
 	cdef Cpreiss *thisptr
@@ -125,7 +132,12 @@ cdef class PyPipe_ps:
 		self.thisptr.setGeom(a)	
 	def stepEuler(self, double dt):
 		self.thisptr.stepEuler(dt)
-			
+	def PhiofA(self, double A, bool P):
+		return self.thisptr.PhiofA(A,P)
+	def AofPhi(self, double phi, bool P):
+		return self.thisptr.AofPhi(phi, P)
+	def Cgrav(self, double A, bool P):
+		return self.thisptr.Cgrav(A,P)
 	#various properties we may want to access 
 	property N:
 		def __get__(self): return self.thisptr.N
