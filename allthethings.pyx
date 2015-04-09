@@ -380,6 +380,8 @@ cdef extern from "optimizeit.h":
 cdef class PyBC_opt_dh:
 	cdef bc_opt_dh *thisptr
 	cdef int ndof
+	cdef double solve_t     #CPU solve time
+	cdef double wsolve_t	#actual solve time
 	def __cinit__(self, char * fi, char *fc, int ndof, np.ndarray x0, int modetype, np.ndarray whichnodes):
 		cdef int M= 1, Mi = 1, skip =1;
 		cdef int Nn = len(whichnodes); #number of nodes
@@ -400,7 +402,15 @@ cdef class PyBC_opt_dh:
 		self.thisptr = new bc_opt_dh(len(x0), M, vx0, Ntwk_i, modetype, T, vwhichnodes, skip)
 
 	def solve(self):
+		cdef clock_t start_t, end_t;
+		cdef double omp_start_t, omp_end_t;
+		start_t = clock();
+		omp_start_t = openmp.omp_get_wtime();
 		self.thisptr.solve(0)
+		end_t = clock();
+		omp_end_t = openmp.omp_get_wtime();
+		self.solve_t = (end_t-start_t)/<double>CLOCKS_PER_SEC;
+		self.wsolve_t = (omp_end_t-omp_start_t)
 	def dump(self):
 		self.thisptr.dump(stdout)
 	def compute_f(self):
@@ -431,8 +441,10 @@ cdef class PyBC_opt_dh:
 			else:
 				t= "Fourier"
 			return t
-	
-
+	property solve_t:
+		def __get__(self): return self.solve_t
+	property wsolve_t:
+		def __get__(self): return self.wsolve_t
 
 
 
