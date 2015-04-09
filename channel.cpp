@@ -1137,7 +1137,7 @@ void Junction1::boundaryFluxes()
 					c1min = Qext/xhat + ch0.PhiofA(xhat, false);//estimate bounds with uniform cross section values.
 					c1max = Qext/xhat - ch0.PhiofA(xhat, false);
 					c1  = uin +sign*ch0.PhiofA(Ain,Pin);
-					printf("c1 = %f,c1 min = %f, c1max = %f, Qext = %f, Qin = %f, Ain = %f\n",c1,c1min,c1max, Qext, Qin, Ain);
+					if(WTF) printf("c1 = %f,c1 min = %f, c1max = %f, Qext = %f, Qin = %f, Ain = %f\n",c1,c1min,c1max, Qext, Qin, Ain);
 					/*
 					if(sign<0)
 					{	
@@ -1242,7 +1242,7 @@ void Junction1::boundaryFluxes()
 					}
 					else{
 					Aext = Ain;
-					printf("welp that was doomed to fail, Aext = Ain = %f\n",Aext); 
+			//		printf("welp that was doomed to fail, Aext = Ain = %f\n",Aext); 
 					}
 					}
 				}
@@ -1292,7 +1292,7 @@ void Junction1::boundaryFluxes()
 		ch0.numFlux(Ain, Aext, Qin, Qext, ch0.bfluxright, ch0.P[N], ch0.P[N+1]);
 		ch0.q_hist[ch0.idx_t(0,N+1,ch0.n)] = Aext;
 		ch0.q_hist[ch0.idx_t(1,N+1,ch0.n)] = Qext;
-		printf("ch0.bfluxright[1] =%f\n", ch0.bfluxright[1]);
+	//	printf("ch0.bfluxright[1] =%f\n", ch0.bfluxright[1]);
 		if(WTF){
 			printf("\n in junction routine!Aext =%f, Ain = %f, Qin %f, Qext = %f, bfluxright = [%f,%f]\n",Aext, Ain, Qin, Qext,ch0.bfluxright[0],ch0.bfluxright[1]);}
 		//update pressurization info--this needs work, I think... 
@@ -1309,7 +1309,7 @@ void Junction1::boundaryFluxes()
 		//ch0.numFlux(Ain, Ain, Qin, Qin, ch0.bfluxleft, false, false);
 		ch0.q_hist[ch0.idx_t(0,0,ch0.n)] = Aext;
 		ch0.q_hist[ch0.idx_t(1,0,ch0.n)] = Qext;
-		printf("ch0.bfluxleft[1] =%f  ", ch0.bfluxleft[1]);
+	//	printf("ch0.bfluxleft[1] =%f  ", ch0.bfluxleft[1]);
 		if(reflect ==-1||reflect ==1){ch0.P[0] =ch0.P[1];}
 		else if(bvaltype==0 && Aext<ch0.At){ch0.P[0] = false;}
 		else if(Aext>ch0.At){ch0.P[0]= true;}
