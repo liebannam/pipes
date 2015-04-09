@@ -24,8 +24,8 @@ setup(ext_modules = cythonize(Extension(
         language="c++",                         # generate and compile C++ code
 	   
 	   #on orinoco
-        extra_link_args=['-DUSEOMP'],
-        #extra_link_args=['-fopenmp'],
+        #extra_link_args=['-DUSEOMP'],
+        extra_link_args=['-fopenmp'],
         #extra_compile_args=['-DUSEOMP'],
         extra_compile_args=['-fopenmp'],
 	   #on macbook Air

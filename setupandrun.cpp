@@ -330,9 +330,10 @@ Network* setupNetwork(char *finp, char *fconfig, int &M, int &Mi, double &T, int
 	cout<<"T = "<<T<<" M = "<<M<<endl;
 	cout<<"a = "<<a<<endl;
 	//make the damn return network
-	Network_params params(Ns, diams, lengths, S0s, Mrs, h0s, q0s,a);
-	Network *Ntwk = new Network (Nnodes, conns, Nedges, M, channeltype, params);
-	
+//	Network_params params(Ns, diams, lengths, S0s, Mrs, h0s, q0s,a);
+//	Network *Ntwk = new Network (Nnodes, conns, Nedges, M, channeltype, params);
+	Network *Ntwk = new Network(Nnodes, conns, Nedges, Ns, diams, lengths, S0s, Mrs, h0s, q0s, M, channeltype,a);
+
 	
 	cout<<"Number of 1 junctions is "<<Ntwk->junction1s.size()<<endl;
 	cout<<"Number of 2 junctions is "<<Ntwk->junction2s.size()<<endl;

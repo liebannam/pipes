@@ -162,11 +162,12 @@ cdef class PyPipe_ps:
 		def __get__(self): return self.thisptr.cmax
 
 
+#cdef cppclass Network_params:
+#	Network_params(vector[int], vector[double], vector[double], vector[double], vector[double], vector[double], vector[double],double)
 cdef extern from "network.h":
-	cdef cppclass Network_params:
-		Network_params(vector[int], vector[double], vector[double], vector[double], vector[double], vector[double], vector[double],double)
 	cdef cppclass Network:
-		Network(int , vector[int] , int , int,  int , Network_params );
+	#	Network(int , vector[int] , int , int,  int , Network_params );
+		Network(int,vector[int], int, vector[int], vector[double],vector[double],vector[double],vector[double], vector[double], vector[double], int,  int, double);
 		int Nnodes, Nedges;   
 		vector[int] nodeTypes; 
 		vector[int] conns;    

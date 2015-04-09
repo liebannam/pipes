@@ -966,7 +966,7 @@ void Cpreiss::speedsHLL(double q1m, double q1p, double q2m, double q2p, double *
 			printf("sL = %f, sR = %f, Sanders speeds (vl-cl, vs-cs) = (%f, %f) and (vr+cR, vr+cr) = (%f,%f)",s[0], s[1], sl1, sl2, sr1, sr2);
 		}
 	//	s[0] = min(sl1,sl2);
-    //	s[1] = max(sr1,sr2);
+   // 	s[1] = max(sr1,sr2);
 
 			
 	}
@@ -1132,8 +1132,13 @@ void Junction1::boundaryFluxes()
 				}
 				else  //Preissman slot requires SUBTERFUDGE (formerly, rootfinding)
 				{	
-					int count;
+//					int count;
+					double xhat = pow(ch0.w/G*Qext*Qext,1./3.);
+					c1min = Qext/xhat + ch0.PhiofA(xhat, false);//estimate bounds with uniform cross section values.
+					c1max = Qext/xhat - ch0.PhiofA(xhat, false);
 					c1  = uin +sign*ch0.PhiofA(Ain,Pin);
+					printf("c1 = %f,c1 min = %f, c1max = %f, Qext = %f, Qin = %f, Ain = %f\n",c1,c1min,c1max, Qext, Qin, Ain);
+					/*
 					if(sign<0)
 					{	
 						if(Qext<0)//solve for xs s.t. 0 = Q + xs*c(xs).
@@ -1156,12 +1161,13 @@ void Junction1::boundaryFluxes()
 							double xs2 = pow(ch0.w/G*Qext*Qext,1./3.);
 							c1min = Qext/xs2 + PhiofA(xs2, ch0.At, ch0.w,ch0.At, ch0.Pnow);
 						//	printf("c1max = %f, estimate = %f",c1min, c1min2);
-				}	
+					}	*/
 				}
-				if(whichend ==0 && Qext<0. && c1>c1max-ctol)//make sure left end boundary flux is enforceable 
+				if(whichend ==0 && Qext<0. && c1>c1max)//make sure left end boundary flux is enforceable 
 				{
-					printf("oops! Qext = %f is too small for c1 = %f\n, setting Aext =Ain= %f\n", Qext, c1,Ain);
+					printf("oops! Qext = %f is too small for c1 = %f\n, setting Aext =Ain= %f.note Qin = %f\n", Qext, c1,Ain,Qin);
 					Aext = Ain;
+				//	Qext = Qin;
 					pass =1;
 					/*
 					if(ch0.channeltype==0){bval[ch0.n] = w/G*pow(c1/3.,3.);}
@@ -1188,11 +1194,12 @@ void Junction1::boundaryFluxes()
 				*/
 				}
 				//make sure right end boundary flux is enforceable
-				if(whichend ==1 && Qext>0. && c1<c1min+ctol)
+				if(whichend ==1 && Qext>0. && c1<c1min)
 				{
-					printf("oops! Qext = %f is too large for c1 = %f\nsetting Aext =Ain=%f, Qin = %f\n", Qext,c1, Ain, Qin);
+					printf("oops! Qext = %f is too large for c1 = %f\nsetting Aext =Ain=%f. note Qin = %f\n", Qext,c1, Ain, Qin);
 					pass = 1;
-					Aext =Ain;
+					Aext = Ain;
+	//				Qext = Qin;
 			/*		if(ch0.channeltype==0){bval[ch0.n] = w/G*pow(c1/3.,3.);}
 					else{
 						//solve for x2 s.t. c1 = c(x)+phi(x)
@@ -1235,7 +1242,7 @@ void Junction1::boundaryFluxes()
 					}
 					else{
 					Aext = Ain;
-					//printf("welp that was doomed to fail, Aext = Ain = %f\n",Aext); 
+					printf("welp that was doomed to fail, Aext = Ain = %f\n",Aext); 
 					}
 					}
 				}
@@ -1285,6 +1292,7 @@ void Junction1::boundaryFluxes()
 		ch0.numFlux(Ain, Aext, Qin, Qext, ch0.bfluxright, ch0.P[N], ch0.P[N+1]);
 		ch0.q_hist[ch0.idx_t(0,N+1,ch0.n)] = Aext;
 		ch0.q_hist[ch0.idx_t(1,N+1,ch0.n)] = Qext;
+		printf("ch0.bfluxright[1] =%f\n", ch0.bfluxright[1]);
 		if(WTF){
 			printf("\n in junction routine!Aext =%f, Ain = %f, Qin %f, Qext = %f, bfluxright = [%f,%f]\n",Aext, Ain, Qin, Qext,ch0.bfluxright[0],ch0.bfluxright[1]);}
 		//update pressurization info--this needs work, I think... 
@@ -1301,6 +1309,7 @@ void Junction1::boundaryFluxes()
 		//ch0.numFlux(Ain, Ain, Qin, Qin, ch0.bfluxleft, false, false);
 		ch0.q_hist[ch0.idx_t(0,0,ch0.n)] = Aext;
 		ch0.q_hist[ch0.idx_t(1,0,ch0.n)] = Qext;
+		printf("ch0.bfluxleft[1] =%f  ", ch0.bfluxleft[1]);
 		if(reflect ==-1||reflect ==1){ch0.P[0] =ch0.P[1];}
 		else if(bvaltype==0 && Aext<ch0.At){ch0.P[0] = false;}
 		else if(Aext>ch0.At){ch0.P[0]= true;}
