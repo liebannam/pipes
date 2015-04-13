@@ -47,8 +47,8 @@ cdef np.ndarray okArray(int N, void *ptr):
 	a_wrap = ArrayWrap()
 	a_wrap.set_data(N,ptr)
 	x = np.array(a_wrap,copy=False)
-	x.base = <PyObject*> a_wrap    #assign our object to "base" of np object
-	Py_INCREF(a_wrap)	       #increase reference count on q
+	x.base = <PyObject*> a_wrap           #assign our object to "base" of np object
+	Py_INCREF(a_wrap)	                  #increase reference count on q
 	return x
 
 cdef class ArrayWrap:
@@ -104,15 +104,19 @@ cdef extern from "channel.h":
 		int channeltype, N, M
 		double kn, w, L, dx, At, Af, a, Ts, S0, Mr, cmax
 		double bcqleft, bcqright, bcaleft, bcaright
-		double* q, *q0
+		double* q, *q0, *q_hist
 		vector [bool] P
 		void geom_init(double, double, double)
 		void setGeom(double)
 		void stepEuler(double)
 		double HofA(double,bool)
+		double AofH(double,bool)
 		double PhiofA(double, bool)
 		double AofPhi(double, bool)
 		double Cgrav(double, bool)
+	cdef cppclass Junction1:
+		Junction1(Cpreiss, int, double, int)
+		void setbVal(vector[Real] x)
 
 cdef class PyPipe_ps:
 	cdef Cpreiss *thisptr
@@ -138,6 +142,10 @@ cdef class PyPipe_ps:
 		return self.thisptr.AofPhi(phi, P)
 	def Cgrav(self, double A, bool P):
 		return self.thisptr.Cgrav(A,P)
+	def HofA(self, double A, bool P):
+		return self.thisptr.HofA(A,P)
+	def AofH(self, double H, bool P):
+		return self.thisptr.AofH(H, P)
 	#various properties we may want to access 
 	property N:
 		def __get__(self): return self.thisptr.N
@@ -169,7 +177,7 @@ cdef extern from "network.h":
 		vector[int] nodeTypes; 
 		vector[int] conns;    
 		vector[Cpreiss*] channels;	
-		#std::vector<Junction1*> junction1s; 
+		vector[Junction1*] junction1s; 
 		#std::vector<Junction2*> junction2s; 
 		#std::vector<Junction3*> junction3s; 
 		int M; 
@@ -179,6 +187,7 @@ cdef extern from "network.h":
 		void runForwardProblem(double);
 		double getAveGradH(int i);	
 		double getTotalVolume();
+		void setbVal(vector[Real] x);
 	cdef void quickWrite(double, int, int, double, int)
 
 cdef extern from "setupandrun.h":
@@ -298,12 +307,20 @@ cdef class PyNetwork:
 		cdef np.ndarray q
 		q = okArray(self.Ns[i]*2,self.thisptr.channels[i].q)
 		return q
+	def qhist(self,i):
+		cdef np.ndarray qh
+		cdef int Nn = (self.Ns[i]+2)*2*(self.thisptr.M+2)
+		qh = okArray(Nn, self.thisptr.channels[i].q_hist)
+		return qh
 	def setIC(self, i,a0,q0):
 		for j in range(self.Ns[i]):
 			self.thisptr.channels[i].q[j] = a0[j]
 			self.thisptr.channels[i].q0[j] = a0[j]
 			self.thisptr.channels[i].q[j+self.Ns[i]] = q0[j]
 			self.thisptr.channels[i].q0[j+self.Ns[i]] = q0[j]
+			self.thisptr.channels[i].q_hist[j] = a0[j]
+			self.thisptr.channels[i].q_hist[j+self.Ns[i]] = q0[j]
+
 	def showLayout(self):
 		print "   pipe | start node | end node\n"+"-"*35
 		for i in range(self.Nedges):
@@ -355,6 +372,8 @@ cdef class PyNetwork:
 		def __get__(self): return [self.thisptr.channels[i].cmax for i in range(self.Nedges)]
 	property solve_time:
 		def __get__(self): return self.solve_t
+	def setbVal(self,i,x):
+		self.thisptr.junction1s[i].setbVal(x)
 
 cdef extern from "levmar.h":
 	cdef cppclass levmar:

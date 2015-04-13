@@ -1111,15 +1111,21 @@ void Junction1::boundaryFluxes()
 		Qext = Qin;
 	}
 	//otherwise we have a specified BC, eg Q(t) = z(t)
-	if (reflect ==0)	//if specifying Q
+	if (reflect ==0)	
 	{
-		if(bvaltype==1) 
+		if(bvaltype==1) //if specifying Q
 		{
 			Qext = bval[ch0.n];	 //sample the boundary time series at the current time step
 			Aext = Ain;
 			
 			if(fabs(Qext)>0)  //if Qext != 0, problem is harder than if Q = 0 (this case treated seperately below)
 			{
+				if (Qin/Ain>ch0.Cgrav(Ain, Pin))//first check for supercritical flow
+				{
+					Aext = ch0.q_hist[ch0.idx_t(0,0,fmax(ch0.n-1,0))]//use previous value of Aext
+				}
+				else
+				{
 				//first use Qext to find values c1min and c1max -- range of c+/_(A, Qext) over A in [0, \infty] 
 				//if c1 = c+/_(Ain, Qin) lies in  [c1min, c1max], then it is feasible to follow a characteristic out of the doman
 				double c1min=0., c1max=0., c1, xs=0.;
@@ -1231,21 +1237,23 @@ void Junction1::boundaryFluxes()
 					int count;
 					double uin = (Ain>0. ?Qin/Ain :0. );
 					double lhs = uin +sign*ch0.PhiofA(Ain,Pin);//solve lhs = Qext/x +sign*phi(x) for x
-				if(WTF)	cout<<"UHHHHHMM reflect = "<<reflect<<" Qext = "<<Qext<<"  lhs = "<<lhs<<"sign ="<<sign<<" Ain="<<Ain<<endl;
+					if(WTF)	cout<<"UHHHHHMM reflect = "<<reflect<<" Qext = "<<Qext<<"  lhs = "<<lhs<<"sign ="<<sign<<" Ain="<<Ain<<endl;
 					fallpurpose fp(ch0.w, ch0.At,ch0.Ts, lhs, Qext, sign,1.,0.,false);
 					if(sgn(fp(0.)*sgn(fp(ch0.Af*2.0))<0))
 					{
-					Aext = ::ridders(fp,0.,ch0.Af*2.0,&count, 1e-10, 1e-10);//this line crashes things quite frequently...
-					double uext = (Aext>0 ?Qext/Aext :0.);
-					double err = fabs(uext +sign*ch0.PhiofA(Aext,Pext)-lhs);
-				//	printf("ridders answer = %.16f, lhs = %f, Qext = %f, RI_ext-RI_n = %f\n", Aext,  lhs,Qext, err);
+						Aext = ::ridders(fp,0.,ch0.Af*2.0,&count, 1e-10, 1e-10);//this line crashes things quite frequently...
+						double uext = (Aext>0 ?Qext/Aext :0.);
+						double err = fabs(uext +sign*ch0.PhiofA(Aext,Pext)-lhs);
+							//		printf("ridders answer = %.16f, lhs = %f, Qext = %f, RI_ext-RI_n = %f\n", Aext,  lhs,Qext, err);
 					}
-					else{
-					Aext = Ain;
-			//		printf("welp that was doomed to fail, Aext = Ain = %f\n",Aext); 
-					}
+					else
+					{
+						Aext = Ain;
+			//			printf("welp that was doomed to fail, Aext = Ain = %f\n",Aext); 
 					}
 				}
+				}
+			}
 			}
 			else{	//if Qext = 0 we can solve it without rootfinding
 				if(ch0.channeltype ==0) //uniform channel	
@@ -1275,11 +1283,28 @@ void Junction1::boundaryFluxes()
 		}
 
 		//if we're specifying A
-	else
+	else if (bvaltype==0)
 	{
 		Aext = bval[ch0.n];
 		Qext = (Qin/Ain+sign*ch0.PhiofA(Ain,Pin) - sign*ch0.PhiofA(Aext,Pext))*Aext;
 		//printf("end %d has Qext is %f and Aext is %f and cgrav =%f\n", whichend, Qext, Aext, ch0.Cgrav(Aext, Pext));
+	}
+	else if(bvaltype ==2)//orifice equation 
+	{
+		double eext = bval[ch0.n];
+		double Cd = 0.78; //discharge coefficient
+		double Cc = 0.83;//contraction coefficient (see Trajkovic 1999)
+		double dp = ch0.HofA(Ain, Pin)-Cc*eext;
+		if (dp>0){
+		//	Aext = Ain;
+			Aext =ch0.AofH(eext, false);
+			Qext = Cd*Aext*sqrt(2.*G*dp);
+			cout<<"orifice eqn! Qext = "<<Qext<<"  Qin = "<<Qin<<"  Aext = "<<Aext<<"  Ain = "<<Ain<<endl;
+		}
+		else{
+		   	Qext = Qin;
+			Aext = Ain;}
+		//Aext = ch0.At;
 	}
 	}	
 
