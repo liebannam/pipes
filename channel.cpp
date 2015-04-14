@@ -1077,272 +1077,213 @@ Junction1::Junction1(Channel &a_ch0, int a_which, double a_bval, int a_bvaltype)
 
 void Junction1::boundaryFluxes()
 {
+	/*New Strategy! Ready for hours of debugging???yayyyyy
+	  case 0: reflect everything
+	  case 1: reflect nothing
+	  case 2: supercritical 
+				2.1 inflow: specify A and Q
+				2.2 outflow: same as case 1
+	  case 3: subcritical: specify A(t) or Q(t)
+				3.1 can solve using RI
+					3.1.0 specify Q<Qtol
+					3.1.1 specify Q>=Qtol
+					3.1.2 specify A
+				3.2 can't solve using RI ohshit(??)
+	  case 4: orifice outflow ?????
+   */
+	int bccase, Nq, Npi, Npe;	
 	double Ain, Qin, Aext, Qext;
+	double Cc=0, Cd = 0, dp0 = 0, eext=0;//random crap for dysfunctional orifice routine
 	double Qtol = 1e-5;
 	bool Pin, Pext;
-	int pass = 0;
-	double ctol = 0;//tolerance for trying to solve for characteristic solns
+	double ctol = 0;					  //tolerance for trying to solve for characteristic solns
 	double sign = pow(-1.,whichend+1);    //gives the sign in u (plus or minus) phi (left side: -1, right side: +1)
 	if (whichend)                         //if we're on the right side of pipe
 	{
-		Ain = ch0.q[ch0.idx(0,N-1)];
-		Qin = ch0.q[ch0.idx(1, N-1)];
-		ch0.Pnow = ch0.P[N];
-		Pin = ch0.P[N];
-		Pext = ch0.P[N+1];
+		Nq = N-1;
+		Npe = N+1;
+		Npi = N;
 	}
-	else //if we're on the left side of the pipe
+	else								  //if we're on the left side of the pipe
 	{
-		Ain = ch0.q[ch0.idx(0,0)];
-		Qin = ch0.q[ch0.idx(1,0)];
-		ch0.Pnow = ch0.P[1];
-		Pin = ch0.P[1];
-		Pext = ch0.P[0];
+		Nq = 0;
+		Npe = 0;
+		Npi = 1;
 	}
 	
-	if(reflect ==1) //reflect =1 means reflection BC
-	{
-		Aext = Ain;
-		Qext = -Qin;
-	}
-	else if(reflect ==-1) //reflect =1 means extrapolation BC
-	{
-		Aext = Ain;
-		Qext = Qin;
-	}
-	//otherwise we have a specified BC, eg Q(t) = z(t)
-	if (reflect ==0)	
-	{
-		if(bvaltype==1) //if specifying Q
-		{
-			Qext = bval[ch0.n];	 //sample the boundary time series at the current time step
-			Aext = Ain;
-			
-			if(fabs(Qext)>0)  //if Qext != 0, problem is harder than if Q = 0 (this case treated seperately below)
-			{
-				if (Qin/Ain>ch0.Cgrav(Ain, Pin))//first check for supercritical flow
-				{
-					Aext = ch0.q_hist[ch0.idx_t(0,0,fmax(ch0.n-1,0))]//use previous value of Aext
-				}
-				else
-				{
-				//first use Qext to find values c1min and c1max -- range of c+/_(A, Qext) over A in [0, \infty] 
-				//if c1 = c+/_(Ain, Qin) lies in  [c1min, c1max], then it is feasible to follow a characteristic out of the doman
-				double c1min=0., c1max=0., c1, xs=0.;
-				double uin = (Ain>1e-10 ?Qin/Ain :0. );
-				if(ch0.channeltype ==0) //uniform cross section case is easy
-				{
-					c1 = uin +sign*2.*sqrt(G*Ain/w);
-					c1min = 3.*pow((G*fabs(Qext)/w),1./3.); //min achievable value for for c+  (outgoing on right)
-					c1max = -c1min;  			//max achievable value for c_ (outgoing on left)
-				}
-				else  //Preissman slot requires SUBTERFUDGE (formerly, rootfinding)
-				{	
-//					int count;
-					double xhat = pow(ch0.w/G*Qext*Qext,1./3.);
-					c1min = Qext/xhat + ch0.PhiofA(xhat, false);//estimate bounds with uniform cross section values.
-					c1max = Qext/xhat - ch0.PhiofA(xhat, false);
-					c1  = uin +sign*ch0.PhiofA(Ain,Pin);
-					if(WTF) printf("c1 = %f,c1 min = %f, c1max = %f, Qext = %f, Qin = %f, Ain = %f\n",c1,c1min,c1max, Qext, Qin, Ain);
-					/*
-					if(sign<0)
-					{	
-						if(Qext<0)//solve for xs s.t. 0 = Q + xs*c(xs).
-						{
-						//	cout<<"Qext"<<Qext<<endl;
-						//	fallpurpose fcpm(ch0.w, ch0.At, ch0.Ts, 0, Qext, 0,1,1., ch0.Pnow);
-						//	xs = ::ridders(fcpm, 0,100.,&count, 1e-10, 1e-10);	
-						//	c1max = -Cgrav(xs, ch0.At, ch0.w, ch0.At, Pext)-PhiofA(xs, ch0.At, ch0.w,ch0.At, ch0.Pnow);
-							double xs2 = pow(ch0.w/G*Qext*Qext,1./3.);
-							c1max = Qext/xs2 - PhiofA(xs2, ch0.At, ch0.w,ch0.At, ch0.Pnow);
-						//	printf("c1max = %f, estimate = %f",c1max, c1max2);
-						}
-					}
-					else if(Qext>0) //solve for xs s.t. 0 = Q-xs*c(xs)	
-					{  
-						//	cout<<"Qext"<<Qext<<endl;
-						//	fallpurpose fcpm(ch0.w, ch0.At, ch0.Ts, 0, Qext,0, 1,-1., ch0.Pnow);
-						//	xs = ::ridders(fcpm,0,100.,&count, 1e-10, 1e-10);	
-						//	c1min = ch0.Cgrav(xs,ch0.Pnow)+ch0.PhiofA(xs,ch0.Pnow);
-							double xs2 = pow(ch0.w/G*Qext*Qext,1./3.);
-							c1min = Qext/xs2 + PhiofA(xs2, ch0.At, ch0.w,ch0.At, ch0.Pnow);
-						//	printf("c1max = %f, estimate = %f",c1min, c1min2);
-					}	*/
-				}
-				if(whichend ==0 && Qext<0. && c1>c1max)//make sure left end boundary flux is enforceable 
-				{
-					printf("oops! Qext = %f is too small for c1 = %f\n, setting Aext =Ain= %f.note Qin = %f\n", Qext, c1,Ain,Qin);
-					Aext = Ain;
-				//	Qext = Qin;
-					pass =1;
-					/*
-					if(ch0.channeltype==0){bval[ch0.n] = w/G*pow(c1/3.,3.);}
-					else{
-						if(c1<=0)
-						{
-						//solve for x2 s.t. c1 = -c(x)-phi(x)
-						int count;
-						fallpurpose f2(ch0.w, ch0.At, ch0.Ts, c1, 0.,-1., 0.,-1., ch0.Pnow);
-						double x2 = ::ridders(f2,0,100.,&count, 1e-10, 1e-10);	
-						bval[ch0.n] = -x2*ch0.Cgrav(ch0.HofA(x2,Pin),Pin);
-						Aext = x2;
-						//cout<<"c1 = "<<c1<<"Phi "<< ch0.intPhi(x2)<<" -c(x)-phi(x) = " <<-ch0.cgrav(ch0.hofA(x2)) -ch0.intPhi(x2)<<endl;
-						}
-						else{
-							Qext = Qin;
-							Aext = Ain;
-							cout<<"This seems wrong but I'm confused..setting Qext = Qin\n";
-						}
-						pass =1;
-					}
-					Qext = bval[ch0.n];
-					printf("Qext increased to min allowed value of %f, Aext = %f, RI = %f\n",Qext, Aext, Qext/Aext -ch0.PhiofA(Aext,Pext));
-				*/
-				}
-				//make sure right end boundary flux is enforceable
-				if(whichend ==1 && Qext>0. && c1<c1min)
-				{
-					printf("oops! Qext = %f is too large for c1 = %f\nsetting Aext =Ain=%f. note Qin = %f\n", Qext,c1, Ain, Qin);
-					pass = 1;
-					Aext = Ain;
-	//				Qext = Qin;
-			/*		if(ch0.channeltype==0){bval[ch0.n] = w/G*pow(c1/3.,3.);}
-					else{
-						//solve for x2 s.t. c1 = c(x)+phi(x)
-						int count;
-						fallpurpose f2(ch0.w, ch0.At, ch0.Ts, c1, 0.,1., 0.,1., ch0.Pnow);
-						double x2 = ::ridders(f2,0,100.,&count, 1e-10, 1e-8);	
-						bval[ch0.n] = x2*ch0.Cgrav(ch0.HofA(x2,Pin),Pin);
-						Aext = x2;
-						//cout<<"c1 = "<<c1<<"Phi "<< ch0.intPhi(x2)<<" -c(x)-phi(x) = " <<-ch0.cgrav(ch0.hofA(x2)) -ch0.intPhi(x2)<<endl;
-						pass = 1;
-					}
-					Qext = bval[ch0.n];
-					printf("Qext decreased to max allowed value of %f, Aext = %f\n",Qext, Aext);
-					pass = 1;*/
-				}
-				
-				if(ch0.channeltype ==0) //if uniform cross section
-				{	
-					double c2 = 2.*sign*sqrt(G/w);
-					fRI f(c1,c2, bval[ch0.n]);
-					dfRI df(c2,bval[ch0.n]);
-					Aext = Newton(f,df,Ain, 1e-10, 100);
-				}
-				else 
-				{
-				//if flux was unenforceable, Aext was set above.
-				if(!pass)
-				{				
-					int count;
-					double uin = (Ain>0. ?Qin/Ain :0. );
-					double lhs = uin +sign*ch0.PhiofA(Ain,Pin);//solve lhs = Qext/x +sign*phi(x) for x
-					if(WTF)	cout<<"UHHHHHMM reflect = "<<reflect<<" Qext = "<<Qext<<"  lhs = "<<lhs<<"sign ="<<sign<<" Ain="<<Ain<<endl;
-					fallpurpose fp(ch0.w, ch0.At,ch0.Ts, lhs, Qext, sign,1.,0.,false);
-					if(sgn(fp(0.)*sgn(fp(ch0.Af*2.0))<0))
-					{
-						Aext = ::ridders(fp,0.,ch0.Af*2.0,&count, 1e-10, 1e-10);//this line crashes things quite frequently...
-						double uext = (Aext>0 ?Qext/Aext :0.);
-						double err = fabs(uext +sign*ch0.PhiofA(Aext,Pext)-lhs);
-							//		printf("ridders answer = %.16f, lhs = %f, Qext = %f, RI_ext-RI_n = %f\n", Aext,  lhs,Qext, err);
-					}
-					else
-					{
-						Aext = Ain;
-			//			printf("welp that was doomed to fail, Aext = Ain = %f\n",Aext); 
-					}
-				}
-				}
-			}
-			}
-			else{	//if Qext = 0 we can solve it without rootfinding
-				if(ch0.channeltype ==0) //uniform channel	
-				{
-					double uin = (Ain>0. ?Qin/Ain :0. );
-					Aext = w/(G*4.)*pow((uin +sign*2.*sqrt(G*Ain/w)),2.);
-				}
-				else //Preissman slot
-				{       			
-					//Qext = -Qin;
-					//Aext = Ain;
-					double lhs = Qin/Ain +sign*ch0.PhiofA(Ain,Pin);
-					if(sign*lhs>=0)
-					{
-						Aext = ch0.AofPhi(sign*lhs,false);
-					}
-					else
-					{
-						cout<<"yeah I dunno, setting Aext =Ain and Qext = -Qin"<<endl;
-						printf("Qin = %f, Ain  %f, lhs= %f, whichend = %d\n",Qin, Ain, lhs,whichend);
-						Aext = Ain;
-						Qext = -Qin;
-						bval[ch0.n] = -Qin;
-					}
-				}
-			}
-		}
+	Ain = ch0.q[ch0.idx(0,Nq)];
+	Qin = ch0.q[ch0.idx(1,Nq)];
+	ch0.Pnow = ch0.P[Nq];
+	Pin = ch0.P[Npi];
+	Pext = ch0.P[Npe];
 
-		//if we're specifying A
-	else if (bvaltype==0)
-	{
-		Aext = bval[ch0.n];
-		Qext = (Qin/Ain+sign*ch0.PhiofA(Ain,Pin) - sign*ch0.PhiofA(Aext,Pext))*Aext;
-		//printf("end %d has Qext is %f and Aext is %f and cgrav =%f\n", whichend, Qext, Aext, ch0.Cgrav(Aext, Pext));
-	}
-	else if(bvaltype ==2)//orifice equation 
-	{
-		double eext = bval[ch0.n];
-		double Cd = 0.78; //discharge coefficient
-		double Cc = 0.83;//contraction coefficient (see Trajkovic 1999)
-		double dp = ch0.HofA(Ain, Pin)-Cc*eext;
-		if (dp>0){
-		//	Aext = Ain;
-			Aext =ch0.AofH(eext, false);
-			Qext = Cd*Aext*sqrt(2.*G*dp);
-			cout<<"orifice eqn! Qext = "<<Qext<<"  Qin = "<<Qin<<"  Aext = "<<Aext<<"  Ain = "<<Ain<<endl;
-		}
-		else{
-		   	Qext = Qin;
-			Aext = Ain;}
-		//Aext = ch0.At;
-	}
-	}	
-
-
-//	printf("Ain is %f and Qin is %f and Aext is %f and Qext is %f for end %d\n", Ain, Qin, Aext, Qext, whichend);
-	//compute the fluxes using numFlux
-	//right end of pipe
-	if(whichend)
-	{	
-		ch0.numFlux(Ain, Aext, Qin, Qext, ch0.bfluxright, ch0.P[N], ch0.P[N+1]);
-		ch0.q_hist[ch0.idx_t(0,N+1,ch0.n)] = Aext;
-		ch0.q_hist[ch0.idx_t(1,N+1,ch0.n)] = Qext;
-	//	printf("ch0.bfluxright[1] =%f\n", ch0.bfluxright[1]);
-		if(WTF){
-			printf("\n in junction routine!Aext =%f, Ain = %f, Qin %f, Qext = %f, bfluxright = [%f,%f]\n",Aext, Ain, Qin, Qext,ch0.bfluxright[0],ch0.bfluxright[1]);}
-		//update pressurization info--this needs work, I think... 
-		if(reflect ==1||reflect==-1){ch0.P[N+1] =ch0.P[N];}
-		else if(bvaltype==0 && Aext<ch0.At){ch0.P[N+1] = false;}
-		else if(Aext>ch0.At){ch0.P[N+1]= true;}
-		else{ch0.P[N+1] =ch0.P[N];}
-	}
-	//left end of pipe
+	if(reflect ==1) bccase = 0;
+	else if(reflect ==-1) bccase =1;
 	else
 	{
-		
-		ch0.numFlux(Aext, Ain, Qext, Qin, ch0.bfluxleft, ch0.P[0], ch0.P[1]);
-		//ch0.numFlux(Ain, Ain, Qin, Qin, ch0.bfluxleft, false, false);
-		ch0.q_hist[ch0.idx_t(0,0,ch0.n)] = Aext;
-		ch0.q_hist[ch0.idx_t(1,0,ch0.n)] = Qext;
-	//	printf("ch0.bfluxleft[1] =%f  ", ch0.bfluxleft[1]);
-		if(reflect ==-1||reflect ==1){ch0.P[0] =ch0.P[1];}
-		else if(bvaltype==0 && Aext<ch0.At){ch0.P[0] = false;}
-		else if(Aext>ch0.At){ch0.P[0]= true;}
-		else{ch0.P[0] =ch0.P[1];}
-		if(WTF)	{
-			printf("\nin junction routine!Aext =%f, Ain = %f, Qin %f, Qext = %f, bfluxleft = [%f,%f]\n",Aext, Ain, Qin, Qext,ch0.bfluxleft[0],ch0.bfluxleft[1]);}
+		if (fabs(Qin)/Ain>ch0.Cgrav(Ain, Pin)&&(whichend==0))  //first check for supercritical flow
+		{
+			cout<<"whoooooaaaa there case 2"<<endl;
+			//if(whichend) bccase=1;          //supercitical outflow -> extrapolate
+			//else bccase = 21;               //dredge up a reasonable value of Aext or Qext!
+			bccase =21;
+		}
+		else
+		{
+			if (bvaltype==0)bccase = 312;		//if specifying A
+			else if(bvaltype==1)				//if specifying Q
+			{
+				Qext = bval[ch0.n];				//sample the boundary time series at the current time step
+				if(fabs(Qext)<Qtol)	bccase = 310;//if Qext != 0, problem is harder than if Q = 0 (cases treated seperately)
+				else
+				{
+					//first use Qext to find values c1min and c1max -- range of c+/_(A, Qext) over A in [0, \infty] 
+					//if c1 = c+/_(Ain, Qin) lies in  [c1min, c1max], then it is feasible to follow a characteristic out of the doman
+					double c1min=0., c1max=0., c1, xs=0.;
+					double uin = (Ain>1e-10 ?Qin/Ain :0. );
+					if(ch0.channeltype ==0) //uniform cross section case is easy
+					{
+						c1 = uin +sign*2.*sqrt(G*Ain/w);
+						c1min = 3.*pow((G*fabs(Qext)/w),1./3.); //min achievable value for for c+  (outgoing on right)
+						c1max = -c1min;  			//max achievable value for c_ (outgoing on left)
+					}
+					else  //Preissman slot requires SUBTERFUDGE (formerly, rootfinding)
+					{	
+						double xhat = pow(ch0.w/G*Qext*Qext,1./3.);
+						c1min = Qext/xhat + ch0.PhiofA(xhat, false);//estimate bounds with uniform cross section values.
+						c1max = Qext/xhat - ch0.PhiofA(xhat, false);
+						c1  = uin +sign*ch0.PhiofA(Ain,Pin);
+						if(WTF) printf("c1 = %f,c1 min = %f, c1max = %f, Qext = %f, Qin = %f, Ain = %f\n",c1,c1min,c1max, Qext, Qin, Ain);
+					}
+					if((whichend ==0 && Qext<0. && c1>c1max)||(whichend ==1 && Qext>0. && c1<c1min))//make sure left end boundary flux is enforceable 
+					{
+						printf("oops! Qext = %f is too %s for c1 = %f\n, setting Aext =Ain= %f.note Qin = %f\n", Qext, whichend?"large":"small",c1,Ain,Qin);
+						bccase =32;
+					}	
+					else bccase = 311;		
+				}
+
+			}
+		}
 	}
-//	printf("Aext = %f and Qext = %f \n",Aext, Qext);
+	if(bvaltype==2)bccase=4;
+	cout<<"bc case ="<<bccase<<endl;
+	switch(bccase)
+	{
+		case 0://reflect everything
+			Aext = Ain;
+			Qext = -Qin;
+			break;
+		case 1://reflect nothing i.e. extrapolate
+			Aext = Ain;
+			Qext = Qin;
+			break;
+		case 21://supercritical inflow...make up correct value of Aext...?
+			Aext = ch0.q_hist[ch0.idx_t(0,0,0)];        //use previous value of Aext unless you are at the beginning...
+			Qext =bval[ch0.n];
+			break;
+		case 310://subcritical, specify Q<Qtol	
+			if(ch0.channeltype ==0) //uniform channel	
+			{
+				double uin = (Ain>0. ?Qin/Ain :0. );
+				Aext = w/(G*4.)*pow((uin +sign*2.*sqrt(G*Ain/w)),2.);
+			}
+			else //Preissman slot
+			{       			
+				double lhs = Qin/Ain +sign*ch0.PhiofA(Ain,Pin);
+				if(sign*lhs>=0)
+				{
+					Aext = ch0.AofPhi(sign*lhs,false);
+				}
+				else //I dunno, reflect?
+				{
+					cout<<"yeah I dunno, setting Aext =Ain and Qext = -Qin"<<endl;
+					printf("Qin = %f, Ain  %f, lhs= %f, whichend = %d\n",Qin, Ain, lhs,whichend);
+					Aext = Ain;
+					Qext = -Qin;
+					bval[ch0.n] = -Qin;
+				}				
+			}
+			break;
+		case 311://subcritical, specify Q>=Qtol
+			if(ch0.channeltype ==0)				//if uniform cross section
+			{	
+				double c2 = 2.*sign*sqrt(G/w);
+				double uin = Ain>0? Qin/Ain :0.;
+				double c1 = uin +sign*2.*sqrt(G*Ain/w);
+				fRI f(c1,c2, bval[ch0.n]);
+				dfRI df(c2,bval[ch0.n]);
+				Aext = Newton(f,df,Ain, 1e-10, 100);
+			}
+			else								//Preissman slot
+			{
+				double uin = (Ain>0. ?Qin/Ain :0. );
+				double lhs = uin +sign*ch0.PhiofA(Ain,Pin);//solve lhs = Qext/x +sign*phi(x) for x
+				if(WTF)	cout<<"UHHHHHMM reflect = "<<reflect<<" Qext = "<<Qext<<"  lhs = "<<lhs<<"sign ="<<sign<<" Ain="<<Ain<<endl;
+				fallpurpose fp(ch0.w, ch0.At,ch0.Ts, lhs, Qext, sign,1.,0.,false);
+				if(sgn(fp(0.)*sgn(fp(ch0.Af*2.0))<0))//careful with the Ridders solver
+				{
+					int count;
+					Aext = ::ridders(fp,0.,ch0.Af*2.0,&count, 1e-10, 1e-10);//this line crashes things quite frequently...
+					double uext = (Aext>0 ?Qext/Aext :0.);
+					double err = fabs(uext +sign*ch0.PhiofA(Aext,Pext)-lhs);
+				}
+				else Aext = Ain;//Well this is dodgy as fuck
+			}
+			break;
+		case 312://subcritical, specify A
+			Aext = bval[ch0.n];
+			Qext = (Qin/Ain+sign*ch0.PhiofA(Ain,Pin) - sign*ch0.PhiofA(Aext,Pext))*Aext;
+			break;	
+		case 32://this is the ohshitcase
+			cout<<"this is the ohshit case, no clue what to do here\n";
+			Aext = Ain;
+			Qext = Qin;
+			bval[ch0.n] = Qext;
+			break;
+		case 4://Orifice outflow
+			Cd = 0.78; //discharge coefficient
+			Cc = 0.83;//contraction coefficient (see Trajkovic 1999)
+			eext = bval[ch0.n];
+			dp0 = ch0.HofA(Ain, Pin)-Cc*eext;
+			if (dp0>0)
+			{
+				//	Aext = Ain;
+				Aext =ch0.AofH(eext, false);
+				Qext = Cd*Aext*sqrt(2.*G*dp0);
+				cout<<"orifice eqn! Qext = "<<Qext<<"  Qin = "<<Qin<<"  Aext = "<<Aext<<"  Ain = "<<Ain<<endl;
+			}
+			else
+			{
+				Qext = Qin;
+				Aext = Ain;
+			}
+			break;
+		default:
+			Aext = Ain;
+			Qext = Qin;
+		break;
+	}	
+	//compute the fluxes using numFlux
+	if(whichend)//right end of pipe
+	{	
+		ch0.numFlux(Ain, Aext, Qin, Qext, ch0.bfluxright, ch0.P[N], ch0.P[N+1]);
+		if(WTF) printf("\n in junction routine!Aext =%f, Ain = %f, Qin %f, Qext = %f, bfluxright = [%f,%f]\n",Aext, Ain, Qin, Qext,ch0.bfluxright[0],ch0.bfluxright[1]);
+	}
+	else
+	{
+		ch0.numFlux(Aext, Ain, Qext, Qin, ch0.bfluxleft, ch0.P[0], ch0.P[1]);
+		if(WTF)	printf("\nin junction routine!Aext =%f, Ain = %f, Qin %f, Qext = %f, bfluxleft = [%f,%f]\n",Aext, Ain, Qin, Qext,ch0.bfluxleft[0],ch0.bfluxleft[1]);
+	}
+	ch0.q_hist[ch0.idx_t(0,Npe,ch0.n)] = Aext;
+	ch0.q_hist[ch0.idx_t(1,Npe,ch0.n)] = Qext;
+	//update boundary pressurization states
+	if(reflect ==1||reflect==-1){ch0.P[Npe] =ch0.P[Npi];}
+	else if(bvaltype==0 && Aext<ch0.At){ch0.P[Npe] = false;}
+	else if(Aext>ch0.At){ch0.P[Npe]= true;}
+	else{ch0.P[Npe] =ch0.P[Npi];}
+	printf("Ain is %f and Qin is %f and Aext is %f and Qext is %f for end %d\n Pin is %d and Pext is %d\n", Ain, Qin, Aext, Qext, whichend, Pin, Pext);
+
 }
 
 double Junction1::getFlowThrough(double dt)
