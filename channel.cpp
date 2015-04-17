@@ -98,7 +98,7 @@ double HofA(double A, double D, double At, double Ts, bool P)
 {
 	double y; 
 	if(A<1e-15){return 0.;}
-	if(A<=At)  //below slot
+	if(A<=At &&!P)  //below slot
 	{
 		A = A/(D*D);//normalize by full area;
 		if (A<=PI/8.){
@@ -185,7 +185,7 @@ double Cgrav(double A, double D, double At, double Ts, bool P)
 {
 	double c=0.;
 	if(A<1e-15){return 0.;}//check for near-zero area 
-	if(A<At)
+	if(A<At && !P)
 	{
 		double h = HofA(A,D,At,Ts,P);
 		double l = 2.*sqrt(h/D*(1.-h/D));
@@ -218,7 +218,7 @@ double Cgrav(double A, double D, double At, double Ts, bool P)
 double Eta(double A, double D, double At, double Ts, bool P)
 {
 	double Eta;
-	if (A<At)
+	if (A<At&&!P)
 	{
 		double y = HofA(A, D, At, Ts, P);
 		Eta = G/12.*((3.*D*D-4.*D*y+4.*y*y)*sqrt(y*(D-y))
@@ -1094,7 +1094,7 @@ void Junction1::boundaryFluxes()
 	int bccase, Nq, Npi, Npe;	
 	double Ain, Qin, Aext, Qext;
 	double Cc=0, Cd = 0, dp0 = 0, eext=0;//random crap for dysfunctional orifice routine
-	double Qtol = 1e-5;
+	double Qtol = 1e-12;
 	bool Pin, Pext;
 	double ctol = 0;					  //tolerance for trying to solve for characteristic solns
 	double sign = pow(-1.,whichend+1);    //gives the sign in u (plus or minus) phi (left side: -1, right side: +1)
@@ -1123,9 +1123,9 @@ void Junction1::boundaryFluxes()
 	{
 		if (fabs(Qin)/Ain>ch0.Cgrav(Ain, Pin)&&(whichend==0))  //first check for supercritical flow
 		{
-			cout<<"whoooooaaaa there case 2"<<endl;
-			//if(whichend) bccase=1;          //supercitical outflow -> extrapolate
-			//else bccase = 21;               //dredge up a reasonable value of Aext or Qext!
+		//	cout<<"whoooooaaaa there case 2"<<endl;
+			if(whichend) bccase=1;          //supercitical outflow -> extrapolate
+			else bccase = 21;               //dredge up a reasonable value of Aext or Qext!
 			bccase =21;
 		}
 		else
@@ -1166,8 +1166,11 @@ void Junction1::boundaryFluxes()
 			}
 		}
 	}
-	if(bvaltype==2)bccase=4;
-	cout<<"bc case ="<<bccase<<endl;
+	if(bvaltype==2){
+		if (Ain<ch0.At) bccase =1;
+		else bccase=4;
+	}
+//	cout<<"bc case ="<<bccase<<endl;
 	switch(bccase)
 	{
 		case 0://reflect everything
@@ -1228,7 +1231,8 @@ void Junction1::boundaryFluxes()
 					double uext = (Aext>0 ?Qext/Aext :0.);
 					double err = fabs(uext +sign*ch0.PhiofA(Aext,Pext)-lhs);
 				}
-				else Aext = Ain;//Well this is dodgy as fuck
+				else Aext = Ain;
+			//	cout<<"hmmm...Well this is dodgy as fuck\n";
 			}
 			break;
 		case 312://subcritical, specify A
@@ -1246,12 +1250,15 @@ void Junction1::boundaryFluxes()
 			Cc = 0.83;//contraction coefficient (see Trajkovic 1999)
 			eext = bval[ch0.n];
 			dp0 = ch0.HofA(Ain, Pin)-Cc*eext;
-			if (dp0>0)
+			if (dp0>0 && Qin>0)
 			{
-				//	Aext = Ain;
-				Aext =ch0.AofH(eext, false);
+				Aext = ch0.AofH(Cc*eext, false);
 				Qext = Cd*Aext*sqrt(2.*G*dp0);
-				cout<<"orifice eqn! Qext = "<<Qext<<"  Qin = "<<Qin<<"  Aext = "<<Aext<<"  Ain = "<<Ain<<endl;
+				Aext = Ain;
+		//	these two lines work but are boring.
+			//	Qext = Qin;
+			//	Aext = Qext/(Cd*sqrt(2*G*dp0));
+				cout<<"orifice eqn! Qext = "<<Qext<<"  Qin = "<<Qin<<"  Aext = "<<Aext<<"  Ain = "<<Ain<<"  eext ="<<eext<<" h(Aext)="<<ch0.HofA(Aext,Pext)<<endl;
 			}
 			else
 			{
@@ -1282,7 +1289,7 @@ void Junction1::boundaryFluxes()
 	else if(bvaltype==0 && Aext<ch0.At){ch0.P[Npe] = false;}
 	else if(Aext>ch0.At){ch0.P[Npe]= true;}
 	else{ch0.P[Npe] =ch0.P[Npi];}
-	printf("Ain is %f and Qin is %f and Aext is %f and Qext is %f for end %d\n Pin is %d and Pext is %d\n", Ain, Qin, Aext, Qext, whichend, Pin, Pext);
+	//printf("Ain is %f and Qin is %f and Aext is %f and Qext is %f for end %d\n Pin is %d and Pext is %d\n", Ain, Qin, Aext, Qext, whichend, Pin, Pext);
 
 }
 

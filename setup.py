@@ -11,8 +11,8 @@ Runs on my macbook air and also on orinoco (same dropbox folder...no bloody clue
 
 import sys
 import os
-#sys.path.append('/Users/anna/anaconda/lib/python2.7/site-packages')
-sys.path.append('/Users/lieba/anaconda/lib/python2.7/site-packages')
+sys.path.append('/Users/anna/anaconda/lib/python2.7/site-packages')
+#sys.path.append('/Users/lieba/anaconda/lib/python2.7/site-packages')
 from distutils.core import setup, Extension
 from Cython.Build import cythonize
 from Cython.Distutils import build_ext

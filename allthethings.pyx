@@ -259,7 +259,8 @@ cdef class PyNetwork:
 	cdef Network *thisptr
 	cdef np.ndarray conn 
 	cdef np.ndarray Ns   
-	cdef np.ndarray Ls   
+	cdef np.ndarray Ls
+	cdef np.ndarray Ds 
 	cdef np.ndarray nodeTypes
 	cdef int Nnodes, Nedges, M, Mi
 	cdef double T
@@ -283,12 +284,14 @@ cdef class PyNetwork:
 		self.Ns = np.PyArray_SimpleNew(1,s2,np.NPY_INTP)
 		self.nodeTypes = np.PyArray_SimpleNew(1,[<np.npy_intp>self.Nnodes],np.NPY_INTP)
 		self.Ls = np.PyArray_SimpleNew(1,[<np.npy_intp>self.Nedges],np.NPY_DOUBLE)
+		self.Ds = np.PyArray_SimpleNew(1,[<np.npy_intp>self.Nedges],np.NPY_DOUBLE)
 		NN = 0
 		for i in range(Ne):
 			self.conn[i][0] = self.thisptr.conns[2*i]
 			self.conn[i][1] = self.thisptr.conns[2*i+1]
 			self.Ns[i] =self.thisptr.channels[i].N 
 			self.Ls[i] = self.thisptr.channels[i].L
+			self.Ds[i] = self.thisptr.channels[i].w
 			NN += self.thisptr.channels[i].N 
 		for i in range(self.Nnodes):
 			self.nodeTypes[i] = self.thisptr.nodeTypes[i]
@@ -357,6 +360,8 @@ cdef class PyNetwork:
 		def __get__(self): return self.thisptr.Nedges
 	property Ns:
 		def __get__(self): return self.Ns
+	property Ds:
+		def __get__(self): return self.Ds
 	property Ls:
 		def __get__(self): return self.Ls
 	property M:
