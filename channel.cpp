@@ -98,7 +98,7 @@ double HofA(double A, double D, double At, double Ts, bool P)
 {
 	double y; 
 	if(A<1e-15){return 0.;}
-	if(A<=At &&!P)  //below slot
+	if(A<=At)  //below slot
 	{
 		A = A/(D*D);//normalize by full area;
 		if (A<=PI/8.){
@@ -185,7 +185,7 @@ double Cgrav(double A, double D, double At, double Ts, bool P)
 {
 	double c=0.;
 	if(A<1e-15){return 0.;}//check for near-zero area 
-	if(A<At && !P)
+	if(A<At)
 	{
 		double h = HofA(A,D,At,Ts,P);
 		double l = 2.*sqrt(h/D*(1.-h/D));
@@ -218,7 +218,7 @@ double Cgrav(double A, double D, double At, double Ts, bool P)
 double Eta(double A, double D, double At, double Ts, bool P)
 {
 	double Eta;
-	if (A<At&&!P)
+	if (A<At)
 	{
 		double y = HofA(A, D, At, Ts, P);
 		Eta = G/12.*((3.*D*D-4.*D*y+4.*y*y)*sqrt(y*(D-y))
