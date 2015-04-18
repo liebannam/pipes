@@ -1285,7 +1285,7 @@ void Junction1::boundaryFluxes()
 	ch0.q_hist[ch0.idx_t(0,Npe,ch0.n)] = Aext;
 	ch0.q_hist[ch0.idx_t(1,Npe,ch0.n)] = Qext;
 	//update boundary pressurization states
-	if(reflect ==1||reflect==-1){ch0.P[Npe] =ch0.P[Npi];}
+	if(reflect ==1||reflect==-1){ch0.P[Npe] =ch0.P[Npi];}//for some reason this cannot be messed with, sigh.
 	else if(bvaltype==0 && Aext<ch0.At){ch0.P[Npe] = false;}
 	else if(Aext>ch0.At){ch0.P[Npe]= true;}
 	else{ch0.P[Npe] =ch0.P[Npi];}
@@ -1467,7 +1467,7 @@ void Junction2::boundaryFluxes(){
 	{
 		ch0.numFlux(q1m, q1m, q2m, -q2m, ch0.bfluxright, ch0.P[Ns0], ch1.P[Ns1]);
 		ch1.numFlux(q1p, q1p, -q2p, q2p,  ch1.bfluxleft, ch0.P[Ns0], ch1.P[Ns1]);
-	     	ch0.q_hist[ch0.idx_t(0,Ns0,ch0.n)] =  q1m;
+	    ch0.q_hist[ch0.idx_t(0,Ns0,ch0.n)] =  q1m;
 		ch0.q_hist[ch0.idx_t(1,Ns0,ch0.n)] =  0.;
 		ch1.q_hist[ch1.idx_t(0,Ns1,ch1.n)] =  q1p;
 		ch1.q_hist[ch1.idx_t(1,Ns1,ch1.n)] =  0.;		
