@@ -1077,7 +1077,7 @@ Junction1::Junction1(Channel &a_ch0, int a_which, double a_bval, int a_bvaltype)
 
 void Junction1::boundaryFluxes()
 {
-	/*New Strategy! Ready for hours of debugging???yayyyyy
+	/*New Strategy!
 	  case 0: reflect everything
 	  case 1: reflect nothing
 	  case 2: supercritical 
@@ -1088,8 +1088,8 @@ void Junction1::boundaryFluxes()
 					3.1.0 specify Q<Qtol
 					3.1.1 specify Q>=Qtol
 					3.1.2 specify A
-				3.2 can't solve using RI ohshit(??)
-	  case 4: orifice outflow ?????
+				3.2 can't solve using RI, set A = Ain
+	  case 4: orifice outflow
    */
 	int bccase, Nq, Npi, Npe;	
 	double Ain, Qin, Aext, Qext;
@@ -1182,8 +1182,17 @@ void Junction1::boundaryFluxes()
 			Qext = Qin;
 			break;
 		case 21://supercritical inflow...make up correct value of Aext...?
-			Aext = ch0.q_hist[ch0.idx_t(0,0,0)];        //use previous value of Aext unless you are at the beginning...
-			Qext =bval[ch0.n];
+			if (bvaltype==0)
+			{
+				Aext = bval[ch0.n];
+				Qext = (Qin*Aext/Ain)*(ch0.Cgrav(Aext, Pin)*ch0.Cgrav(Ain, Pin));
+			}
+			else
+			{
+				Qext =bval[ch0.n];
+				//Aext = Ain*Qext/Qin;
+				Aext = ch0.q_hist[ch0.idx_t(0,0,0)];        //use previous value of Aext unless you are at the beginning...
+			}
 			break;
 		case 310://subcritical, specify Q<Qtol	
 			if(ch0.channeltype ==0) //uniform channel	
