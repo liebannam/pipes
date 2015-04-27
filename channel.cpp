@@ -98,7 +98,7 @@ double HofA(double A, double D, double At, double Ts, bool P)
 {
 	double y; 
 	if(A<1e-15){return 0.;}
-	if(A<=At)  //below slot
+	if(A<=At &&(!P))  //below slot
 	{
 		A = A/(D*D);//normalize by full area;
 		if (A<=PI/8.){
@@ -123,7 +123,7 @@ double PhiofA(double A, double D, double At, double Ts, bool P)
 {
 	if(A<1e-15){return 0.;}
 	double phi = 0.;
-	if(A<=At)
+	if(A<=At &&(!P))
 	{	
 		A = A/(D*D);
 		if(A<PI*D*D/8.)
@@ -151,7 +151,7 @@ double AofPhi(double phi, double D, double At, double Ts, bool P)
 	double A = 0.;
 	double phi1m = D*ChebEval(&coeffs_p2[0],Ncheb, 1.);
 	double phi2m = D*ChebEval(&coeffs_p2[0],Ncheb, -1.);
-	if(phi<=phi2m)
+	if(phi<=phi2m &&(!P))
 	{
 		
 		if(phi<phi1m)
@@ -185,7 +185,7 @@ double Cgrav(double A, double D, double At, double Ts, bool P)
 {
 	double c=0.;
 	if(A<1e-15){return 0.;}//check for near-zero area 
-	if(A<At)
+	if(A<At &&(!P))
 	{
 		double h = HofA(A,D,At,Ts,P);
 		double l = 2.*sqrt(h/D*(1.-h/D));
@@ -218,7 +218,7 @@ double Cgrav(double A, double D, double At, double Ts, bool P)
 double Eta(double A, double D, double At, double Ts, bool P)
 {
 	double Eta;
-	if (A<At)
+	if (A<At &&(!P))
 	{
 		double y = HofA(A, D, At, Ts, P);
 		Eta = G/12.*((3.*D*D-4.*D*y+4.*y*y)*sqrt(y*(D-y))
@@ -834,12 +834,16 @@ double Cpreiss::AofH(double h, bool p)
 }
 double Cpreiss::pbar(double A, bool p)
 {
-	double y = HofA(A,p);
-	if(y<D && (!p) )
-		return  G/12.*((3.*D*D-4.*D*y+4.*y*y)*sqrt(y*(D-y))-3.*D*D*(D-2.*y)*atan(sqrt(y)/sqrt(D-y)));
+	return Eta(A,D,At,Ts,p);
+	/*
+	if(A<At && (!p) )
+		{
+			double y = HofA(A,p);
+			return  G/12.*((3.*D*D-4.*D*y+4.*y*y)*sqrt(y*(D-y))-3.*D*D*(D-2.*y)*atan(sqrt(y)/sqrt(D-y)));
+		}
 	else 
 		return PI/4.*G*D*D*((A-At)/Ts+D/2.);
-
+*/
 }
 
 
@@ -938,7 +942,7 @@ void Cpreiss::speedsHLL(double q1m, double q1p, double q2m, double q2p, double *
 		//	printf("Astar = %f um = %f, up = %f intphim = %f intphip = %f\n",Astar, um, up, intPhi(q1m), intPhi(q1p));
 		//	else{
 				Astar = (q1m+q1p)/2.*(1+( (cbar>1e-6)? (um-up)/(2.*cbar): 0));//}  //this is linearized version
-			//if(Astar<0){Astar = (q1p+q1m)/2;}
+			if(Astar<0){Astar = (q1p+q1m)/2;}
 		//}
 		//else{
 
@@ -1022,7 +1026,7 @@ double Cpreiss::findOmega(double Astar, double Ak, bool Ps, bool Pk)
 	double omega;
 	double eps = 1e-8;
 	//cout<<Astar<<"   "<< Ak<<endl;	
-    if (Astar>Ak)
+    if (Astar>Ak &&(!Pk) &&(!Ps))
     	{
         	if(Astar<=Ak+eps)//if Ak-x is super small, the usual routine will fuck up
 			{//so use Ak-eps small and Taylor expand to evaluate Eta(Ak)-Eta(x) ~ dEta/dA(x)(x-Ak)
@@ -1038,7 +1042,7 @@ double Cpreiss::findOmega(double Astar, double Ak, bool Ps, bool Pk)
 	else
     	{
 		//double y = hofA(Ak);
-        	omega  = Cgrav(Ak,Ps);
+        	omega  = Cgrav(Ak,Pk);
     	}
 	//cout<<"omega = "<<omega<<endl;	
 	return omega;
@@ -1247,6 +1251,7 @@ void Junction1::boundaryFluxes()
 		case 312://subcritical, specify A
 			Aext = bval[ch0.n];
 			Qext = (Qin/Ain+sign*ch0.PhiofA(Ain,Pin) - sign*ch0.PhiofA(Aext,Pext))*Aext;
+			if (fabs((Qext/Aext))>ch0.Cgrav(Aext, Pext)) Qext = Qin;
 			break;	
 		case 32://this is the ohshitcase
 			cout<<"this is the ohshit case, no clue what to do here\n";
@@ -1298,7 +1303,7 @@ void Junction1::boundaryFluxes()
 	else if(bvaltype==0 && Aext<ch0.At){ch0.P[Npe] = false;}
 	else if(Aext>ch0.At){ch0.P[Npe]= true;}
 	else{ch0.P[Npe] =ch0.P[Npi];}
-	//printf("Ain is %f and Qin is %f and Aext is %f and Qext is %f for end %d\n Pin is %d and Pext is %d\n", Ain, Qin, Aext, Qext, whichend, Pin, Pext);
+	printf("Ain is %f and Qin is %f and Aext is %f and Qext is %f for end %d\n Pin is %d and Pext is %d\n", Ain, Qin, Aext, Qext, whichend, Pin, Pext);
 
 }
 
@@ -1434,8 +1439,11 @@ void Junction2::boundaryFluxes(){
 	q2m = ch0.q[ch0.idx(1,N0)];
 	q1p = ch1.q[ch1.idx(0,N1)];
 	q2p = ch1.q[ch1.idx(1,N1)];
-	bool pm = ch0.P[ch0.pj(N0)];
-	bool pp = ch1.P[ch1.pj(N1)];
+//	bool pm = ch0.P[ch0.pj(N0)];
+//	bool pp = ch1.P[ch1.pj(N1)];
+	
+	bool pm = ch0.P[Ns0];
+	bool pp = ch1.P[Ns1];
 //attempt at incorporating valve opening coefficient - wish me luck/facepalm
 	//printf("ws=  %f %f %f %f \n",w1[0], w1[1],w2[0], w2[1]);
 	if(valveopen>0)
