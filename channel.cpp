@@ -251,7 +251,10 @@ Channel::Channel(int Nin, double win, double Lin, int Min, double a): kn(1.0),w(
 	for(int i = 0; i<N+1; i++){P.push_back(false);}
 	P.push_back(false);
 	n = 0;
-	if(N*M<1e7){q_hist = new double[2*(N+2)*(M+2)];}//allocated if there's less than 10 million stored variables, else complain and quit
+	if(N*M<1e7){
+		q_hist = new double[2*(N+2)*(M+2)]; //allocated if there's less than 10 million stored variables, else complain and quit
+		p_hist = new double[2*(N+2)*(M+2)];
+	}
 	else 
 	{
 		cout<<"You know, allocating "<< sizeof(w)*M*N*2<<" bytes may be a bad idea! Decrease time increment or figure out a better storage scheme.\n";
@@ -282,6 +285,7 @@ Channel::~Channel()
 	delete [] q0;
 	delete [] q;
 	delete [] q_hist;
+	delete [] p_hist;
 	delete [] qhat;
 	delete [] bfluxleft;
 	delete [] bfluxright;
@@ -356,18 +360,25 @@ void Cpreiss::showp()
 void Channel::setq0(double A0, double Q0) 
 {
 	int i;
+	bool p0 = A0>=At;
 	for(i=0; i<N; i++)
 	{
 		q0[idx(0,i)] = A0;
 		q0[idx(1,i)] = Q0;
 		q_hist[idx_t(0,i+1,0)] = A0;
 		q_hist[idx_t(1,i+1,0)] = Q0;
-		P[pj(i)] = A0>=At;
+		P[pj(i)] = p0;
+		p_hist[pj_t(i+1,0)] = p0;
 	}
 	q_hist[idx_t(0,0,0)] = A0;
 	q_hist[idx_t(0,N+1,0)] = A0;
 	q_hist[idx_t(1,0,0)] = Q0;
 	q_hist[idx_t(1,N+1,0)] = Q0;
+	P[0] = p0;
+	P[N+1] = p0;
+	p_hist[pj_t(0,0)] = p0;
+	p_hist[pj_t(N+1,0)] = p0;
+
 }
 //initialize with nonconstant data A0, Q0
 void Channel::setq0(double *A0, double *Q0)
@@ -382,19 +393,16 @@ void Channel::setq0(double *A0, double *Q0)
 		q_hist[idx_t(0,i+1,0)] = A0[i];
 		q_hist[idx_t(1,i+1,0)] = Q0[i];
 		P[pj(i)] = A0[i]>=At;
-	}
-	if(A0[0]>=At){
-	P[pj(0)] = true;
-	}
-	if (A0[N-1]>=At){	
-	P[pj(N)] = true;	
+		p_hist[pj_t(i+1,0)] = A0[i]>=At;
 	}
 	q_hist[idx_t(0,0,0)] = A0[0];
 	q_hist[idx_t(0,N+1,0)] = A0[N-1];
 	q_hist[idx_t(1,0,0)] = Q0[0];
 	q_hist[idx_t(1,N+1,0)] = Q0[N-1];
-
-
+	P[0] = A0[0]>=At;
+	P[N+1] = A0[N-1]>=At;	
+	p_hist[pj_t(0,0)] = A0[0]>=At;
+	p_hist[pj_t(N+1,0)] = A0[N-1]>=At;
 }
 
 void Channel::setq(vector<double>A0, vector<double>Q0)
@@ -409,23 +417,35 @@ void Channel::setq(vector<double>A0, vector<double>Q0)
 		q_hist[idx_t(0,i+1,0)] = A0[i];
 		q_hist[idx_t(1,i+1,0)] = Q0[i];
 		P[pj(i)] = A0[i]>=At;
+		p_hist[pj_t(i+1,0)] = A0[i]>=At;
 	}
 	q_hist[idx_t(0,0,0)] = A0[0];
 	q_hist[idx_t(0,N+1,0)] = A0[N-1];
 	q_hist[idx_t(1,0,0)] = Q0[0];
 	q_hist[idx_t(1,N+1,0)] = Q0[N-1];
+	P[0] = A0[0]>=At;
+	P[N+1] = A0[N-1]>=At;	
+	p_hist[pj_t(0,0)] = A0[0]>=At;
+	p_hist[pj_t(N+1,0)] = A0[N-1]>=At;
 }
 
 /**Initialize q with constant data (A0,Q0)*/
 void Channel::setq(double A0, double Q0)
 {
 	int i;
+	bool p0 = A0>=At;
 	for(i=0; i<N; i++)
 	{
 		q[idx(0,i)] = A0;
 		q[idx(1,i)] = Q0;
-		P[pj(i)] = A0>=At;
+		P[pj(i)] = p0;
+		p_hist[pj_t(i,0)] = p0;
+
 	}
+	P[0] = p0;
+	P[N+1] = p0;
+	p_hist[pj_t(0,0)] = p0;
+	p_hist[pj_t(N+1,0)] = p0;
 }		
 
 /////**take M Euler steps of length dt to update conservation law for left state [q1(i), q2(i)] and right state [q1p(i+1), q2(i+1)],using numflux as numerical flux*/
@@ -950,6 +970,7 @@ void Cpreiss::speedsHLL(double q1m, double q1p, double q2m, double q2p, double *
 		bool Ps = (Pm && Pp);
 		s[0] = um - findOmega(Astar, q1m, Ps, Pm);
 		s[1] = up + findOmega(Astar, q1p, Ps, Pp);
+		/*
 		double Vs, cs, phip, phim;
 		phim = PhiofA(q1m, Pm);
 		phip = PhiofA(q1p, Pp);
@@ -968,7 +989,7 @@ void Cpreiss::speedsHLL(double q1m, double q1p, double q2m, double q2p, double *
 			cout<<"phis = "<<phis<<" cs = "<<cs<<endl;
 			printf("Atsar = %f, Astard = %f, AstarS = %f\nwith q1m = %f and q1p = %f, um =%f, up = %f\n",Astar, Astarp, Astars, q1m, q1p, um, up);
 			printf("sL = %f, sR = %f, Sanders speeds (vl-cl, vs-cs) = (%f, %f) and (vr+cR, vr+cr) = (%f,%f)",s[0], s[1], sl1, sl2, sr1, sr2);
-		}
+		}*/
 	//	s[0] = min(sl1,sl2);
    // 	s[1] = max(sr1,sr2);
 
@@ -1303,6 +1324,7 @@ void Junction1::boundaryFluxes()
 	else if(bvaltype==0 && Aext<ch0.At){ch0.P[Npe] = false;}
 	else if(Aext>ch0.At){ch0.P[Npe]= true;}
 	else{ch0.P[Npe] =ch0.P[Npi];}
+	ch0.p_hist[ch0.pj_t(Npe,ch0.n)] = ch0.P[Npe];
 	printf("Ain is %f and Qin is %f and Aext is %f and Qext is %f for end %d\n Pin is %d and Pext is %d\n", Ain, Qin, Aext, Qext, whichend, Pin, Pext);
 
 }

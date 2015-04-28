@@ -148,18 +148,21 @@ class Channel
 *if P =[P[0], P[1], ...P[N+1]], P[0] and P[N+1] are ghost cell values; if P(i) = 1, cell i is pressurized--details in Bourdarias 2007, pg 122
 *associate indexing function pj keeps track of this shift*/
 
-		double *q0, *q, *qhat;                     // previous, current, and temporary dynamical variables	
-		double *q_hist;           		   // history of dynamical variables	  		  			
-		vector<bool> P;   			   // pressurization states = [p[leftend], p[0], p[1]....p[N-1], p[rightend]], size is N+2x1
-		bool Pnow; 				   // ''current pressurization'' at cell under consideration-- this is a hilariously bad idea!
+		double *q0, *q, *qhat;          // previous, current, and temporary dynamical variables	
+		double *q_hist;           		// history of dynamical variables	  		  			
+		double *p_hist;					//history of pressurization states
+		vector<bool> P;   			    // pressurization states = [p[leftend], p[0], p[1]....p[N-1], p[rightend]], size is N+2x1
+		bool Pnow; 				        // ''current pressurization'' at cell under consideration-- this is a hilariously bad idea!
 
 		
 		//indexing functions		
 		int idx(int i_in, int j_in){return (N*i_in+j_in);}    //access q(i,j)  where i =0,1 and j= 0,1...N-1
 		int idx_t(int i_in, int j_in, int n_in){return (2*(N+2)*n_in+(N+2)*i_in+j_in);} //accessq^n(i,j)with i,j as above and n = 0,...M-1 (n*dt = t at which this slice is taken)
 
-		int pj(int i){return i+1;} 		    // indexing for pressurization states vector
+		int pj(int i){return i+1;} 		    // indexing for pressurization states vector 
+		int pj_t(int i,int n){return (N+2)*n+i;}; //indexing for history of pressurization states, i = 0, [1,...N] N+1 
 		double *bfluxleft, *bfluxright;         // left and right boundary fluxes
+		
 /*****Methods*/
 		Channel (int Nin, double win, double Lin, int Min, double a); // constructor
 		~Channel();
