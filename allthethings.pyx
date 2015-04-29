@@ -31,7 +31,7 @@ sys.path.append('/Users/anna/anaconda/lib/python2.7/site-packages')
 #print sys.path
 np.import_array()
 
-cdef np.ndarray okArray(int N, void *ptr):
+cdef np.ndarray okArray(int N, void *ptr, int dtype = np.NPY_DOUBLE):
 	'''Take pointer ptr to C++ array of N elements of double64 and return np.ndarray pointing to same data
 	Note it uses the ArrayWrap class (below) to set data and correctly overload the array() behavior 
 	Parameters:
@@ -45,7 +45,7 @@ cdef np.ndarray okArray(int N, void *ptr):
 	
 	cdef np.ndarray x
 	a_wrap = ArrayWrap()
-	a_wrap.set_data(N,ptr)
+	a_wrap.set_data(N,ptr, dtype)
 	x = np.array(a_wrap,copy=False)
 	x.base = <PyObject*> a_wrap           #assign our object to "base" of np object
 	Py_INCREF(a_wrap)	                  #increase reference count on q
@@ -58,7 +58,7 @@ https://gist.github.com/GaelVaroquaux/1249305  (BDS license)'''
 	cdef void* d_ptr
 	cdef int size
 	cdef int dtype
-	cdef set_data(self, int size, void * d_ptr, int dtype = np.NPY_DOUBLE):
+	cdef set_data(self, int size, void * d_ptr, int dtype):
 		'''Set array data
 		Parameters:
 		-----------
@@ -104,7 +104,8 @@ cdef extern from "channel.h":
 		int channeltype, N, M
 		double kn, w, L, dx, At, Af, a, Ts, S0, Mr, cmax
 		double bcqleft, bcqright, bcaleft, bcaright
-		double* q, *q0, *q_hist, *p_hist
+		double* q, *q0, *q_hist 
+		bool *p_hist
 		vector [bool] P
 		void geom_init(double, double, double)
 		void setGeom(double)
@@ -318,7 +319,7 @@ cdef class PyNetwork:
 	def phist(self, i):
 		cdef np.ndarray ph
 		cdef int Nn = (self.Ns[i]+2)*(self.thisptr.M+2)
-		ph = okArray(Nn, self.thisptr.channels[i].p_hist)
+		ph = okArray(Nn, self.thisptr.channels[i].p_hist, np.NPY_BOOL)
 		return ph
 	def setIC(self, i,a0,q0):
 		for j in range(self.Ns[i]):

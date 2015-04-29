@@ -150,7 +150,7 @@ class Channel
 
 		double *q0, *q, *qhat;          // previous, current, and temporary dynamical variables	
 		double *q_hist;           		// history of dynamical variables	  		  			
-		double *p_hist;					//history of pressurization states
+		bool *p_hist;					//history of pressurization states
 		vector<bool> P;   			    // pressurization states = [p[leftend], p[0], p[1]....p[N-1], p[rightend]], size is N+2x1
 		bool Pnow; 				        // ''current pressurization'' at cell under consideration-- this is a hilariously bad idea!
 
