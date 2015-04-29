@@ -104,7 +104,7 @@ cdef extern from "channel.h":
 		int channeltype, N, M
 		double kn, w, L, dx, At, Af, a, Ts, S0, Mr, cmax
 		double bcqleft, bcqright, bcaleft, bcaright
-		double* q, *q0, *q_hist
+		double* q, *q0, *q_hist, *p_hist
 		vector [bool] P
 		void geom_init(double, double, double)
 		void setGeom(double)
@@ -315,6 +315,11 @@ cdef class PyNetwork:
 		cdef int Nn = (self.Ns[i]+2)*2*(self.thisptr.M+2)
 		qh = okArray(Nn, self.thisptr.channels[i].q_hist)
 		return qh
+	def phist(self, i):
+		cdef np.ndarray ph
+		cdef int Nn = (self.Ns[i]+2)*(self.thisptr.M+2)
+		ph = okArray(Nn, self.thisptr.channels[i].p_hist)
+		return ph
 	def setIC(self, i,a0,q0):
 		for j in range(self.Ns[i]):
 			self.thisptr.channels[i].q[j] = a0[j]
