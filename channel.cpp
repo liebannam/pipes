@@ -98,7 +98,8 @@ double HofA(double A, double D, double At, double Ts, bool P)
 {
 	double y; 
 	if(A<1e-15){return 0.;}
-	if(A<=At &&(!P))  //below slot
+//	if(A<=At &&(!P))  //below slot
+	if(A<=At)  //below slot
 	{
 		A = A/(D*D);//normalize by full area;
 		if (A<=PI/8.){
@@ -123,7 +124,8 @@ double PhiofA(double A, double D, double At, double Ts, bool P)
 {
 	if(A<1e-15){return 0.;}
 	double phi = 0.;
-	if(A<=At &&(!P))
+	//if(A<=At &&(!P))
+	if(A<=At)
 	{	
 		A = A/(D*D);
 		if(A<PI*D*D/8.)
@@ -151,7 +153,8 @@ double AofPhi(double phi, double D, double At, double Ts, bool P)
 	double A = 0.;
 	double phi1m = D*ChebEval(&coeffs_p2[0],Ncheb, 1.);
 	double phi2m = D*ChebEval(&coeffs_p2[0],Ncheb, -1.);
-	if(phi<=phi2m &&(!P))
+//	if(phi<=phi2m &&(!P))
+	if(phi<=phi2m)
 	{
 		
 		if(phi<phi1m)
@@ -185,7 +188,8 @@ double Cgrav(double A, double D, double At, double Ts, bool P)
 {
 	double c=0.;
 	if(A<1e-15){return 0.;}//check for near-zero area 
-	if(A<At &&(!P))
+//	if(A<At &&(!P))
+	if(A<At)
 	{
 		double h = HofA(A,D,At,Ts,P);
 		double l = 2.*sqrt(h/D*(1.-h/D));
@@ -218,7 +222,8 @@ double Cgrav(double A, double D, double At, double Ts, bool P)
 double Eta(double A, double D, double At, double Ts, bool P)
 {
 	double Eta;
-	if (A<At &&(!P))
+//	if (A<At &&(!P))
+	if (A<At)
 	{
 		double y = HofA(A, D, At, Ts, P);
 		Eta = G/12.*((3.*D*D-4.*D*y+4.*y*y)*sqrt(y*(D-y))
@@ -845,7 +850,8 @@ void Cpreiss::setGeom(double a_)
 	
 double Cpreiss::AofH(double h, bool p)
 {
-	if(h<=yt && (!p))
+//	if(h<=yt && (!p))
+	if(h<=yt)
 	{	double t = 2.*(acos(1.-h/D*2.));
 		return	 D*D*(t-sin(t))/8.;
 	}
@@ -1048,6 +1054,7 @@ double Cpreiss::findOmega(double Astar, double Ak, bool Ps, bool Pk)
 	double eps = 1e-8;
 	//cout<<Astar<<"   "<< Ak<<endl;	
     if (Astar>Ak &&(!Pk) &&(!Ps))
+ //   if (Astar>Ak)
     	{
         	if(Astar<=Ak+eps)//if Ak-x is super small, the usual routine will fuck up
 			{//so use Ak-eps small and Taylor expand to evaluate Eta(Ak)-Eta(x) ~ dEta/dA(x)(x-Ak)
