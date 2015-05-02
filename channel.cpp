@@ -1043,7 +1043,7 @@ void Cpreiss::speedsHLL(double q1m, double q1p, double q2m, double q2p, double *
 	}
 	if(s[0]>s[1]) 	//check that HLL speeds have s0<s1; really, this should never bloody happen!
 	{  
-		printf("The hell? s[0]>s[1], with q1m = %f, q2m = %f, q1p =%f, q2p =%f, s[0] = %f, s[1] = %f\n",q1m,q2m,q1p,q2p,s[0],s[1]);
+	if(WTF)	printf("The hell? s[0]>s[1], with q1m = %f, q2m = %f, q1p =%f, q2p =%f, s[0] = %f, s[1] = %f\n",q1m,q2m,q1p,q2p,s[0],s[1]);
 		//use Sanders wave speed estimates instead if this happens
 		s[0] = min(sl1,sl2);
     	s[1] = max(sr1,sr2);
@@ -1058,8 +1058,8 @@ double Cpreiss::findOmega(double Astar, double Ak, bool Ps, bool Pk)
 	double eps = 1e-8;
 	//cout<<Astar<<"   "<< Ak<<endl;	
   //  if (Astar>Ak &&(!Pk) &&(!Ps))
-   if (Astar>Ak)
-    	{
+   if (Astar>Ak+eps)
+    	/*{
         	if(Astar<=Ak+eps)//if Ak-x is super small, the usual routine will fuck up
 			{//so use Ak-eps small and Taylor expand to evaluate Eta(Ak)-Eta(x) ~ dEta/dA(x)(x-Ak)
 			//this is easy since c^2 = GdEta/dA, lol. 
@@ -1067,9 +1067,10 @@ double Cpreiss::findOmega(double Astar, double Ak, bool Ps, bool Pk)
 				return c*sqrt(Astar/Ak); 
 		//		printf("c = %f\n", c);	
 			}
-		else{
+		else*/
+		{
 			omega = sqrt((Eta(Astar, w, At, Ts, Ps)-Eta(Ak, w, At, Ts, Pk))*Astar/(Ak*(Astar-Ak)));
-		}
+		//}
 	} 
 	else
     	{
@@ -1338,7 +1339,7 @@ void Junction1::boundaryFluxes()
 	else if(Aext>ch0.At){ch0.P[Npe]= true;}
 	else{ch0.P[Npe] =ch0.P[Npi];}
 	ch0.p_hist[ch0.pj_t(Npe,ch0.n)] = ch0.P[Npe];
-	printf("Ain is %f and Qin is %f and Aext is %f and Qext is %f for end %d\n Pin is %d and Pext is %d\n", Ain, Qin, Aext, Qext, whichend, Pin, Pext);
+//	printf("Ain is %f and Qin is %f and Aext is %f and Qext is %f for end %d\n Pin is %d and Pext is %d\n", Ain, Qin, Aext, Qext, whichend, Pin, Pext);
 
 }
 

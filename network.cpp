@@ -377,6 +377,7 @@ void Network::EulerStep(double dt)
 	for (unsigned int j = 0; j<junction3s.size(); j++){junction3s[j]->boundaryFluxes();}
 	for (unsigned int j = 0; j<junction1s.size(); j++){junction1s[j]->boundaryFluxes();}
 	for (unsigned int j = 0; j<junction2s.size(); j++){junction2s[j]->boundaryFluxes();}
+#pragma OMP parallel for
 	for (int k = 0;k<Nedges; k++){
 		//cout<<"k= "<<k<<endl;
 		channels[k]->stepEuler(dt);

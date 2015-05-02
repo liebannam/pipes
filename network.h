@@ -32,6 +32,11 @@
 #define NETWORK_H
 #include <vector>
 #include "channel.h"
+#ifdef __OMP
+#include "omp.h"
+#endif
+
+
 /*
 class Network_params
 {
