@@ -431,20 +431,35 @@ void Network::stepRK3_SSP(double dt)
 void Network::runForwardProblem(double dt)
 {
 	nn = 0;
-	//int Mi = M<500?1:M/500;
+	int Mi = M<500?1:M/500;
 	for(int i=0; i<M; i++)
 	{
 			
-	//	if(i%Mi==0)
+		if(i%Mi==0)
 		{
-	//		printf("current time is = %f s ", (double)nn*dt);
-	//		printf("Average Gradient is %f \n", getAveGradH(i));	
+			printf("current time is = %f s ", (double)nn*dt);
+			printf("Average Gradient is %f \n", getAveGradH(i));	
 	if (WTF)
 			printf("%f %d %f \n",0.,i ,getAveGradH(i));	
 		}
 		nn ++;
 		stepRK3_SSP(dt);
-		//EulerStep(dt);
+	/*	EulerStep(dt);
+		for(int j=0; j<Nedges; j++)
+		{
+			for(int i = 0; i<channels[j]->N; i++)
+			{
+				for (int k=0; k<2; k++)
+				{
+					channels[j]->q0[channels[j]->idx(k,i)] = channels[j]->q[channels[j]->idx(k,i)];
+					channels[j]->q_hist[channels[j]->idx_t(k,i+1,nn)] = channels[j]->q[channels[j]->idx(k,i)];
+				}
+				channels[j]->p_hist[channels[j]->pj_t(i+1,nn)] = channels[j]->P[i+1];
+			}
+		}
+		*/
+
+
 	
 	}
 }
