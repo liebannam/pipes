@@ -345,12 +345,13 @@ Network* setupNetwork(char *finp, char *fconfig, int &M, int &Mi, double &T, int
 		printf("h0 = %f, a0 = %.10f, h(a0) = %f\n", h0s[k],a0, Ntwk->channels[k]->HofA(a0,false) );
 		Ntwk->channels[k]->setq(a0, q0s[k]);
 		Ntwk->channels[k]->setq0(a0, q0s[k]);
-	}	
+	}
 	for(int k = 0; k<Ntwk->junction1s.size(); k++)
 	{
 		Ntwk->junction1s[k]->bvaltype = bvaltypes[k];
 		Ntwk->junction1s[k]->setbVal(bvals[k]);
 		Ntwk->junction1s[k]->reflect = reflects[k];
+		cout<<"k = "<<k<<" reflect = "<<reflects[k]<<endl;
 	}
 	for(int k = 0; k<Ntwk->junction2s.size(); k++)
 	{

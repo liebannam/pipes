@@ -203,7 +203,8 @@ class Channel
 /** Other quantities of interest*/		
 		double getTheGoddamnVolume();
 		double getAveGradH(int i);  //returns int_0^L(dh/dx) dx at time ti (probably not accurate enough...) 
-
+		double getKE(int i);
+		double getPE(int i);
 /**Write stuff */
 		int writeqToFile(int Mi, double dt);    //write all information to file at intervals of dt*Mi/M 
 		int writeRItofile(double dt, int sign); //Write Riemann Invariants to file

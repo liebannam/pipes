@@ -645,6 +645,35 @@ double Channel::getTheGoddamnVolume()
 	return evol;
 }
 
+//add up u^2/2g
+double Channel::getKE(int i)
+{
+	double ui =0,KE=0;
+	for (int j = 0; j<N; j++)
+	{
+		double ai = q_hist[idx_t(0,j+1,i)];
+		ui = ai>0? (q_hist[idx_t(1,j+1,i)]/ai): 0;
+		KE+= ui*ui/(2*G)*ai;
+	}
+	return KE;
+}
+
+double Channel::getPE(int i)
+{
+	double hi =0,ai=0,PE=0;
+	bool p = false;
+	for (int j = 0; j<N; j++)
+	{
+    	ai=q_hist[idx_t(0,j+1,i)];
+		hi=	HofA(ai, p);
+	//next two lines incorrect, but I am not sure why:
+	//	double ai = q_hist[idx_t(0,j+1,i)];
+	//
+	PE+= ai*hi- pbar(ai,p)/G; 
+	}
+	return PE;
+}
+
 //get average spatial gradient at time t_i	
 // Simpson's rule... in theory...
 double Channel::getAveGradH(int i)
@@ -1037,7 +1066,7 @@ void Cpreiss::speedsHLL(double q1m, double q1p, double q2m, double q2p, double *
 	}
 	if(isnan(s[0]) || isnan(s[1])) //check for NaNs
 	{
-		printf("Error!nan speeds!s[0] = %f, s[1] = %f, with y1 = %f, y2 = %f\n", s[0], s[1],ym, yp);
+		printf("Error!nan speeds!s[0] = %f, s[1] = %f, with y1 = %.10f, y2 = %.10f\n", s[0], s[1],ym, yp);
 		printf("q1p is %f and q2p is %f, um is %f, up is %f\n", q1p, q2p, um, q2p);
 		exit (1);
 	}
@@ -1153,17 +1182,20 @@ void Junction1::boundaryFluxes()
 	ch0.Pnow = ch0.P[Nq];
 	Pin = ch0.P[Npi];
 	Pext = ch0.P[Npe];
-
+//	cout<<"reflect= "<<reflect<<endl;
 	if(reflect ==1) bccase = 0;
 	else if(reflect ==-1) bccase =1;
 	else
 	{
-		if (fabs(Qin)/Ain>ch0.Cgrav(Ain, Pin)&&(whichend==0))  //first check for supercritical flow
+		if (fabs(Qin)/Ain>ch0.Cgrav(Ain, Pin))  //first check for supercritical flow
 		{
 		//	cout<<"whoooooaaaa there case 2"<<endl;
-			if(whichend) bccase=1;          //supercitical outflow -> extrapolate
+			Qext = bval[ch0.n];		
+			if (fabs(Qext)<Qtol) bccase =0;      //just reflect
+			else if((whichend &&(Qext>Qtol)) ||(!whichend &&Qext<-Qtol)) bccase=1;          //supercitical outflow -> extrapolate
 			else bccase = 21;               //dredge up a reasonable value of Aext or Qext!
-			bccase =21;
+		//	bccase =21;
+		//	cout<<"bccase= "<<bccase<<endl;
 		}
 		else
 		{
@@ -1485,10 +1517,10 @@ void Junction2::boundaryFluxes(){
 	//printf("ws=  %f %f %f %f \n",w1[0], w1[1],w2[0], w2[1]);
 	if(valveopen>0)
 	{
-		double h0f = ch1.HofA(q1p,pm)-offset;
-		double h1f = ch0.HofA(q1m,pp)+offset;
-		q1pfake = ch0.AofH(h0f,pm);      //what channel 0 sees
-		q1mfake = ch1.AofH(h1f,pp);      //what channel 1 sees
+		double h0f = ch1.HofA(q1p,pp)-offset;
+		double h1f = ch0.HofA(q1m,pm)+offset;
+		q1pfake = ch0.AofH(h0f,pp);      //what channel 0 sees
+		q1mfake = ch1.AofH(h1f,pm);      //what channel 1 sees
 	//	cout<< q1p-ch0.AofH(h0f,pm)<<" "<<q1m-ch1.AofH(h1f,pm)<<endl;
 	//	printf("q1m = %f, q1mfake = %f, q1p = %f, q1pfake = %f, hm = %f, hp = %f N1 = %d N0 = %d\n", q1m, q1mfake,q1p,q1pfake, h0f, h1f, N1,N0);
 	//	ch1.showVals(1);	
@@ -1687,8 +1719,7 @@ void Cpreiss::updateExactRS(double q1m, double q1p, double q2m, double q2p, doub
 			printf("in rarefaction!");
 		}
 		else if (m2<=0)//whole rarefaction wave is tilted off to the left
-		{
-			qnew[0] = Astar;
+		{	qnew[0] = Astar;
 			qnew[1] = Qstar;
 			printf("titled to left\n");
 		}

@@ -115,6 +115,7 @@ cdef extern from "channel.h":
 		double PhiofA(double, bool)
 		double AofPhi(double, bool)
 		double Cgrav(double, bool)
+		double pbar(double, bool)
 	cdef cppclass Junction1:
 		Junction1(Cpreiss, int, double, int)
 		void setbVal(vector[Real] x)
@@ -147,6 +148,8 @@ cdef class PyPipe_ps:
 		return self.thisptr.HofA(A,P)
 	def AofH(self, double H, bool P):
 		return self.thisptr.AofH(H, P)
+	def pbar(self, double A, bool P):
+		return self.thisptr.pbar(A,P)
 	#various properties we may want to access 
 	property N:
 		def __get__(self): return self.thisptr.N
@@ -186,7 +189,9 @@ cdef extern from "network.h":
 		int channeltype;
 		double T;
 		void runForwardProblem(double);
-		double getAveGradH(int i);	
+		double getAveGradH(int i);
+		double getKE(int i);
+		double getPE(int i);
 		double getTotalVolume();
 		void setbVal(vector[Real] x);
 	cdef void quickWrite(double, int, int, double, int)
@@ -348,6 +353,10 @@ cdef class PyNetwork:
 				print "%f    %f" %(l[j], l[j+Ni])
 	def getAveGradH(self,i):
 		return self.thisptr.getAveGradH(i)
+	def getKE(self,i):
+		return self.thisptr.getKE(i)
+	def getPE(self, i):
+		return self.thisptr.getPE(i)
 	def getTotalVolume(self):
 		return self.thisptr.getTotalVolume()
 	def getHofA(self,i):
@@ -384,7 +393,10 @@ cdef class PyNetwork:
 	property solve_time:
 		def __get__(self): return self.solve_t
 	def setbVal(self,i,x):
-		self.thisptr.junction1s[i].setbVal(x)
+		cdef vector[Real] xx
+		for k in range(len(x)):
+			xx.push_back(x[k])
+		self.thisptr.junction1s[i].setbVal(xx)
 
 cdef extern from "levmar.h":
 	cdef cppclass levmar:
@@ -407,6 +419,79 @@ cdef extern from "optimizeit.h":
 		double dt;
 		double mydelta;
 		bc_opt_dh(int , int , vector[double], Network*, int , double , vector[int], int )
+	cdef cppclass mystery_bc(levmar):
+		int whichnode
+		int M
+		int modetype
+		double T
+		mystery_bc(int, int, vector[double], vector[double], Network *, int, double, int, double, int, vector[double], int)
+cdef class PyMystery_BC:
+	cdef mystery_bc *thisptr
+	cdef double solve_t;
+	cdef double wsolve_t;
+	cdef int ndof;
+	def __cinit__(self, char *fi, char *fc, int ndof, np.ndarray x0, np.ndarray hdata, int modetype, int pj, double xstar, int whichnode, np.ndarray qfixed,int delay):
+		cdef int M = 1, Mi=1;
+		cdef int channeltype = 1;
+		cdef double T = 1.;
+		cdef vector[double] vx0
+		cdef vector[double] vhdata
+		cdef vector[double] vqfixed
+		self.ndof = ndof;
+		for i in range(len(x0)):
+			vx0.push_back(x0[i])
+		for i in range(len(hdata)):
+			vhdata.push_back(hdata[i])
+		for i in range(len(qfixed)):
+			vqfixed.push_back(qfixed[i])
+		Ntwk_i = setupNetwork(fi,fc,M,Mi, T, channeltype);
+		self.thisptr = new mystery_bc(len(x0), M, vx0, vhdata, Ntwk_i, modetype, T, pj, xstar, whichnode, vqfixed, delay)
+	def solve(self):
+		cdef clock_t start_t, end_t;
+		cdef double omp_start_t, omp_end_t;
+		start_t = clock();
+		omp_start_t = openmp.omp_get_wtime();
+		self.thisptr.solve(0)
+		end_t = clock();
+		omp_end_t = openmp.omp_get_wtime();
+		self.solve_t = (end_t-start_t)/<double>CLOCKS_PER_SEC;
+		self.wsolve_t = (omp_end_t-omp_start_t)
+	def dump(self):
+		self.thisptr.dump(stdout)
+	def compute_f(self):
+		self.thisptr.compute_f()
+	def getBCtimeseries(self,i):
+		cdef vector[Real] bvals
+		cdef vector[Real] xfake
+		for k in range(self.M+1):
+			bvals.push_back(0)
+		for k in range(self.ndof):
+			xfake.push_back(self.x[i*self.ndof+k])
+		getTimeSeries(bvals, xfake, self.ndof, self.thisptr.M, self.thisptr.T, self.thisptr.modetype)
+		return bvals
+	property x:
+		def __get__(self): return self.thisptr.x
+	property r:
+		def __get__(self): return self.thisptr.r
+	property f:
+		def __get__(self): return self.thisptr.f
+	property T:
+		def __get__(self): return self.thisptr.T
+	property M:
+		def __get__(self): return self.thisptr.M
+	property modetype:
+		def __get__(self):
+			if self.thisptr.modetype ==0:
+				t= "Hermite"
+			else:
+				t= "Fourier"
+			return t
+	property solve_t:
+		def __get__(self): return self.solve_t
+	property wsolve_t:
+		def __get__(self): return self.wsolve_t
+
+
 cdef class PyBC_opt_dh:
 	cdef bc_opt_dh *thisptr
 	cdef int ndof

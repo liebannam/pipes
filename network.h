@@ -32,11 +32,9 @@
 #define NETWORK_H
 #include <vector>
 #include "channel.h"
-#ifdef __OMP
 #include "omp.h"
-#endif
 
-
+//
 /*
 class Network_params
 {
@@ -84,6 +82,8 @@ class Network{
 	void runForwardProblem(double dt);//step dynamic variables from t =0 to t = T
 	double getTotalVolume();//total volume (because this is an FV code, V= sum(A(i))*dx))
 	double getAveGradH(int i); //average gradient of h(x) over lengths
+	double getKE(int i);
+	double getPE(int i);
 };
 
 

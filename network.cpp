@@ -5,6 +5,8 @@
 
 #include "network.h"
 
+
+
 int find_nth(std::vector<int> values,  int desired, int n_ordinal, int N)
 {
 	int retval = -1;
@@ -377,11 +379,16 @@ void Network::EulerStep(double dt)
 	for (unsigned int j = 0; j<junction3s.size(); j++){junction3s[j]->boundaryFluxes();}
 	for (unsigned int j = 0; j<junction1s.size(); j++){junction1s[j]->boundaryFluxes();}
 	for (unsigned int j = 0; j<junction2s.size(); j++){junction2s[j]->boundaryFluxes();}
-#pragma OMP parallel for
+//	#pragma omp parallel num_threads(3)
+//	{
+//	#pragma omp parallel for
+//	#pragma omp for
 	for (int k = 0;k<Nedges; k++){
-		//cout<<"k= "<<k<<endl;
 		channels[k]->stepEuler(dt);
+	//	int NT = omp_get_num_threads();
+	//	printf("number of threads is %d\n",NT);
 	}
+//	}
 }
 
 void Network::stepRK3_SSP(double dt)
@@ -431,20 +438,21 @@ void Network::stepRK3_SSP(double dt)
 void Network::runForwardProblem(double dt)
 {
 	nn = 0;
-	int Mi = M<500?1:M/500;
+	int Mi = M<500?1:M/100;
 	for(int i=0; i<M; i++)
 	{
 			
-		if(i%Mi==0)
+	/*	if(i%Mi==0)
 		{
 			printf("current time is = %f s ", (double)nn*dt);
 			printf("Average Gradient is %f \n", getAveGradH(i));	
 	if (WTF)
 			printf("%f %d %f \n",0.,i ,getAveGradH(i));	
-		}
+		}*/
 		nn ++;
 		stepRK3_SSP(dt);
-	/*	EulerStep(dt);
+	
+		/*	EulerStep(dt);
 		for(int j=0; j<Nedges; j++)
 		{
 			for(int i = 0; i<channels[j]->N; i++)
@@ -483,4 +491,24 @@ double Network::getAveGradH(int i)
 	return dhdx;
 }
 
+double Network::getKE(int i)
+{
+	double KE = 0;
+	for(unsigned int j = 0; j <channels.size(); j++)
+	{
+		KE += channels[j]->getKE(i); 
+	}
+	return KE;
 
+}
+
+double Network::getPE(int i)
+{
+	double PE = 0;
+	for(unsigned int j = 0; j <channels.size(); j++)
+	{
+		PE += channels[j]->getPE(i); 
+	}
+	return PE;
+
+}
