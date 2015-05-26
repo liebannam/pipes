@@ -225,8 +225,8 @@ double times[1] = {T};
 int which[1] = {0};
 int which2[1] = {1}; 
 //}
-//writeOutputTarga(Ntwk, M, Mi,T, 0);
-//writeOutputText(Ntwk, M, Mi);
+writeOutputTarga(Ntwk, M, Mi,T, 0);
+writeOutputText(Ntwk, M, Mi);
 
 //printf("h = .014, A = %.10f\n",Ntwk.channels[0]->AofH(0.014,false));
 

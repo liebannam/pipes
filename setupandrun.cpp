@@ -417,11 +417,11 @@ Network* setupNetwork(char *finp, char *fconfig, int &M, int &Mi, double &T, int
 
 
 ////output heightfields and a textfile "runinfo.txt" of maxvalues to accompany them.
-void writeOutputTarga(Network &Ntwk, int M, int Mi, double T, int writelogs)
+void writeOutputTarga(Network *Ntwk, int M, int Mi, double T, int writelogs)
 {
 //	char sdata[] = "~/Dropbox/Research/Network7.0/output_data/scalings.txt";
 	char sdata[] = "output_data/scalings.txt";
-	int Nedges = Ntwk.Nedges;
+	int Nedges = Ntwk->Nedges;
 	//int Nnodes = Ntwk.Nnodes;
 	FILE *fp = fopen(sdata, "w");
 		if(fp==NULL)
@@ -439,7 +439,7 @@ void writeOutputTarga(Network &Ntwk, int M, int Mi, double T, int writelogs)
 			char filename[100];
 			sprintf(filename,"output_data/out%d_%03d.tga", kk,ii/Mi);
 			//sprintf(filename,"../output_data/out%d_%03d.tga", kk,ii/Mi);
-			int mm = Ntwk.channels[kk]->N;                        //x direction
+			int mm = Ntwk->channels[kk]->N;                        //x direction
 			int nn = mm/2;	                        //y direction
 			double myfld[mm*nn];
 			double val;	
@@ -455,13 +455,13 @@ void writeOutputTarga(Network &Ntwk, int M, int Mi, double T, int writelogs)
 					if(writelogs)
 					{
 						bool p =  false;//Ntwk.channels[kk]->P_hist[Ntwk.channels[kk]->pidx_t(i+1, ii)]
-						double a = Ntwk.channels[kk]->q_hist[Ntwk.channels[kk]->idx_t(0,i+1, ii)];
-						val = log(Ntwk.channels[kk]->HofA(a,p)+1);
+						double a = Ntwk->channels[kk]->q_hist[Ntwk->channels[kk]->idx_t(0,i+1, ii)];
+						val = log(Ntwk->channels[kk]->HofA(a,p)+1);
 					}
 					else{
 						bool p = false;
-						double a = Ntwk.channels[kk]->q_hist[Ntwk.channels[kk]->idx_t(0,i+1, ii)];
-						val = Ntwk.channels[kk]->HofA(a,p);
+						double a = Ntwk->channels[kk]->q_hist[Ntwk->channels[kk]->idx_t(0,i+1, ii)];
+						val = Ntwk->channels[kk]->HofA(a,p);
 					}	
 					myfld[i+mm*j] = val;
 				       //cout<<val<<"   ";	
@@ -487,10 +487,10 @@ void writeOutputTarga(Network &Ntwk, int M, int Mi, double T, int writelogs)
 
 }
 
-void writeOutputText(Network &Ntwk, int M, int Mi)	
+void writeOutputText(Network *Ntwk, int M, int Mi)	
 {
 	
-	int Nedges= Ntwk.Nedges;
+	int Nedges= Ntwk->Nedges;
 	cout<<"number of writes is  "<<M/Mi<<endl;
 	for(int ii=0;ii<M; ii+=Mi)
 	{
@@ -506,10 +506,10 @@ void writeOutputText(Network &Ntwk, int M, int Mi)
 		}
 		for(int kk=0; kk<Nedges; kk++)
 		{
-			int NN = Ntwk.channels[kk]->N;
+			int NN = Ntwk->channels[kk]->N;
 			for(int j = 0;j<NN; j++)
 			{
-				val = m_to_psi*Ntwk.channels[kk]->fakehofA(Ntwk.channels[kk]->q_hist[Ntwk.channels[kk]->idx_t(0,j+1, ii)], false);
+				val = m_to_psi*Ntwk->channels[kk]->fakehofA(Ntwk->channels[kk]->q_hist[Ntwk->channels[kk]->idx_t(0,j+1, ii)], false);
 				fprintf(fd, "%.10f     ", val);
 
 			}

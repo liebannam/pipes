@@ -660,16 +660,14 @@ double Channel::getKE(int i)
 
 double Channel::getPE(int i)
 {
-	double hi =0,ai=0,PE=0;
+	double hi =0,PE=0;
 	bool p = false;
 	for (int j = 0; j<N; j++)
 	{
-    	ai=q_hist[idx_t(0,j+1,i)];
-		hi=	HofA(ai, p);
+	PE+= HofA( q_hist[idx_t(0,j+1,i)],p);
 	//next two lines incorrect, but I am not sure why:
 	//	double ai = q_hist[idx_t(0,j+1,i)];
-	//
-	PE+= ai*hi- pbar(ai,p)/G; 
+	//	PE+= (ai>0?  pbar(ai,p)/(G*ai):0); 
 	}
 	return PE;
 }
@@ -692,9 +690,10 @@ double Channel::getAveGradH(int i)
 		I += 2*pow(2.,k%2)*0.5*pow((h3-h1)/(2.*dx),2);
 	}
 	I += 0.5*pow((h3-h2)/dx,2); 
-	I *= dx/3.;
+	I *= dx/(3.*L);
 	return I;
 }
+
 
 
 /**write q information to M/Mi files 
@@ -1654,6 +1653,7 @@ void Junction3::boundaryFluxes(){
 }
 
 
+
  // Exact Riemann flux, my best guess of implementation in Kerger 2011. Seems unstable for supercritical flow, not sure why.
 void Channel::numFluxExact(double q1m, double q1p, double q2m, double q2p, double *flux, bool Pl, bool Pr)
 {
@@ -1664,6 +1664,7 @@ void Channel::numFluxExact(double q1m, double q1p, double q2m, double q2p, doubl
 }
 
 /**update the solution by samlping exact solution to Riemann problem with q(left) = [q1m, q2m] and q(right) = [q1p, q2p] */
+//AND ALSO THIS FUCKING NOISE
 void Cpreiss::updateExactRS(double q1m, double q1p, double q2m, double q2p, double *qnew, bool Pl, bool Pr, bool Px){
 	/* * what's going on here:
 	 *     ?    :     ?                   ?  ?    :
@@ -1718,8 +1719,7 @@ void Cpreiss::updateExactRS(double q1m, double q1p, double q2m, double q2p, doub
 			qnew[1] = Cgrav(Ah,Px)*Ah;
 			printf("in rarefaction!");
 		}
-		else if (m2<=0)//whole rarefaction wave is tilted off to the left
-		{	qnew[0] = Astar;
+			qnew[0] = Astar;
 			qnew[1] = Qstar;
 			printf("titled to left\n");
 		}
