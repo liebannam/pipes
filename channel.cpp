@@ -1719,6 +1719,9 @@ void Cpreiss::updateExactRS(double q1m, double q1p, double q2m, double q2p, doub
 			qnew[1] = Cgrav(Ah,Px)*Ah;
 			printf("in rarefaction!");
 		}
+		else if (m2<=0)//whole rarefaction wave is tilted off to the left
+		{	qnew[0] = Astar;
+		
 			qnew[0] = Astar;
 			qnew[1] = Qstar;
 			printf("titled to left\n");
