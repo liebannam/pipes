@@ -690,7 +690,7 @@ double Channel::getAveGradH(int i)
 		I += 2*pow(2.,k%2)*0.5*pow((h3-h1)/(2.*dx),2);
 	}
 	I += 0.5*pow((h3-h2)/dx,2); 
-	I *= dx/(3.*L);
+	I *= 1./(3.*(float)N*(float)N);
 	return I;
 }
 
