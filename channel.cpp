@@ -676,8 +676,23 @@ double Channel::getPE(int i)
 // Simpson's rule... in theory...
 double Channel::getAveGradH(int i)
 {
-	double h1, h2, h3;
+	double h1, h2, dhdx;
 	bool p = false;
+	h1 = HofA(q_hist[idx_t(0,1,i)],p);
+	h2 = HofA(q_hist[idx_t(0,2,i)],p);
+	dhdx = (h2-h1)/dx;
+	double I = 0.5*dhdx*dhdx;
+	for (int k = 2; k<N; k++)
+	{
+		h1 = h2;
+		h2 = HofA(q_hist[idx_t(0,k+1,i)],p);
+		dhdx = (h2-h1)/dx;
+		I+=2*pow(2.,k%2)*.5*dhdx*dhdx;
+	}
+	I *= 1./(3.*(float)N*(float)N);
+	
+	/*old way seems dodgy... but may be better... fuck if I know
+	double h1, h2, h3;
 	h1 = HofA(q_hist[idx_t(0,1,i)],p);
 	h2 = HofA(q_hist[idx_t(0,2,i)],p);
 	h3 = HofA(q_hist[idx_t(0,3,i)],p);
@@ -690,7 +705,7 @@ double Channel::getAveGradH(int i)
 		I += 2*pow(2.,k%2)*0.5*pow((h3-h1)/(2.*dx),2);
 	}
 	I += 0.5*pow((h3-h2)/dx,2); 
-	I *= 1./(3.*(float)N*(float)N);
+	I *= 1./(3.*(float)N*(float)N);*/
 	return I;
 }
 
