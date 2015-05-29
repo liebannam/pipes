@@ -410,15 +410,16 @@ cdef extern from "levmar.h":
 
 
 cdef extern from "optimizeit.h":
-	cdef cppclass bc_opt_dh(levmar):
-		vector [int] whichnodes; 
+	cdef cppclass bc_opt_dh_c(levmar):
+		int whichnode; 
 		Network Ntwk;
 		int M;              
 		int modetype;         #1 - Fourier   0- Hermite interpolation 
 		double T;
 		double dt;
+		double Vin;
 		double mydelta;
-		bc_opt_dh(int , int , vector[double], Network*, int , double , vector[int], int )
+		bc_opt_dh_c(int , int , vector[double], Network*, double , int, double )
 	cdef cppclass mystery_bc(levmar):
 		int whichnode
 		int M
@@ -493,19 +494,16 @@ cdef class PyMystery_BC:
 
 
 cdef class PyBC_opt_dh:
-	cdef bc_opt_dh *thisptr
+	cdef bc_opt_dh_c *thisptr
 	cdef int ndof
 	cdef double solve_t     #CPU solve time
 	cdef double wsolve_t	#actual solve time
-	def __cinit__(self, char * fi, char *fc, int ndof, np.ndarray x0, int modetype, np.ndarray whichnodes):
+#        int n, int M_, vector<double>x0_, Network *Ntwk_i, double T_, int whichnode, double Vin_
+	def __cinit__(self, char * fi, char *fc, int ndof, np.ndarray x0, int whichnode, double Vin):
 		cdef int M= 1, Mi = 1, skip =1;
-		cdef int Nn = len(whichnodes); #number of nodes
 		cdef int channeltype = 1
 		cdef double T=1.
 		cdef vector[double] vx0
-		cdef vector[int] vwhichnodes
-		for i in range(Nn):
-			vwhichnodes.push_back(whichnodes[i])
 		for i in range(x0.size):
 			vx0.push_back(x0[i])
 		self.ndof = ndof
@@ -514,7 +512,7 @@ cdef class PyBC_opt_dh:
 		#print "T = %f" %T
 		#print whichnodes
 		#print vwhichnodes
-		self.thisptr = new bc_opt_dh(len(x0), M, vx0, Ntwk_i, modetype, T, vwhichnodes, skip)
+		self.thisptr = new bc_opt_dh_c(len(x0), M, vx0, Ntwk_i, T, whichnode, Vin)
 
 	def solve(self):
 		cdef clock_t start_t, end_t;
@@ -530,14 +528,15 @@ cdef class PyBC_opt_dh:
 		self.thisptr.dump(stdout)
 	def compute_f(self):
 		self.thisptr.compute_f()
-	def getBCtimeseries(self,i):
+	def getBCtimeseries(self):
 		cdef vector[Real] bvals
 		cdef vector[Real] xfake
 		for k in range(self.M+1):
-			bvals.push_back(0)
-		for k in range(self.ndof):
-			xfake.push_back(self.x[i*self.ndof+k])
-		getTimeSeries(bvals, xfake, self.ndof, self.thisptr.M, self.thisptr.T, self.thisptr.modetype)
+			bvals.push_back(0) 
+		xfake.push_back(self.Vin*2./self.T)
+		for k in range(0,self.ndof):
+			xfake.push_back(self.x[k])
+		getTimeSeries(bvals, xfake, self.ndof+1, self.thisptr.M, self.thisptr.T, self.thisptr.modetype)
 		return bvals
 	property x:
 		def __get__(self): return self.thisptr.x
@@ -549,6 +548,8 @@ cdef class PyBC_opt_dh:
 		def __get__(self): return self.thisptr.T
 	property M:
 		def __get__(self): return self.thisptr.M
+	property Vin:
+		def __get__(self): return self.thisptr.Vin
 	property modetype:
 		def __get__(self):
 			if self.thisptr.modetype ==0:
