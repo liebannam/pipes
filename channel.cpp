@@ -692,7 +692,7 @@ double Channel::getAveGradH(int i)
 	I *= 1./(3.*(float)N*(float)N);
 */	
 	//old way seems dodgy... but may be better... fuck if I know
-	double h1, h2, h3;
+/*	double h1, h2, h3;
 	h1 = HofA(q_hist[idx_t(0,1,i)],p);
 	h2 = HofA(q_hist[idx_t(0,2,i)],p);
 	h3 = HofA(q_hist[idx_t(0,3,i)],p);
@@ -704,8 +704,22 @@ double Channel::getAveGradH(int i)
 		h3 = HofA(q_hist[idx_t(0,k+1,i)],p);
 		I += 2*pow(2.,k%2)*0.5*pow((h3-h1)/(2.*dx),2);
 	}
-	I += 0.5*pow((h3-h2)/dx,2); 
-	I *= 1./(3.*(float)N*(float)N);
+	I += 0.5*pow((h3-h2)/dx,2);
+	I *= 1./(3.*(float)N*(float)N); //this expression is creepy but seems to give correct scaling		
+//	I *= 1./(3.*(float)N); //this expression seems to agree with theory but scales with N which seems wrong :(
+//	*/
+	double h1, h2;
+	h1 = HofA(q_hist[idx_t(0,1,i)],p);
+	h2 = HofA(q_hist[idx_t(0,2,i)],p);
+	double I = 0;
+	for (int k = 1; k<N+1; k++)
+	{
+	//	I+= (h2-h1)*(h2-h1);
+		I+= abs(h2-h1);
+		h1 = h2;
+		h2 = HofA(q_hist[idx_t(0,k+1,i)],p); 
+	}
+//	I*=1./((float)N*(float)N);
 	return I;
 }
 
