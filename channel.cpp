@@ -6,23 +6,7 @@
 *************************************/
 #include "channel.h"
 
-/*
-////
-double Ptheta(double A){
-	//This polynomial interpolates [0, 0.95*Af]:
-	//double theta = -51373.9446484794*pow(A,10)+214568.573482387*pow(A,9)
-	//+-386661.433789624*pow(A,8)+393840.3676702*pow(A,7)+-249498.681803086*pow(A,6)+
-	//101951.704467777*pow(A,5)+-26998.0616861897*pow(A,4)+4553.1074838931*pow(A,3)+
-	//-474.700106183024*pow(A,2)+34.1596999465758*A+0.446951718804595;
-	//This polynomial interpolates [0.1*A/D, 0.95*Af]
-	double theta =1927.8569448950*A*A*A *A*A*A *A*A*A +-6160.4825286065*A*A*A *A*A*A *A*A +8423.8271813105*A*A*A *A*A*A*A 
-	+-6430.9755770757*A*A*A*A*A*A +3009.6548102583*A*A*A*A*A +-893.1759921281*A*A*A*A 
-	+169.9339821843*A*A*A +-20.2421601712*A*A +2.8514566220*A +3.6440131732;
-	return theta*pow(A,1./3.);
-}
-*/
-/** retrun theta as a function of A, where A = D^2/8(theta-sin(theta))*/
-
+//Don't actually need these routines but they are potentially useful to compare to other people's evaluation (e.g. Kerger 2011, Leon 2006) of h(A), phi(A), etc.
 inline double getTheta(double A, double D)
 {
 	int count;
@@ -37,17 +21,15 @@ inline double getTheta(double A, double D)
 	return theta;
 }
 
-/*unstable and possibly  terrible way to comput Phi in the circular part of the pipe*/
+/*unstable and possibly  terrible way to comput Phi in the circular part of the pipe
+ * as seen in  (e.g. Kerger 2011, Leon 2006) */
 
 //inline double powPhi(double t, double D){
 //	return sqrt(G*3.*D/8.)*(t-1/80.*t*t*t+19./448000.*t*t*t*t*t
 //		+1./10035200.*t*t*t*t*t*t*t+491./(27.*70647808000.)*t*t*t*t*t*t*t*t*t);}
 
 
-/**Phi = \int_0^A (c(z)/z)dz, where c(z) is the gravity wavespeed as a function of A
- * A = area, D = diameter, At = transition area, Ts = slot width, P = true if pressurized, false otherwise
- */
-
+//Chebyshev coefficients for interpolation of h(A), phi(A), A(phi)
 const int Ncheb = 20;
 const double xx []= {-1.0000000000000000,  -0.9876883405951378,  -0.9510565162951535,  -0.8910065241883679,  
 		     -0.8090169943749475,  -0.7071067811865476,  -0.5877852522924732,  -0.4539904997395468,  
@@ -93,7 +75,7 @@ const double pA2 = 5./12.;
 const double pPhi1 = 1.;
 const double pPhi2 = 3./5.;
 
-
+//height as a function of cross sectional area
 double HofA(double A, double D, double At, double Ts, bool P)
 {
 	double y; 
@@ -115,16 +97,18 @@ double HofA(double A, double D, double At, double Ts, bool P)
 	else      //in Preissman Slot
 	{
 		y = D+(A-At)/Ts;
-		//cout<<"y = "<<y<<" A = "<<A<<endl;
 	}
 	return y;
 }
 
+
+/**Phi(A) = \int_0^A (c(z)/z)dz, where c(z) is the gravity wavespeed as a function of A
+ * A = area, D = diameter, At = transition area, Ts = slot width, P = true if pressurized, false otherwise
+ */
 double PhiofA(double A, double D, double At, double Ts, bool P)
 {
 	if(A<1e-15){return 0.;}
 	double phi = 0.;
-	//if(A<=At &&(!P))
 	if(A<=At)
 	{	
 		A = A/(D*D);
@@ -147,13 +131,13 @@ double PhiofA(double A, double D, double At, double Ts, bool P)
 	return phi;
 }
 
+//Inverse of Phi(A)
 double AofPhi(double phi, double D, double At, double Ts, bool P)
 {
 	if(phi<1e-15){return 0.;}
 	double A = 0.;
 	double phi1m = D*ChebEval(&coeffs_p2[0],Ncheb, 1.);
 	double phi2m = D*ChebEval(&coeffs_p2[0],Ncheb, -1.);
-//	if(phi<=phi2m &&(!P))
 	if(phi<=phi2m)
 	{
 		
@@ -170,12 +154,9 @@ double AofPhi(double phi, double D, double At, double Ts, bool P)
 	}
 	else
 	{
-		//A = D*D*ChebEval(&coeffs_a2[0], Ncheb, -1)+2.*(sqrt(A/Ts)-sqrt(At/Ts));
-		//phi = D*ChebEval(&coeffs_p2[0], Ncheb, -1)+2.*(sqrt(A/Ts)-sqrt(At/Ts));
 		double duh = (phi-phi2m)/(2.*sqrt(G))+sqrt(At/Ts);
 		A = (duh*duh*Ts);
 	}
-//	printf("A =%f, phi = %f\n", A, phi);
 	return A;
 
 }
@@ -188,12 +169,10 @@ double Cgrav(double A, double D, double At, double Ts, bool P)
 {
 	double c=0.;
 	if(A<1e-15){return 0.;}//check for near-zero area 
-//	if(A<At &&(!P))
 	if(A<At)
 	{
 		double h = HofA(A,D,At,Ts,P);
 		double l = 2.*sqrt(h/D*(1.-h/D));
-	//	printf("ahhh WTF l = %f, h = %f, A = %f\n", l, h, A);
 		c = sqrt(G*A/l);
 	}
 	else  
@@ -203,26 +182,13 @@ double Cgrav(double A, double D, double At, double Ts, bool P)
 	return c;    
 }
 
-
-/**Eta = g*I(A) = g*int_0^h(A) (h-z)l(z) dz */
-
-	/*double y = hofA(A);	
-		if (A<=At&& (!Pnow))
-		{
-			Eta = G/12.*((3.*D*D-4.*D*y+4.*y*y)*sqrt(y*(D-y))
-				-3.*D*D*(D-2.*y)*atan(sqrt(y)/sqrt(D-y)));
-		//	if(Pnow){Eta-=((A-At)*(A-At)/Ts)/2.;}//bahahahahahahahah this is bullshit...? (YES)
-					}
-		else 
-		{
-			Eta = (y-yt)*At+G/12.*(sqrt(yt*(D-yt))*(3.*D*D+2.*D*yt-6.*D*y-8.*yt*yt+12.*yt*y)
-				-3.*D*D*(D-2.*y)*atan(sqrt(yt/(D-yt))))+G*Ts*(y-yt)*(y-yt)/2.;
-		}*/
-
+//Eta = g*\int_0^h(A)((h(A)-z)l(z)) dz  = ghA - g\bar{y}
+//is the average 
+//where g =9.8 m/s^2 is acceleration due to gravity
+//\bar{y} is the centroid of the flow, \bar{y} = (\int_0^h(A) zl(z) dz)/A 
 double Eta(double A, double D, double At, double Ts, bool P)
 {
 	double Eta;
-//	if (A<At &&(!P))
 	if (A<At)
 	{
 		double y = HofA(A, D, At, Ts, P);
@@ -256,8 +222,8 @@ Channel::Channel(int Nin, double win, double Lin, int Min, double a): kn(1.0),w(
 	for(int i = 0; i<N+1; i++){P.push_back(false);}
 	P.push_back(false);
 	n = 0;
-	if(N*M<1e7){
-		q_hist = new double[2*(N+2)*(M+2)]; //allocated if there's less than 10 million stored variables, else complain and quit
+	if(N*M<1e7){//allocated if there's less than 10 million stored variables, else complain and quit
+		q_hist = new double[2*(N+2)*(M+2)]; 
 		p_hist = new bool[2*(N+2)*(M+2)];
 	}
 	else 
@@ -428,8 +394,8 @@ void Channel::setq(vector<double>A0, vector<double>Q0)
 	q_hist[idx_t(0,N+1,0)] = A0[N-1];
 	q_hist[idx_t(1,0,0)] = Q0[0];
 	q_hist[idx_t(1,N+1,0)] = Q0[N-1];
-//	P[0] = (A0[0]>=At);
-//	P[N+1] = (A0[N-1]>=At);	
+	P[0] = (A0[0]>=At);
+	P[N+1] = (A0[N-1]>=At);	
 	p_hist[pj_t(0,0)] = (A0[0]>=At);
 	p_hist[pj_t(N+1,0)] = (A0[N-1]>=At);
 }
@@ -448,8 +414,8 @@ void Channel::setq(double A0, double Q0)
 		p_hist[pj_t(i,0)] = p0;
 
 	}
-//	P[0] = p0;
-//	P[N+1] = p0;
+	P[0] = p0;
+	P[N+1] = p0;
 	p_hist[pj_t(0,0)] = p0;
 	p_hist[pj_t(N+1,0)] = p0;
 }		
@@ -520,7 +486,17 @@ void physFluxBetter(double A, double Q, bool P, double D, double At, double Ts, 
 	flux[1] = (A>0? Q*Q/A:0.) +Eta(A, D, At, Ts, P); 
 }
 
-//HLL flux
+/*HLL flux
+	 * (what's going on here:
+	 *     sl   :     sr                 sl  sr   :
+	 *      \   u*   /                    ` u*\   :
+	 *       \  :   /                       `  \  :
+	 *    um  \ :  / up                  um   ` \ :up
+	 * ________\:/_______  or maybe    _________`\:_________ or even...
+	 *          :                                 : 
+	 * um, up are left and right states, u* is center state 
+	 * sl, sr denote shocks )*/ 
+
 void Channel::numFluxHLL(double q1m, double q1p, double q2m, double q2p, double *flux, bool Pm, bool Pp)                
 {
     
@@ -1682,166 +1658,6 @@ void Junction3::boundaryFluxes(){
 }
 
 
-
- // Exact Riemann flux, my best guess of implementation in Kerger 2011. Seems unstable for supercritical flow, not sure why.
-void Channel::numFluxExact(double q1m, double q1p, double q2m, double q2p, double *flux, bool Pl, bool Pr)
-{
-	double qnew[2];
-	bool Px=Pnow; //if and right are both pressurized, then so is Px; else it's not pressurized
-	updateExactRS(q1m, q1p, q2m, q2p, qnew, Pl, Pr, Px);//sample solution at dx/dt = 0 (along t-axis)
-	physFluxBetter(qnew[0], qnew[1], Px, w, At, Ts, flux);
-}
-
-/**update the solution by samlping exact solution to Riemann problem with q(left) = [q1m, q2m] and q(right) = [q1p, q2p] */
-//AND ALSO THIS FUCKING NOISE
-void Cpreiss::updateExactRS(double q1m, double q1p, double q2m, double q2p, double *qnew, bool Pl, bool Pr, bool Px){
-	/* * what's going on here:
-	 *     ?    :     ?                   ?  ?    :
-	 *      \   u*   /                    ` u*\   :
-	 *       \  :   /                       `  \  :
-	 *    um  \ :  / up                  um   ` \ :up
-	 * ________\:/_______  or maybe    _________`\:_________ or even...
-	 *          :                                 : 
-	 * ? denotes either shock or rarefaction
-	 * */
-	//Astar and Qstar are the values of (A,Q) in the "star" region in between qm and qp
-	double up, um, Astar, Amax, Qstar, ustar;
-	um = (q1m>0.? q2m/q1m : 0.);
-    	up = (q1p>0.? q2p/q1p : 0.);
-	int count;
-	//compute u* = [Astar, Qstar]
-	Amax = fmax(fmax(q1p, q1m), 1.001*At/.95);     //max of nearby values and 2*Af (for root bracketing)
-	flr fl(w, Ts, At, q1m, Pl, Px);
-	flr fr(w, Ts, At, q1p, Pr, Px);
-	f_exactRS ff(fl, fr, um, up);
-	printf("about to solve for Astar with qm = [%f, %f] and qp = [%f,%f] ul = %f, ur = %f\n", q1m, q2m, q1p, q2p, um, up);
-	Astar = ::ridders(ff, 0, Amax, &count,1e-10, 1e-12);
-	double cbar = (Cgrav(q1m,Pl) +Cgrav(q1p,Pr))/2.;
-	double Astar1 = (q1m+q1p)/2.*(1+(um-up)/(PhiofA(q1p,Pl)+PhiofA(q1m,Pr)));
-	double Astar2 = (q1m+q1p)/2.*(1+( (cbar>1e-6)? (um-up)/(2.*cbar): 0));
-	Qstar = Astar/2.*(up+um)+Astar/2.*(-fl(Astar)+fr(Astar));
-	cout<<"Astar = "<<Astar<<"  f(A*) = "<<ff(Astar)<<" Aapprox = "<<Astar1<<" ff(Aapprox)="<<ff(Astar1)<<"Alin = "<<Astar2<<" f(Alin) = "<<(Astar2>0?ff(Astar2):42)<<endl;
-	cout<<"fl(Astar)="<<fl(Astar)<<" fr(Astar)="<<fr(Astar)<<endl;
-	ustar = Astar>0? Qstar/Astar:0;
-	printf("ql = [%f, %f], qr = [%f, %f], q* = [%f, %f]\n", q1m, q2m, q1p, q2p, Astar, Qstar);
-	double sl, sr;
-	//now evaluate speeds and sample solution at dx/dt = 0 (along t-axis) 
-	//left side 
-	if(Astar<q1m)//rarefaction
-	{
-		
-		printf("left rarefaction-- ");
-		double sl1, sl2; //bounding edges of rarefaction fan
-		sl1 = um - Cgrav(q1m, Pl);
-		sl2 = ustar - Cgrav(Astar,Px);
-		double m1 = fmin(sl1,sl2);
-		double m2 = fmax(sl1, sl2);
-		if (m1<0 && m2>0)//omg we're in the rarefaction!!!
-		{
-			//assume u-c = x/t = 0 (evaluate on x-axis). Then assume u+phi(A) = ul+phi(Al) (Riemann invariant is const)
-			//so nonlinear solve here: c(x)+phi(x)-ul-phi(Al) = 0
-			double Ah;
-			double lhs = um +PhiofA(q1m,Pl);
-			fallpurpose fri(w,At,Ts,lhs,0., 1, 0., 1.,Px);
-			Ah = ::ridders(fri,0, Amax, &count,1e-10, 1e-12);
-			qnew[0] = Ah;
-			qnew[1] = Cgrav(Ah,Px)*Ah;
-			printf("in rarefaction!");
-		}
-		else if (m2<=0)//whole rarefaction wave is tilted off to the left
-		{	qnew[0] = Astar;
-		
-			qnew[0] = Astar;
-			qnew[1] = Qstar;
-			printf("titled to left\n");
-		}
-		else //whole thing is tilted off to the right
-		{
-			qnew[0] = q1m;
-			qnew[1] = q2m;
-			printf("titled to right\n");
-		}
-		sl = m1;
-		printf("left speeds are sl1 = %f and sl2 = %f\n", sl1, sl2);
-
-	}
-	else //shock!!!!
-	{
-		printf("left shock! speed = ");
-			
-		sl = um - findOmega(Astar,q1m, Px, Pl);
-		
-	//	sl = um-sqrt(G*(eEta(Astar, w,At,Ts,Px)-eEta(q1m,w,At,Ts,Px)*Astar)/(Astar-q1m));
-		cout<<sl<<endl;
-		if(0<=sl)//left shock has positive speed
-		{
-			qnew[0] = q1m;
-			qnew[1] = q2m;
-		}
-		else
-		{
-			qnew[0] = Astar;
-			qnew[1] = Qstar;
-		}
-	}
-
-//right side
-	if(Astar<q1p)//rarefaction
-	{
-		printf("right rarefaction-- ");
-		double sr1, sr2;
-		sr1 = ustar + Cgrav(Astar,Px);
-		sr2 = up    + Cgrav(q1p  ,Pr);
-		double m1 = fmin(sr1,sr2);
-		double m2 = fmax(sr1,sr2);
-
-		if(m1<0 &&m2>0) //omg we're in the rarefaction!!!
-		{
-		
-			//assume u+c = x/t = 0 (evaluate on x-axis). Then assume u-phi(A) = ur-phi(Ar) (Riemann invariant is const)
-			//so nonlinear solve here: -c(x)-phi(x)-ur+phi(Ar) = 0
-			double Ah;
-			double lhs = up -PhiofA(q1p,Pr);
-			fallpurpose fri(w,At,Ts,lhs,0., -1, 0., -1.,Px);
-			Ah = ::ridders(fri, 0, Amax, &count,1e-10, 1e-12);
-			qnew[0] = Ah;
-			qnew[1] = -Cgrav(Ah,Px)*Ah;
-			printf("in rarefaction!, A= %f, Q = %f", Ah, qnew[1]);
-		}
-		else if (m2<=0)//whole rarefaction wave is titled off to the left
-		{
-			qnew[0] = q1p;
-			qnew[1] = q2p;
-			printf("titled to left\n");
-		}
-		else//whole thing is tilted off to the right
-		{
-			qnew[0] = Astar;
-			qnew[1] = Qstar;
-			printf("titled to right\n");
-		}
-		sr = m2;
-		printf("right speeds are sr1 = %f and sr2 = %f\n", sr1, sr2);
-	}
-	else//shock!!
-	{
-		
-		printf("right shock! speed = ");
-		sr = up+findOmega(Astar, q1p, Px, Pr);
-	//	sr = up+sqrt(G*(eEta(Astar, w,At,Ts,Px)-eEta(q1p,w,At,Ts,Px)*Astar)/(Astar-q1p));
-		cout<<sr<<endl;
-		if(sr>=0) //right shock has positive speed
-		{
-			qnew[0] = Astar;
-			qnew[1] = Qstar;
-		}
-		else{
-			qnew[0] = q1p;
-			qnew[1] = q2p;
-		}
-		cmax = max(cmax, max(fabs(sl),fabs(sr)));
-	}
-}
 
 
 
