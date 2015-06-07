@@ -640,62 +640,27 @@ double Channel::getPE(int i)
 	bool p = false;
 	for (int j = 0; j<N; j++)
 	{
-	PE+= HofA( q_hist[idx_t(0,j+1,i)],p);
-	//next two lines incorrect, but I am not sure why:
-	//	double ai = q_hist[idx_t(0,j+1,i)];
-	//	PE+= (ai>0?  pbar(ai,p)/(G*ai):0); 
+		double ai = q_hist[idx_t(0,j+1,i)];
+		PE+= (ai*HofA(ai,p)-(ai>0?  pbar(ai,p)/(G*ai):0); 
 	}
 	return PE;
 }
 
-//get average spatial gradient at time t_i	
-// Simpson's rule... in theory...
+//get <dh/dx> at time t_i
+//add up |h_{k+1}-h_k| for all k (it's just |(h_{k+1}-h{k})/dx|*dx	
 double Channel::getAveGradH(int i)
 {
 	bool p = false;
-/*	double h1, h2, dhdx;
-	h1 = HofA(q_hist[idx_t(0,1,i)],p);
-	h2 = HofA(q_hist[idx_t(0,2,i)],p);
-	dhdx = (h2-h1)/dx;
-	double I = 0.5*dhdx*dhdx;
-	for (int k = 2; k<N; k++)
-	{
-		h1 = h2;
-		h2 = HofA(q_hist[idx_t(0,k+1,i)],p);
-		dhdx = (h2-h1)/dx;
-		I+=2*pow(2.,k%2)*.5*dhdx*dhdx;
-	}
-	I *= 1./(3.*(float)N*(float)N);
-*/	
-	//old way seems dodgy... but may be better... fuck if I know
-/*	double h1, h2, h3;
-	h1 = HofA(q_hist[idx_t(0,1,i)],p);
-	h2 = HofA(q_hist[idx_t(0,2,i)],p);
-	h3 = HofA(q_hist[idx_t(0,3,i)],p);
-	double I =0.5*pow((h2-h1)/dx,2);	
-	for(int k = 2; k<N-1; k++)
-	{
-		h1 = h2;
-		h2 = h3;
-		h3 = HofA(q_hist[idx_t(0,k+1,i)],p);
-		I += 2*pow(2.,k%2)*0.5*pow((h3-h1)/(2.*dx),2);
-	}
-	I += 0.5*pow((h3-h2)/dx,2);
-	I *= 1./(3.*(float)N*(float)N); //this expression is creepy but seems to give correct scaling		
-//	I *= 1./(3.*(float)N); //this expression seems to agree with theory but scales with N which seems wrong :(
-//	*/
 	double h1, h2;
 	h1 = HofA(q_hist[idx_t(0,1,i)],p);
 	h2 = HofA(q_hist[idx_t(0,2,i)],p);
 	double I = 0;
 	for (int k = 1; k<N+1; k++)
 	{
-	//	I+= (h2-h1)*(h2-h1);
 		I+= abs(h2-h1);
 		h1 = h2;
 		h2 = HofA(q_hist[idx_t(0,k+1,i)],p); 
 	}
-//	I*=1./((float)N*(float)N);
 	return I;
 }
 

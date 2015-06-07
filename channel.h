@@ -43,7 +43,6 @@ using std::min;
 /////
 
 #define numFlux(q1m, q1p, q2m, q2p, flux, Pm, Pp)  numFluxHLL(q1m, q1p, q2m, q2p, flux, Pm, Pp) 
-//#define numFlux(q1m, q1p, q2m, q2p, flux, Pm, Pp)  numFluxExact(q1m, q1p, q2m, q2p, flux, Pm, Pp) 
 #define speeds(q1m, q1p, q2m, q2p, flux, Pm, Pp)   speedsHLL(q1m, q1p, q2m, q2p, flux, Pm, Pp) 
 //#define speeds speedsRoe
 
@@ -71,24 +70,7 @@ AppendToVector<T> appendTo(std::vector<T>& vec)
 {
     return AppendToVector<T>(vec);
 }
-/*whoops don't need this crap
-template<typename T>
-void readCoeffs(const char *fname, std::vector<T> &V, int &count)
-{
-	ifstream file1(fname);
-	string stuff;
-	count = 0;
-	int trash;
-	while (getline(file1, stuff, '\n')) 
-	{
-		stringstream ss(stuff);
-		ss>>trash>>appendTo(V);
-		count++;
-		//cout<<V[count-1]<<endl;
-	}
-	file1.close();
-}
-*/
+
 
 //////
 //various prototype detritus
@@ -176,13 +158,11 @@ class Channel
 		
 		void stepEuler(double dt);                          // Take an Euler step
 		void numFluxHLL(double q1m, double q1p, double q2m, double q2p, double *flux, bool Pm, bool Pp);      //HLL Flux (need to define speeds)
-		void numFluxExact(double q1m, double q1p, double q2m, double q2p, double *flux, bool Pm, bool Pp);    //Exact RS flux for Preis. slot (presently dodgy at best)
 		
 
 		void physFlux(double q1, double q2, double *flux, bool P);
 		virtual void speedsHLL(double q1m, double q1p, double q2m, double q2p, double *s, bool Pm, bool Pp)=0;
 		virtual void speedsRoe(double q1m, double q1p, double q2m, double q2p, double *s, bool Pm, bool Pp)=0;
-		virtual void updateExactRS(double q1m, double q1p, double q2m, double q2p, double *qnew, bool Pl, bool Pr, bool Px)=0;
 /**Specify geometry of specific cross section in a derived class:*/
 		virtual void showp()=0;
 		virtual double pbar(double A, bool p) = 0;		         // pbar = average hydrostatic pressure term 
@@ -270,7 +250,6 @@ class Cpreiss: public Channel{
 		double AofPhi(double phi,bool p){return ::AofPhi(phi, D, At, Ts, p);}
 		void speedsHLL(double q1m, double q1p, double q2m, double q2p, double *s, bool Pm, bool Pp);
 		void speedsRoe(double q1m, double q1p, double q2m, double q2p, double *s, bool Pm, bool Pp);
-		void updateExactRS(double q1m, double q1p, double q2m, double q2p, double *qnew, bool Pl, bool Pr, bool Px);
 };
 ///////
 //Junction class definitions 
