@@ -33,7 +33,6 @@
 #include <vector>
 #include "channel.h"
 #include "omp.h"
-
 //
 /*
 class Network_params

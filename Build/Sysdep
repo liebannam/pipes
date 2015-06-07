@@ -6,8 +6,8 @@ NVCC   = nvcc
 MPICC  = mpic++
 
 #CFAST  = -O3 -Wall -fopenmp -DUSEOMP
-CFAST  = -O3 -Wall -g -DUSEOMP 
-CFAST  = -O0 -Wall -g -DUSEOMP  #for debugging with valgrind 
+CFAST  = -O3 -Wall -g -fopenmp 
+CFAST  = -O0 -Wall -g -fopenmp  #for debugging with valgrind 
 cFLAGS = $(CFAST)
 CFLAGS = $(CFAST)
 CFLAGSD = -g -Wall
