@@ -827,6 +827,7 @@ double Cpreiss::pbar(double A, bool p)
 	return Eta(A,D,At,Ts,p);
 }
 
+/*
 //keep around for comparison purposes, maybe?
 double Cpreiss::hofAold(double A)
 {
@@ -834,6 +835,7 @@ double Cpreiss::hofAold(double A)
 		double y = D/2.*(1.+cos(PI-theta/2.));
 		return y;
 }
+*/
 //if you want to use negative slot...?
 double Cpreiss::fakehofA(double A, bool p)
 {
