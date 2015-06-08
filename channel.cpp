@@ -1139,7 +1139,7 @@ void Junction1::boundaryFluxes()
 			{
 				Qext =bval[ch0.n];
 				//Aext = Ain*Qext/Qin;
-				Aext = ch0.q_hist[ch0.idx_t(0,0,max(ch0.n-1,0)];        //use previous value of Aext unless you are at the beginning...
+				Aext = ch0.q_hist[ch0.idx_t(0,0,max(ch0.n-1,0))];        //use previous value of Aext unless you are at the beginning...
 			}
 			break;
 		case 310://subcritical, specify Q<Qtol	
