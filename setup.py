@@ -3,9 +3,11 @@ Compile with command
 	CXX=g++ python setup.py build_ext -i
 
 Use in python with command:
-	from allthethings import * (so far * can by either *, PyNetwork or PyBC_opt_dh)
+	from allthethings import [stuff] (so far [stuff] can be: * or PyNetwork or PyBC_opt_dh or PyMystery_BC)
 
 Runs on my macbook air and also on orinoco (same dropbox folder...no bloody clue if that's legit...) I'm doing something kind of sketch with the lapack wrapper to get around segfaults that happen if I call the libcla.a library like in the pure C++ code in Build/. by kind of sketch I mean...I copied lapack.c and added it as a dependency, and wrapped the header.
+BASICALLY ALL OF THIS IS BLACK MAGIC... 
+...so if it doesn't compile for you, I'm terribly sorry for the hassle and I will try to help...but no guarantees :/
 '''
 
 

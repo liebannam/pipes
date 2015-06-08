@@ -6,30 +6,7 @@
 *************************************/
 #include "channel.h"
 
-//Don't actually need these routines but they are potentially useful to compare to other people's evaluation (e.g. Kerger 2011, Leon 2006) of h(A), phi(A), etc.
-inline double getTheta(double A, double D)
-{
-	int count;
-	ftheta th(A,D);
-	double theta =::ridders(th, -.1, 2*PI+1, &count,1e-15, 1e-15);
-//	printf("errr in theta  is %e\n", fabs(A-D*D/8*(theta-sin(theta))));	
-
-//this way is 3x as fast--but! lose a lot of accuracy near the top.
-//	double theta = Ptheta(A/(D*D));
-//	for(int i=0;i<2; i++)
-//	{theta = (A>0.)? (theta -(theta-sin(theta)- 8.*A/(D*D))/(1.-cos(theta))):0.;}
-	return theta;
-}
-
-/*unstable and possibly  terrible way to comput Phi in the circular part of the pipe
- * as seen in  (e.g. Kerger 2011, Leon 2006) */
-
-//inline double powPhi(double t, double D){
-//	return sqrt(G*3.*D/8.)*(t-1/80.*t*t*t+19./448000.*t*t*t*t*t
-//		+1./10035200.*t*t*t*t*t*t*t+491./(27.*70647808000.)*t*t*t*t*t*t*t*t*t);}
-
-
-//Chebyshev coefficients for interpolation of h(A), phi(A), A(phi)
+//Chebyshev coefficients for my interpolation of h(A), phi(A), A(phi)
 const int Ncheb = 20;
 const double xx []= {-1.0000000000000000,  -0.9876883405951378,  -0.9510565162951535,  -0.8910065241883679,  
 		     -0.8090169943749475,  -0.7071067811865476,  -0.5877852522924732,  -0.4539904997395468,  
@@ -793,17 +770,7 @@ void Cpreiss::setGeom(double a_)
 	tt = 2*(PI-asin(Ts/D));// theta such that c(A(theta)) = a
 	yt = D/2.*(1-cos(tt/2.));
 	At = AofH(yt,false);
-//	At = D*D*(tt-sin(tt))/8.;
-//	At = .99999*Af;
-//	yt = HofA(At,false);	
-//	cout<<"D= "<<D<<endl;
-//	tt = 2*asin(G*D*2*PI/(8*a*a));	
-//	double yt2 = HofA(At, false);
-//	cout<<"At = "<<At<<" Ts ="<<Ts<<endl;
-//	printf("difference between At and Af is  %e\n", At-PI*D*D/4.);
-//	printf("slot gravity wavespeed c  = %f\n", sqrt(D*D*PI/4.*G/Ts));
-//	printf("yt = %.16f,At = %.16f, fAt = %.16f AofH(At)-At = %.16f\n",yt, At, AofH(yt,false)-At);
-        	
+//write out a file tabulating A, g, I, c, phi, A(phi), A(h(A)) etc (use as sanity check)
 	char fname1[30];
 	clock_t time1 = clock();
 	int duh = (int)time1;
@@ -815,7 +782,6 @@ void Cpreiss::setGeom(double a_)
 	bool pp = false; 
 	for(int k = 0; k<Mp; k++)
 	 {
-		 //double aa = D*D*PI/(4*Mp)*(double)k;
 		 double tt = PI*2/Mp*(double)k;
 		 double aa = D*D/8.*(tt-sin(tt));
 		 double ht = 0.5*D*(1-cos(tt*.5));
@@ -830,10 +796,9 @@ void Cpreiss::setGeom(double a_)
 	 fclose(fg1);
 
 	char fname2[30];
-       	sprintf(fname2, "geomconfirm%d.txt", 2);
+    sprintf(fname2, "geomconfirm%d.txt", 2);
 	FILE *fg2 = fopen(fname2, "w");	
 	fprintf(fg2, "A                   h(A)       Phi(A)              A(Phi(A))    A-Af\n");
-	
 	for (int i=0; i<2;i++)
 	{
 		for(int k = 0; k<40; k++)
@@ -860,33 +825,16 @@ double Cpreiss::AofH(double h, bool p)
 double Cpreiss::pbar(double A, bool p)
 {
 	return Eta(A,D,At,Ts,p);
-/*	double y = HofA(A,p);
-	if(y<D && (!p) )
-		return  G/12.*((3.*D*D-4.*D*y+4.*y*y)*sqrt(y*(D-y))-3.*D*D*(D-2.*y)*atan(sqrt(y)/sqrt(D-y)));
-	
-	if(A<At && (!p) )
-		{
-			double y = HofA(A,p);
-			return  G/12.*((3.*D*D-4.*D*y+4.*y*y)*sqrt(y*(D-y))-3.*D*D*(D-2.*y)*atan(sqrt(y)/sqrt(D-y)));
-		}
-	else 
-		return PI/4.*G*D*D*((A-At)/Ts+D/2.);
-*/
 }
 
-
-double Cpreiss::pbar_old(double A, bool P)
-	{
-		return Eta(A,w, At,Ts, P); 
-	}
-
+//keep around for comparison purposes, maybe?
 double Cpreiss::hofAold(double A)
 {
 		double theta = getTheta(A,D);		
 		double y = D/2.*(1.+cos(PI-theta/2.));
 		return y;
 }
-
+//if you want to use negative slot...?
 double Cpreiss::fakehofA(double A, bool p)
 {
 	if (A>=At){p=true;}
@@ -916,8 +864,8 @@ double Cpreiss::getHydRad(double A)
 		return A/perim;
 	}  
 
-
-void Cpreiss::speedsRoe(double q1m, double q1p, double q2m, double q2p, double *s, bool Pm, bool Pp)    // HLL speeds with Roe estimates
+// HLL speeds with Roe estimates
+void Cpreiss::speedsRoe(double q1m, double q1p, double q2m, double q2p, double *s, bool Pm, bool Pp) 
 {
 
     double um, up, hm, hp, uhat, hhat,chat, smin, smax;
@@ -948,13 +896,12 @@ void Cpreiss::speedsRoe(double q1m, double q1p, double q2m, double q2p, double *
 }
 
 
-
-void Cpreiss::speedsHLL(double q1m, double q1p, double q2m, double q2p, double *s, bool Pm, bool Pp) //HLL speeds from Leon 2009 - they seem terrible...
-{
+//HLL speeds from Leon 2009 - they seem terrible...
+void Cpreiss::speedsHLL(double q1m, double q1p, double q2m, double q2p, double *s, bool Pm, bool Pp){
 	double dry = 1e-6*At;;                                                  //pay attention to this!?
     double cbar,Astar, ym,yp,cm, cp, um =0 , up= 0;	
 	double Astarp;
-	double sl1, sl2, sr1, sr2;//other wave speed estimates from Sanders 2011
+	double sl1, sl2, sr1, sr2;//other wave speed estimates from Sanders 2011 (keep around for comparison purposes?)
 	ym = HofA(q1m,Pm);
 	yp = HofA(q1p,Pp);
 	cm = Cgrav(q1m, Pm);
@@ -964,21 +911,12 @@ void Cpreiss::speedsHLL(double q1m, double q1p, double q2m, double q2p, double *
 		cbar = (cp+cm)/2.;
 		um = q2m/q1m;
 		up = q2p/q1p;
-		//cout<<"um = "<<um<< "up = " <<up<<endl;
-	//	if (max(q1p,q1m)<0.7*Af){
-			Astarp = (q1m+q1p)/2.*(1+(um-up)/(PhiofA(q1p,Pp)+PhiofA(q1m,Pm)));//} //this verstion uses depth positivity condition
-		//	printf("Astar = %f um = %f, up = %f intphim = %f intphip = %f\n",Astar, um, up, intPhi(q1m), intPhi(q1p));
-		//	else{
-				Astar = (q1m+q1p)/2.*(1+( (cbar>1e-6)? (um-up)/(2.*cbar): 0));//}  //this is linearized version
-			if(Astar<0){Astar = (q1p+q1m)/2;}
-		//}
-		//else{
-
-		//}
+	//	Astar = (q1m+q1p)/2.*(1+(um-up)/(PhiofA(q1p,Pp)+PhiofA(q1m,Pm))); //this verstion uses depth positivity condition
+		Astar = (q1m+q1p)/2.*(1+( (cbar>1e-6)? (um-up)/(2.*cbar): 0));  //this is linearized version
 		bool Ps = (Pm && Pp);
 		s[0] = um - findOmega(Astar, q1m, Ps, Pm);
 		s[1] = up + findOmega(Astar, q1p, Ps, Pp);
-		/*
+	// Sanders estimates (not very good--use them if the other estimate messes up(??!))
 		double Vs, cs, phip, phim;
 		phim = PhiofA(q1m, Pm);
 		phip = PhiofA(q1p, Pp);
@@ -997,7 +935,7 @@ void Cpreiss::speedsHLL(double q1m, double q1p, double q2m, double q2p, double *
 			cout<<"phis = "<<phis<<" cs = "<<cs<<endl;
 			printf("Atsar = %f, Astard = %f, AstarS = %f\nwith q1m = %f and q1p = %f, um =%f, up = %f\n",Astar, Astarp, Astars, q1m, q1p, um, up);
 			printf("sL = %f, sR = %f, Sanders speeds (vl-cl, vs-cs) = (%f, %f) and (vr+cR, vr+cr) = (%f,%f)",s[0], s[1], sl1, sl2, sr1, sr2);
-		}*/
+		}
 	//	s[0] = min(sl1,sl2);
    // 	s[1] = max(sr1,sr2);
 
@@ -1006,27 +944,17 @@ void Cpreiss::speedsHLL(double q1m, double q1p, double q2m, double q2p, double *
 	else{
 		if(fmax(ym,yp)<dry)     // Both sides dry - both stay dry
 		{
-		//	printf("both sides dry\n");
-		//	cout<<"P = ["<<Pm<<","<<Pp<<"]\n";
-		//	cout<<"[ym, yp]=["<<ym<<","<<yp<<"]  "<<"[um, up]= ["<<um<<","<<up<<"]\n";
 			s[0] = 0.;
 			s[1] = 0.;
 		}
 		else if(ym<dry)  //left side dry
 		{
-		//	printf("left side dry\n");
-		//	cout<<"P = ["<<Pm<<","<<Pp<<"]\n";
-		//	cout<<"[ym, yp]=["<<ym<<","<<yp<<"]  "<<"[um, up]= ["<<um<<","<<up<<"]\n";
-
 			up = q2p/q1p;
 			s[0] = up - PhiofA(q1p,Pp);
 			s[1] = up + cp;	
 		}
 		else if(yp<dry) //right side dry
 		{
-		//	printf("right side dry\n");
-		//	cout<<"P = ["<<Pm<<","<<Pp<<"]\n";
-		//	cout<<"[ym, yp]=["<<ym<<","<<yp<<"]  "<<"[um, up]= ["<<um<<","<<up<<"]\n";
 			um = q2m/q1m;
 			s[0] = um - cm;
 			s[1] = um + PhiofA(q1m,Pm);
@@ -1042,9 +970,9 @@ void Cpreiss::speedsHLL(double q1m, double q1p, double q2m, double q2p, double *
 	if(s[0]>s[1]) 	//check that HLL speeds have s0<s1; really, this should never bloody happen!
 	{  
 	if(WTF)	printf("The hell? s[0]>s[1], with q1m = %f, q2m = %f, q1p =%f, q2p =%f, s[0] = %f, s[1] = %f\n",q1m,q2m,q1p,q2p,s[0],s[1]);
-		//use Sanders wave speed estimates instead if this happens
-		s[0] = min(sl1,sl2);
-    	s[1] = max(sr1,sr2);
+	//use Sanders wave speed estimates instead if this happens
+	s[0] = min(sl1,sl2);
+    s[1] = max(sr1,sr2);
 	}
 	cmax = max(cmax, max(fabs(s[0]),fabs(s[1]))); 		   
 }
@@ -1054,28 +982,14 @@ double Cpreiss::findOmega(double Astar, double Ak, bool Ps, bool Pk)
 {
 	double omega;
 	double eps = 1e-8;
-	//cout<<Astar<<"   "<< Ak<<endl;	
-  //  if (Astar>Ak &&(!Pk) &&(!Ps))
    if (Astar>Ak+eps)
-    	/*{
-        	if(Astar<=Ak+eps)//if Ak-x is super small, the usual routine will fuck up
-			{//so use Ak-eps small and Taylor expand to evaluate Eta(Ak)-Eta(x) ~ dEta/dA(x)(x-Ak)
-			//this is easy since c^2 = GdEta/dA, lol. 
-				double c = Cgrav((Astar+Ak)/2.,Pk);
-				return c*sqrt(Astar/Ak); 
-		//		printf("c = %f\n", c);	
-			}
-		else*/
 		{
 			omega = sqrt((Eta(Astar, w, At, Ts, Ps)-Eta(Ak, w, At, Ts, Pk))*Astar/(Ak*(Astar-Ak)));
-		//}
-	} 
+		} 
 	else
     	{
-		//double y = hofA(Ak);
         	omega  = Cgrav(Ak,Pk);
     	}
-	//cout<<"omega = "<<omega<<endl;	
 	return omega;
 }
 
@@ -1099,7 +1013,7 @@ Junction1::Junction1(Channel &a_ch0, int a_which, double a_bval, int a_bvaltype)
 }
 
 /**apply boundary conditions at the end of a single pipe. Several options.
- * Computation controlled by these parameters:
+ **What computation happens depends on these parameters:
  **** reflect = +1, -1, 0  (see below for details)
  **** whichend = 0, 1   (0 for left (x=0) end, 1 for right (x=L) end. Matters for signs of things.)  
  **** bvaltype = 0, 1   (0 for A, 1 for Q)  
@@ -1107,7 +1021,7 @@ Junction1::Junction1(Channel &a_ch0, int a_which, double a_bval, int a_bvaltype)
  * Extrapolate: let all incoming waves through (ghost cell has same values as last interior cell), set reflect = -1
  * Specify: specify Q,A
  *			specify f(Q,A) = 0 (not implemented yet) 
- * following a characteristcic out of the domain to solve for unknown value, then updating boundary fluxes accordingly.
+ *     following a characteristcic out of the domain to solve for unknown value, then updating boundary fluxes accordingly.
  * */
 
 void Junction1::boundaryFluxes()
@@ -1158,13 +1072,10 @@ void Junction1::boundaryFluxes()
 	{
 		if (fabs(Qin)/Ain>ch0.Cgrav(Ain, Pin))  //first check for supercritical flow
 		{
-		//	cout<<"whoooooaaaa there case 2"<<endl;
 			Qext = bval[ch0.n];		
 			if (fabs(Qext)<Qtol) bccase =0;      //just reflect
 			else if((whichend &&(Qext>Qtol)) ||(!whichend &&Qext<-Qtol)) bccase=1;          //supercitical outflow -> extrapolate
 			else bccase = 21;               //dredge up a reasonable value of Aext or Qext!
-		//	bccase =21;
-		//	cout<<"bccase= "<<bccase<<endl;
 		}
 		else
 		{
@@ -1208,7 +1119,6 @@ void Junction1::boundaryFluxes()
 		if (Ain<ch0.At) bccase =1;
 		else bccase=4;
 	}
-//	cout<<"bc case ="<<bccase<<endl;
 	switch(bccase)
 	{
 		case 0://reflect everything
@@ -1229,7 +1139,7 @@ void Junction1::boundaryFluxes()
 			{
 				Qext =bval[ch0.n];
 				//Aext = Ain*Qext/Qin;
-				Aext = ch0.q_hist[ch0.idx_t(0,0,0)];        //use previous value of Aext unless you are at the beginning...
+				Aext = ch0.q_hist[ch0.idx_t(0,0,max(ch0.n-1,0)];        //use previous value of Aext unless you are at the beginning...
 			}
 			break;
 		case 310://subcritical, specify Q<Qtol	
@@ -1471,28 +1381,20 @@ void Junction2::setValveTimes(valarray<Real>x)
 void Junction2::boundaryFluxes(){	
 	double q1m, q1p, q2m, q2p, q1mfake, q1pfake;
 	valveopen = valvetimes[ch0.n];
-//	cout<<"valveopen="<<valveopen<<endl;
 	q1m = ch0.q[ch0.idx(0,N0)];
 	q2m = ch0.q[ch0.idx(1,N0)];
 	q1p = ch1.q[ch1.idx(0,N1)];
 	q2p = ch1.q[ch1.idx(1,N1)];
-//following two lines are revision 61 	
 	bool pm = ch0.P[ch0.pj(N0)];
 	bool pp = ch1.P[ch1.pj(N1)];
-//following two lines are revision 66	
-//	bool pm = ch0.P[Ns0];
-//	bool pp = ch1.P[Ns1];
+
 //attempt at incorporating valve opening coefficient - wish me luck/facepalm
-	//printf("ws=  %f %f %f %f \n",w1[0], w1[1],w2[0], w2[1]);
 	if(valveopen>0)
 	{
 		double h0f = ch1.HofA(q1p,pp)-offset;
 		double h1f = ch0.HofA(q1m,pm)+offset;
 		q1pfake = ch0.AofH(h0f,pp);      //what channel 0 sees
 		q1mfake = ch1.AofH(h1f,pm);      //what channel 1 sees
-	//	cout<< q1p-ch0.AofH(h0f,pm)<<" "<<q1m-ch1.AofH(h1f,pm)<<endl;
-	//	printf("q1m = %f, q1mfake = %f, q1p = %f, q1pfake = %f, hm = %f, hp = %f N1 = %d N0 = %d\n", q1m, q1mfake,q1p,q1pfake, h0f, h1f, N1,N0);
-	//	ch1.showVals(1);	
 		if(whichend0)
 		{
 			ch0.numFlux(q1m,q1pfake, q2m, q2p*valveopen, ch0.bfluxright, pm, pp);
@@ -1519,8 +1421,6 @@ void Junction2::boundaryFluxes(){
 		ch0.p_hist[ch0.pj_t(Ns0,ch0.n)] = ch0.P[Ns0];
 		ch1.p_hist[ch1.pj_t(Ns1,ch1.n)] = ch1.P[Ns1];
 
-   //    	printf("q1m =%f, q1mfake = %f, q1p = %f, q1pfake = %f, q2m = %f, q2p = %f\n", q1m, q1mfake, q1p, q1pfake, q2m, q2p); 
-	     	
 	}
 	else //reflect to get 0 flux...
 	{
@@ -1556,7 +1456,6 @@ void Junction3::boundaryFluxes(){
 	p12 = 0.5;
 	p20 = 1-p02;
 	p21 = 1-p12;
-//	cout<<"junction 3 time godfuckingdamnallofthisfuckinguselessfuckingshit\n";
 //this routine assumes you have one incoming (whichend =1) and two outgoing pipes (whichend =0)
 //I can see needing to set up the machinery to have two incoming and one outgong but there's no reason to have anything else
 	if((whichend[0]==1 &&whichend[1] ==0 &&whichend[2] ==0) || (whichend[0] ==0&& whichend[1] ==1 &&whichend[2] ==1))
@@ -1621,6 +1520,29 @@ void Junction3::boundaryFluxes(){
 		cout<<"Have not implemented triple junctions for this configuration!Sorry!\n";}
 
 }
+
+
+//Don't actually need these routines but they are potentially useful to compare to other people's evaluation (e.g. Kerger 2011, Leon 2006) of h(A), phi(A), etc.
+inline double getTheta(double A, double D)
+{
+	int count;
+	ftheta th(A,D);
+	double theta =::ridders(th, -.1, 2*PI+1, &count,1e-15, 1e-15);
+//	printf("errr in theta  is %e\n", fabs(A-D*D/8*(theta-sin(theta))));	
+
+//this way is 3x as fast--but! lose a lot of accuracy near the top.
+//	double theta = Ptheta(A/(D*D));
+//	for(int i=0;i<2; i++)
+//	{theta = (A>0.)? (theta -(theta-sin(theta)- 8.*A/(D*D))/(1.-cos(theta))):0.;}
+	return theta;
+}
+
+/*unstable and possibly terrible way to compute Phi in the circular part of the pipe
+ * as seen in  (e.g. Kerger 2011, Leon 2006) */
+
+//inline double powPhi(double t, double D){
+//	return sqrt(G*3.*D/8.)*(t-1/80.*t*t*t+19./448000.*t*t*t*t*t
+//		+1./10035200.*t*t*t*t*t*t*t+491./(27.*70647808000.)*t*t*t*t*t*t*t*t*t);}
 
 
 

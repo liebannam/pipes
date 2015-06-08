@@ -260,6 +260,7 @@ cdef class PyNetwork:
 		return average gradient at ith time step
 	getTotalVolume(self):
 		return current total system volume
+	...and many more, check allthethings.pyx for full list of methods.
 	'''
 
 	cdef Network *thisptr
@@ -426,7 +427,69 @@ cdef extern from "optimizeit.h":
 		int modetype
 		double T
 		mystery_bc(int, int, vector[double], vector[double], Network *, int, double, int, double, int, vector[double], int)
+
+
 cdef class PyMystery_BC:
+	'''Optimize to fit unknown boundary conditions to a measured time series of pressure head h
+	Input Parameters:
+	-------------
+	fi: char* 
+		.inp file
+	fc: char *
+		.config file
+	ndof: int
+		degrees of freedom 
+	x0:	np.ndarray
+		initial guess for time series of boundary time series (length = ndof)
+	hdata: np.ndarray
+		time series of "measured" pressure head data h (units are meters)
+	modetype: int
+		1 for Hermite representation
+		0 for Fourier representation
+	pj: int
+		which pipe you're measuring the data in
+	xstar: double
+		location (distance from x=0) of location where you measure data
+	whichnode: int
+		node at which you are trying to recover the boundary value time series
+	qfixed: np.ndarray
+		time series of fixed (known) boundary values for t-i
+		where either i<delay or i>M-delay
+	delay: int
+		number of time steps at beginning and end of simulation where you don't
+		use the data to contribute to the residual 
+		(doesn't seem to work at present, haven't tested all that much)
+	
+	Attributes:
+	-----------------
+	solve_t: double
+		total CPU time (s)
+	w_solve_t: double
+		total wall clock time (s). 
+		w_solve_t <= solve_t (hopefully lots less, if the parallelism is working)
+	x: np.ndarray
+		decision variables describing time series at whichnode
+	r: np.ndarray
+		residual-- in this case, it's sum (h*-h) for simulated h
+	f: double
+		objective function, f = 1/2 r*r
+	T: double
+		simulation time (s)
+	M: int
+		number of time steps
+
+	Methods:
+	-----------------
+	solve(): void
+		calls the levmar solve. prints lots of numbers and a few swear words. 
+	dump(): void
+		prints some crap and maybe writes it to file.
+	compute_f(): void
+		computes the value of f (have to call this before self.f is correct)
+	getBCtimeseries(int i):np.ndarray
+		return the lenght M+1 time series described by x
+	'''
+
 	cdef mystery_bc *thisptr
 	cdef double solve_t;
 	cdef double wsolve_t;
@@ -492,13 +555,12 @@ cdef class PyMystery_BC:
 	property wsolve_t:
 		def __get__(self): return self.wsolve_t
 
-
+#optimize <dh/dx> using boundary control at one node.
 cdef class PyBC_opt_dh:
 	cdef bc_opt_dh_c *thisptr
 	cdef int ndof
 	cdef double solve_t     #CPU solve time
 	cdef double wsolve_t	#actual solve time
-#        int n, int M_, vector<double>x0_, Network *Ntwk_i, double T_, int whichnode, double Vin_
 	def __cinit__(self, char * fi, char *fc, int ndof, np.ndarray x0, int whichnode, double Vin):
 		cdef int M= 1, Mi = 1, skip =1;
 		cdef int channeltype = 1
@@ -508,10 +570,6 @@ cdef class PyBC_opt_dh:
 			vx0.push_back(x0[i])
 		self.ndof = ndof
 		Ntwk_i = setupNetwork(fi, fc, M, Mi, T, channeltype);
-		#print vx0
-		#print "T = %f" %T
-		#print whichnodes
-		#print vwhichnodes
 		self.thisptr = new bc_opt_dh_c(len(x0), M, vx0, Ntwk_i, T, whichnode, Vin)
 
 	def solve(self):

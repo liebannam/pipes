@@ -32,20 +32,20 @@ using std::max;
 using std::min;
 
 //
-//WTF defined as true prints lots of miscellanious debug info...sigh
+//WTF defined as true prints lots of miscellanious debug info...
 #define WTF false
 //#define WTF true
 
 ///////
-//horrifying macros for easily changing numerical flux routines
-//numFlux choices are numFluxHLL and numFluxExact (THEY'RE BOTH IDIOTIC SO DON'T WORRY TOO MUCH HERE)
-//if you choose HLL you also need to define speeds-- choices are speedsHLL and speedsROE (also both dumb)
+//horrifying macros for numerical flux routines--previously allowed for an exact riemann solver that was slow and crappy)
+//numFluxHLL requires you to define speeds-- 
+//choices are speedsHLL and speedsROE (both dumb)
 /////
 
 #define numFlux(q1m, q1p, q2m, q2p, flux, Pm, Pp)  numFluxHLL(q1m, q1p, q2m, q2p, flux, Pm, Pp) 
+
 #define speeds(q1m, q1p, q2m, q2p, flux, Pm, Pp)   speedsHLL(q1m, q1p, q2m, q2p, flux, Pm, Pp) 
 //#define speeds speedsRoe
-
 
 
 //Templating magic for streaming into vectors (THANKS ROB!!!!!)
@@ -93,13 +93,6 @@ double Eta    (double A, double D, double At, double Ts, bool P);
 /////
 ///Class for channel data 
 /////////
-
-//so that you can pass numflux as a function easily--screw it, too hard :(
-//typedef void(Channel::*numFlux_t)(double q1m, double q1p, double q2m, double q2p, double *flux, bool Pm, bool Pp);
-//typedef void (Channel::*speeds_t)(double q1m, double q1p, double q2m, double q2p, double *s, bool Pm, bool Pp);
-
-
-
 class Channel
 {
 
@@ -219,7 +212,6 @@ class Cuniform: public Channel
 };
 
 
-//extern double Ptheta(double A);//mumblemumle plzwork??
 //preissmann slot geometry
 class Cpreiss: public Channel{
 	public:
@@ -235,7 +227,6 @@ class Cpreiss: public Channel{
 		
 		void showp();	
 		double pbar(double A, bool p);
-		double pbar_old(double A, bool p);
 		double HofA(double A,bool p){return ::HofA(A, D, At, Ts, p);}
 	        double hofAold(double A);	
 		double fakehofA(double A, bool p);
@@ -264,11 +255,10 @@ class Junction1
 	public:
 		Channel &ch0;
 		int N;					
-		double w; 			//width of associated channel
+		double w; 			    //width of associated channel
 		int bvaltype;			//type of externally specified quantity.(bvaltype =0 specifies A; bvaltype  =1  specifies Q) 
 		double *bval;			//value of externally specified quantity 
 		int whichend;			//which end of pipe connects to this junction; 0 corresponds to left, 1 corresponds to right
-	//	Junction1(Channel &ch0_, int which);
 		Junction1(Channel &a_ch0, int a_which, double a_bval, int a_bvaltype);
 		void setbVal(double bvalnew);		
 		void setbVal(valarray<Real> x);
@@ -277,8 +267,7 @@ class Junction1
 		~Junction1();
 		void boundaryFluxes();//	
 		double getFlowThrough(double dt);//compute total flow from left to right 	
-	//	int idx(int i_in, int j_in){return (N*i_in+j_in);}
-		int reflect;//=1 means do (A,-Q) at boundary rather than try RI thing
+		int reflect;        //reflect=-/+1 means do (A,+/-Q) at boundary rather than try RI thing
 };
 
 ///////
@@ -386,108 +375,6 @@ public:
 	double operator()(double x) { return D*D/8.*(1-cos(x)); }
 };
 
-/**evaluate phi(x)-lhs */
-class fphimlhs {      
-public:
-	double D, At, Ts, lhs;
-	fphimlhs(double D_,double At_,double Ts_, double lhs_):D(D_), At(At_),Ts(Ts_), lhs(lhs_)
-	{
-	}
-	~fphimlhs(){
-	}
-
-	double operator()(double x) 
-	{
-		double Phi;	
-		if(x<0){return lhs;}
-		else if (x<=At)
-		{
-			Phi = PhiofA(x,D,At, Ts, false);
-		}
-		else
-		{
-			Phi = PhiofA(PI*D*D/4.,D, At, Ts, false);		
-			Phi += 2*sqrt(x/Ts)-2*sqrt(At/Ts);
-		}
-		return -Phi+lhs;
-	}
-};
-
-
-
-/** piece of exact Riemann sovler function as described in Kerger 2011 
- *  fk(x) =     {   phi(x)-phi(Ak)				x<=Ak
- * 		{   sqrt((eta(x)-eta(Ak)*(x-Ak))/(x*ak))	else
- **/
-class flr{
-public:
-	double D, Ts, At, Ak;
-	bool Pk, Px;
-	
-	double eps;
-	flr(double D_, double Ts_, double At_, double Ak_, bool Pk_, bool Px_):D(D_), Ts(Ts_), At(At_), Ak(Ak_), Pk(Pk_), Px(Px_)
-	{
-		eps = 1e-8;
-	}
-	~flr(){
-	}
-	double operator()(double x)
-	{
-		if(x<=Ak)
-		{
-			return PhiofA(x,D,At,Ts,Px)-PhiofA(Ak,D,At,Ts,Pk);
-		}
-		else
-		{
-
-			if(Ak==0){return 0.;}
-			else if(x<=Ak+eps)//if Ak-x is super small, the usual routine will fuck up
-			{//so use Ak-eps small and taylor expand to evaluate Eta(Ak)-Eta(x) ~ dEta/dA(x)(x-Ak)
-			//this is easy since c^2 = GdEta/dA, lol. 
-				double c = Cgrav((x+Ak)/2.,D, At, Ts, Px);
-				return c*(x-Ak)*sqrt(1/(x*Ak)); 
-			//	printf("c = %f\n", c);	
-			}
-			else{
-				return sqrt((Eta(Ak,D,At,Ts,Pk)-Eta(x,D,At,Ts,Px))*(Ak-x)/(Ak*x));
-			}
-		}
-	}
-};
-
-/**routine for exact solver evaluation, returns fl+fr-ur-ul*/
-class f_exactRS{
-public:
-	double D, At, Ts, ul, ur;
-	flr fl, fr;
-	f_exactRS(flr fl_, flr fr_, double ul_, double ur_):ul(ul_),ur(ur_),fl(fl_),fr(fr_)
-	{
-	}
-	~f_exactRS(){
-	}
-	double operator() (double x)
-	{
-		double f1,f2;
-		f1 = fl(x);
-		f2 = fr(x);
-		return f1+f2+ur-ul;
-	}
-	
-
-};
-/*
-class fshock{
-	//find A2 to satisfy (Q1-Q2)^2/(A1-A2) = Q1^2/A1 + Q2^2/A2 +gI(A1)-I(A2))
-	double D, At, Ts, lhs, Q1, Q2, A1;
-	double operator()(double x)
-	{
-		double I1 = ;
-		double I2 = ;
-		return Q1*Q1/A1 +Q2*Q2/A2 
-	}
-}
-*/
-
 template <typename T> int sgn(T val)
 {
 		return (T(0)<val)-(val<T(0));
@@ -504,26 +391,16 @@ public:
 	fallpurpose(double D_,double At_,double Ts_, double lhs_, double Q_, int sign_, double cq_, double cc_, bool P_):
 		D(D_), At(At_),Ts(Ts_), lhs(lhs_), Q(Q_), cq(cq_), cc(cc_), P(P_),sign(sign_)
 	{
-		//s = sgn(Q)*sgn(lhs);//if dicates what you want to try to solve
 	}
 	~fallpurpose(){
 	}
 	double operator()(double x) 
 	{
-		//if (x<1e-15) return x*lhs-(cq*Q+x*(sign*PhiofA(x,D,At,Ts,P)+cc*Cgrav(x,D,At,Ts,P)));
-		//else{
-		//printf("solving %f -(%f*%f+(%d*phi(x)+%f*cgrav))=0\n",lhs,cq,Q,sign, cc);
-		//return x*lhs-(cq*Q+x*(sign*PhiofA(x,D,At,Ts,P)+cc*Cgrav(x,D,At,Ts,P)));
-	//	printf("x = %f, f(x) = %f phi = %f\n",x,-x*lhs+(cq*Q+x*(sign*PhiofA(x,D,At,Ts,P)+cc*Cgrav(x,D,At,Ts,P))), PhiofA(x,D,At,Ts,P));
 		return x*lhs-(cq*Q+x*(sign*PhiofA(x,D,At,Ts,P)+cc*Cgrav(x,D,At,Ts,P)));
-	//	}
 	}
 
 
 };
-
-
-
 
 
 #endif
