@@ -827,31 +827,6 @@ double Cpreiss::pbar(double A, bool p)
 	return Eta(A,D,At,Ts,p);
 }
 
-/*
-//keep around for comparison purposes, maybe?
-double Cpreiss::hofAold(double A)
-{
-		double theta = getTheta(A,D);		
-		double y = D/2.*(1.+cos(PI-theta/2.));
-		return y;
-}
-*/
-//if you want to use negative slot...?
-double Cpreiss::fakehofA(double A, bool p)
-{
-	if (A>=At){p=true;}
-	double y;
-	if (p){y = yt+(A-At)/Ts;}	
-	else {y = HofA(A,p);}
-	return y;
-}
-
-double Cpreiss::fakeAofh(double h, bool p)
-{
-	if (!p){return AofH(h,p);}
-	else{return (h-yt)*Ts+At;}	
-}
-
 
 double Cpreiss::getHydRad(double A)
 	{	
@@ -1548,6 +1523,29 @@ inline double getTheta(double A, double D)
 
 
 
+/*
+//keep around for comparison purposes, maybe?
+double Cpreiss::hofAold(double A)
+{
+		double theta = getTheta(A,D);		
+		double y = D/2.*(1.+cos(PI-theta/2.));
+		return y;
+}
+*/
+//if you want to use negative slot...?
+/*double Cpreiss::fakehofA(double A, bool p)
+{
+	if (A>=At){p=true;}
+	double y;
+	if (p){y = yt+(A-At)/Ts;}	
+	else {y = HofA(A,p);}
+	return y;
+}
 
-
+double Cpreiss::fakeAofh(double h, bool p)
+{
+	if (!p){return AofH(h,p);}
+	else{return (h-yt)*Ts+At;}	
+}
+*/
 
