@@ -618,7 +618,7 @@ double Channel::getPE(int i)
 	for (int j = 0; j<N; j++)
 	{
 		double ai = q_hist[idx_t(0,j+1,i)];
-		PE+= (ai*HofA(ai,p)-(ai>0?  pbar(ai,p)/(G*ai):0); 
+		PE+= (ai*HofA(ai,p)-(ai>0?  pbar(ai,p)/(G*ai):0)); 
 	}
 	return PE;
 }
@@ -1533,7 +1533,7 @@ double Cpreiss::hofAold(double A)
 }
 */
 //if you want to use negative slot...?
-/*double Cpreiss::fakehofA(double A, bool p)
+double Cpreiss::fakehofA(double A, bool p)
 {
 	if (A>=At){p=true;}
 	double y;
@@ -1547,5 +1547,5 @@ double Cpreiss::fakeAofh(double h, bool p)
 	if (!p){return AofH(h,p);}
 	else{return (h-yt)*Ts+At;}	
 }
-*/
+
 
