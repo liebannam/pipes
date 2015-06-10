@@ -420,7 +420,7 @@ cdef extern from "optimizeit.h":
 		double dt;
 		double Vin;
 		double mydelta;
-		bc_opt_dh_c(int , int , vector[double], Network*, double , int, double )
+		bc_opt_dh_c(int , int , vector[double], Network*, double , int, double, int)
 	cdef cppclass mystery_bc(levmar):
 		int whichnode
 		int M
@@ -561,7 +561,7 @@ cdef class PyBC_opt_dh:
 	cdef int ndof
 	cdef double solve_t     #CPU solve time
 	cdef double wsolve_t	#actual solve time
-	def __cinit__(self, char * fi, char *fc, int ndof, np.ndarray x0, int whichnode, double Vin):
+	def __cinit__(self, char * fi, char *fc, int ndof, np.ndarray x0, int whichnode, double Vin, int modetype):
 		cdef int M= 1, Mi = 1, skip =1;
 		cdef int channeltype = 1
 		cdef double T=1.
