@@ -570,7 +570,7 @@ cdef class PyBC_opt_dh:
 			vx0.push_back(x0[i])
 		self.ndof = ndof
 		Ntwk_i = setupNetwork(fi, fc, M, Mi, T, channeltype);
-		self.thisptr = new bc_opt_dh_c(len(x0), M, vx0, Ntwk_i, T, whichnode, Vin)
+		self.thisptr = new bc_opt_dh_c(len(x0), M, vx0, Ntwk_i, T, whichnode, Vin,modetype)
 
 	def solve(self):
 		cdef clock_t start_t, end_t;
