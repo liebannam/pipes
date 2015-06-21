@@ -371,9 +371,12 @@ Network* setupNetwork(char *finp, char *fconfig, int &M, int &Mi, double &T, int
 		}
 		}
 	
-//	char mdata[] = "../output_data/mapdata.txt";
-    char mdata[] = "output_data/mapdata.txt";
-//	char mdata[] = "~/Dropbox/Research/Network7.0/output_data/mapdata.txt";
+	#ifdef commandline
+	char mdata[] = "../output_data/mapdata.txt";
+	#else
+	char mdata[] = "output_data/mapdata.txt";
+	#endif
+	cout<<mdata<<endl;
 	FILE *fm = fopen(mdata, "w");
 	if(fm==NULL)
 	{
@@ -401,7 +404,11 @@ Network* setupNetwork(char *finp, char *fconfig, int &M, int &Mi, double &T, int
 void writeOutputTarga(Network *Ntwk, int M, int Mi, double T, int writelogs)
 {
 //	char sdata[] = "~/Dropbox/Research/Network7.0/output_data/scalings.txt";
+	#ifdef commandline
+	char sdata[] = "../output_data/scalings.txt";
+	#else
 	char sdata[] = "output_data/scalings.txt";
+	#endif
 	int Nedges = Ntwk->Nedges;
 	//int Nnodes = Ntwk.Nnodes;
 	FILE *fp = fopen(sdata, "w");
@@ -418,8 +425,11 @@ void writeOutputTarga(Network *Ntwk, int M, int Mi, double T, int writelogs)
 		for(int kk = 0; kk<Nedges;kk++)
 		{
 			char filename[100];
+			#ifdef commandline
+			sprintf(filename,"../output_data/out%d_%03d.tga", kk,ii/Mi);
+			#else
 			sprintf(filename,"output_data/out%d_%03d.tga", kk,ii/Mi);
-			//sprintf(filename,"../output_data/out%d_%03d.tga", kk,ii/Mi);
+			#endif
 			int mm = Ntwk->channels[kk]->N;                        //x direction
 			int nn = mm/2;	                        //y direction
 			double myfld[mm*nn];
@@ -477,8 +487,11 @@ void writeOutputText(Network *Ntwk, int M, int Mi)
 	{
 		double val;
 		char fname[100];
+		#ifdef commandline
+		sprintf(fname,"../output_data/txt_out%03d.txt",ii/Mi);		
+		#else
 		sprintf(fname,"output_data/txt_out%03d.txt",ii/Mi);		
-		//sprintf(fname,"../output_data/txt_out%03d.txt",ii/Mi);		
+		#endif
 		FILE *fd = fopen(fname, "w");
 		if(fd==NULL)
 		{

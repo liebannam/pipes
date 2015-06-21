@@ -6,8 +6,8 @@ NVCC   = nvcc
 MPICC  = mpic++
 
 #CFAST  = -O3 -Wall -fopenmp -DUSEOMP
-CFAST  = -O3 -Wall -g -fopenmp 
-CFAST  = -O0 -Wall -g -fopenmp  #for debugging with valgrind 
+CFAST  = -O3 -Wall -g -fopenmp  
+CFAST  = -O0 -Wall -g -fopenmp  -Dcommandline=1 #for debugging with valgrind 
 cFLAGS = $(CFAST)
 CFLAGS = $(CFAST)
 CFLAGSD = -g -Wall
@@ -23,4 +23,5 @@ LA     = -llapack -lblas  -lcblas
 #LIBS   = -L. -L/opt/local/lib -L$(ROOT)/lib -lcla $(LA) -lqd -lfftw3 -lm
 #LIBS   = -L. -L/opt/local/lib -L//usr/lib $(LA) -lqd -lfftw3 -lm
 #LIBS   = -L. -L//usr/lib $(LA) -lqd -lfftw3 -lm
-LIBS   = -L. -L$(ROOT)/lib -lcla $(LA) -lqd -lfftw3 -lm 
+#LIBS   = -L. -L$(ROOT)/lib -lcla $(LA) -lqd -lfftw3 -lm 
+LIBS   = -L. -L$(ROOT)/lib  $(LA) -lqd -lfftw3 -lm 

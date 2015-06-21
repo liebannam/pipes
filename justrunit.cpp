@@ -86,7 +86,7 @@ void testallthiscrap() //print out all the crap I'm computing to see if it makes
 	 {
 		 double aa = D*D*PI/4.*(1.-pow(2.,-k-1));
 		 double h = ch0.HofA(aa,pp);
-		 double hold =ch0.hofAold(aa);
+		 double hold =h;
 		 double th = 2*acos(1-2.*h/D);
 		 printf("%.16f   %.16f   %e   %e   %e\n", aa, h,fabs(aa-D*D*PI/4.), fabs(h-hold), fabs(D*D/8.*(th-sin(th))-aa)); 
 	 }
@@ -117,9 +117,9 @@ void testallthiscrap() //print out all the crap I'm computing to see if it makes
 	 int MM = 10000;
 	 for (int i = 1; i<MM; i++){yy =ch0.HofA((float)i/MM*PI*D*D/4.,false);}
 	 t1 = clock();
-	 for (int i = 1; i<MM; i++) {yy =ch0.hofAold((float)i/MM*PI*D*D/4.); } 
+	 for (int i = 1; i<MM; i++) {yy =ch0.HofA((float)i/MM*PI*D*D/4.,false); } 
 	 t2  = clock();
-	 for (int i = 1; i<MM; i++){yy =ch0.pbar_old((float)i/MM*PI*D*D/4., false);}
+	 for (int i = 1; i<MM; i++){yy =ch0.pbar((float)i/MM*PI*D*D/4., false);}
 	t3 = clock();
 	for (int i = 1; i<MM; i++){yy =ch0.AofH((float)i/MM*PI*D*D/4.,false); }
 	t4 = clock();
