@@ -40,14 +40,14 @@ def colorme(x,xmin, xmax):  #return an rgb tuple for x in [xmin,xmax]. Do some k
         print (c[0], c[1], c[2])        	
         return (c[0],c[1],c[2])
 
-
+nwrites = 199
 cbarsize = 9.   #size of colorbar on actual map.  Fuck all if I know how to automatically make it look nice. I'm pretty bamboozled by all the camera angle nonsense.
 cbarloc = [23,0];
 tloc = [12,9];   #location of title
 tscale = .8;
 ## values for known networks: (7deSeptiembre) cbarsize = 30, cbarloc = [10,60], tloc = [80,90],tscale = 1.5
 ##                            (simple3pipes)  cbarsize = 3, cbarloc = [];
-rscale = 1.;  #scale the radii so that the picture has a nicer aspect ratio
+rscale = 2.;  #scale the radii so that the picture has a nicer aspect ratio
 
 fromabove = 0  #set to 0 or 1--see below
 ######
@@ -55,14 +55,16 @@ fromabove = 0  #set to 0 or 1--see below
 ##########
 if fromabove:
     colormap = "H2Ofalse"
+    colormap = "H2Oblues"
     drawpipes = 0
     shape = "cylinder"
-    bckgnd = 0
+    bckgnd = 1
 #######
 #cut height fields with cylinders so it looks realistic (read: amazing!) close up (only shows if pipe is full or not-pressure head not apparent)
 #######
 else:
     colormap = "H2Oblues"
+    #colormap = "H2Ofalse"
     drawpipes = 1
     bckgnd = 1
 
@@ -197,11 +199,13 @@ for i in range(Nedges):
 #drawing commands for the height fields
 #####
 	delta = r[i]/Ls[i];
-	s1 = "\n//pipe %d \nintersection{\nintersection{\nmerge{"%(i)
+	#s1 = "\n//pipe %d \nintersection{\nintersection{\nmerge{"%(i)
 	if fromabove:
+		s1 = "\n//pipe %d \nintersection{\nmerge{"%(i)
 		shape = "box{<0,-R%d,0> <L%d,R%d,hmax%d+1> } cylinder{<0,0,0> <0,0,hmax%d+1>R%d} cylinder{<L%d,0,0><L%d,0,hmax%d+1> R%d}  }\n"%(i,i,i,i, i,i,i, i,i,i)
 		sh1 = "height_field{tga fig%d rotate<90,0,0> scale<%.5f,R%d*5,hmax%d> translate<%f, R%d,-%f> scale<L%d,1,1>}}\n"%(i,1+2*delta ,i,i, -delta,i,-hmin,i)
 	else:
+		s1 = "\n//pipe %d \nintersection{\nintersection{\nmerge{"%(i)
 		shape = "cylinder{<0,0,R%d>, <L%d,0,R%d>, R%d} sphere{<0,0,R%d> R%d} sphere{<L%d,0,R%d>R%d}  }\n"%(i,i,i, i,i,i, i,i,i)
 		sh1 = "height_field{tga fig%d rotate<90,0,0> scale<%.5f,R%d*5,hmax%d> translate<%f, R%d,0> scale<L%d,1,1>}}\n"%(i,1+2*delta ,i,i, -delta,i,i)
 		s1 += shape	
@@ -305,7 +309,7 @@ print "Goddamnit"
 
 
 ###write temporary povray plotting file with data from each time step
-count = 199
+count = nwrites
 for i in range(0,count+1):
 	istring = "%03d"%i
 	lines = [];
@@ -363,4 +367,7 @@ for i in range(0,count+1):
             command = "povray +A0.001 -J angleview.pov Output_File_Name=movie/tmp_"+istring +".png"
         print command
 	#os.system(command)
+
+print hs
+print hmax
 

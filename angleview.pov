@@ -29,17 +29,17 @@ camera {
 //	right -80*x*image_width/image_height
 //	up 80*z
 // for 7deSeptiembbre
-//	location <55, 60, 500>
-//	look_at <55,60,1>
+	location <55, 60, 500>
+	look_at <55,60,1>
 //for dumb 3pipe.inp
-	location <70, -32, 25>
-	look_at <15,0,5>
+//	location <70, -32, 25>
+//	look_at <15,0,5>
 //for slightly less dumb 3pipe2.inp
-	location <5, -52, 40>
-	look_at <7,0,5>
+//	location <5, -52, 40>
+//	look_at <7,0,5>
 //bees
-	location <6, -32, 25>
-	look_at <4,-5,5>
+//	location <6, -32, 25>
+//	look_at <4,-5,5>
 
 }
 
@@ -71,7 +71,7 @@ cone {
    texture{pigment{ Blue}}
 }
 }*/
-#declare H2Oblues =
+#declare H2Oblues_old =
 color_map {
        	[0.0 color Black] 
 //	[0.2 color rgb <48/255, 128/255, 20/255>]//sap green
@@ -84,16 +84,40 @@ color_map {
 
 }
 
-#declare H2Ofalse = 
+#declare H2Oblues=
+color_map {
+  //  [0.0 color rgb <255/255, 255/255, 240/255>] //ivory
+	[0.000 color rgb <100/225, 149/255,247/255>] //cornflower blue 
+	[0.05 color rgb <70/255, 130/255, 180/255>]//steel blue
+	[0.2 color rgb <25/255, 25/255, 112/255>] //midnight blue 	
+//	[0.5 color Black]     
+	[0.5 color rgb <75./255.,0.,130./255.>]//indigo
+	[0.7 color Red]
+	[1.0 color Yellow]
+//	[0.7 color rgb <48/255, 128/255, 20/255>]//sap green
+
+}
+#declare H2Ofalse_old = 
 color_map {
 	 [0.0 color rgb <255/255, 255/255, 240/255>] //ivory
 	 [0.0125 color rgb <70/255, 130/255, 180/255>] //steel blue
 	 [0.025 color rgb <25/255, 25/255, 112/255>] //midnight blue 
 //	 [0.1 color rgb <100/225, 149/255,247/255>] //cornflower blue 
 	 [0.03725 color rgb <48/255, 128/255, 20/255>]//sap green
-         [0.05 color Yellow]
 	 [1.0 color Red]
 }
+
+#declare H2Ofalse = 
+color_map {
+	 [0.0 color rgb <255/255, 255/255, 240/255>] //ivory
+     [0.1 color rgb <100/225, 149/255,247/255>] //cornflower blue 
+	 [0.25 color rgb <25/255, 25/255, 112/255>] //midnight blue 
+	 [0.6 color rgb <70/255, 130/255, 180/255>] //steel blue
+	 [0.8 color rgb <48/255, 128/255, 20/255>]//sap green
+     [0.9 color Yellow]
+	 [1.0 color Red]
+}
+
 
 #include "plottmp.pov"
 

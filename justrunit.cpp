@@ -237,19 +237,20 @@ writeOutputText(Ntwk, M, Mi);
 //printf("%d   %.15f    %.15f    %.15f    %.15f    %.15f   \n", i, coeffs_h[i],coeffs_p1[i],coeffs_p2[i], Ntwk.channels[0]->coeffs_a1[i],coeffs_a2[i]);
 //testcopyconstructor(Ntwk);
 
-Ntwk->channels[0]->quickWrite(places1, which2, 1,T,Mi); 
+//Ntwk->channels[0]->quickWrite(places1, which2, 1,T,Mi); 
 //Ntwk.channels[2]->quickWrite(places1, which, 1,T,100); 
 //Ntwk.channels[2]->quickWrite(times, which, 1,T,100); 
 for(int i = 0; i<Ntwk->channels.size(); i++)
 {
 	Ntwk->channels[i]->quickWrite(times, which, 1,T,1);
 }
+/*
 if (Ntwk->channels.size()>3)
 {
 	double places2[1] = {5.0};
 	int which2[1] = {1};
 	Ntwk->channels[3]->quickWrite(places2,which2,1,T,Mi);
-}
+}*/
 
 
 }//}

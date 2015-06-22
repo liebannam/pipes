@@ -24,8 +24,8 @@ camera {
 //	right -80*x*image_width/image_height
 //	up 80*z
 // for 7deSeptiembbre
-	 up y*80
-	right -80*x*image_width/image_height
+	 up y*50
+	right -50*x*image_width/image_height
 	location <55, 50, 250>
 	look_at <55,50,1>
 //for 3pipes2
@@ -70,13 +70,23 @@ cone {
 }
 }*/
 
-#declare H2Oblues =
+#declare H2Oblues_old =
 color_map {
        	[0.0 color rgb <255/255, 255/255, 240/255>] //ivory
 //	[0.2 color rgb <48/255, 128/255, 20/255>]//sap green
 	[0.5 color rgb <70/255, 130/255, 180/255>]//steel blue
 	[1.0 color rgb <25/255, 25/255, 112/255>] //midnight blue 
 }
+
+#declare H2Oblues=
+color_map {
+    [0.0 color rgb <255/255, 255/255, 240/255>] //ivory
+	[0.1 color rgb <100/225, 149/255,247/255>] //cornflower blue 
+	[0.5 color rgb <70/255, 130/255, 180/255>]//steel blue
+	[0.9 color rgb <25/255, 25/255, 112/255>] //midnight blue 	
+	[1.0 color rgb <48/255, 128/255, 20/255>]//sap green
+}
+
 #declare H2Ofalse = 
 color_map {
 	 [0.0 color rgb <255/255, 255/255, 240/255>] //ivory
@@ -84,7 +94,7 @@ color_map {
 	 [0.4 color rgb <25/255, 25/255, 112/255>] //midnight blue 
 //	 [0.1 color rgb <100/225, 149/255,247/255>] //cornflower blue 
 	 [0.5 color rgb <48/255, 128/255, 20/255>]//sap green
-         [0.6 color Yellow]
+     [0.6 color Yellow]
 	 [1.0 color Red]
 }
 
