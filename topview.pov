@@ -78,7 +78,7 @@ color_map {
 	[1.0 color rgb <25/255, 25/255, 112/255>] //midnight blue 
 }
 
-#declare H2Oblues=
+#declare H2Oblues_old2=
 color_map {
     [0.0 color rgb <255/255, 255/255, 240/255>] //ivory
 	[0.1 color rgb <100/225, 149/255,247/255>] //cornflower blue 
@@ -86,6 +86,16 @@ color_map {
 	[0.9 color rgb <25/255, 25/255, 112/255>] //midnight blue 	
 	[1.0 color rgb <48/255, 128/255, 20/255>]//sap green
 }
+#declare H2Oblues=
+color_map {
+  //  [0.0 color rgb <255/255, 255/255, 240/255>] //ivory
+	[0.000 color rgb <100/225, 149/255,247/255>] //cornflower blue 
+	[0.05 color rgb <70/255, 130/255, 180/255>]//steel blue
+	[0.2 color rgb <25/255, 25/255, 112/255>] //midnight blue 	
+//	[0.5 color Black]     
+	[0.5 color rgb <75./255.,0.,130./255.>]//indigo
+	[0.7 color Red]
+	[1.0 color Yellow]}
 
 #declare H2Ofalse = 
 color_map {
