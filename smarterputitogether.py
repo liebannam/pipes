@@ -40,7 +40,7 @@ def colorme(x,xmin, xmax):  #return an rgb tuple for x in [xmin,xmax]. Do some k
         print (c[0], c[1], c[2])        	
         return (c[0],c[1],c[2])
 
-nwrites = 1
+nwrites = 299
 cbarsize = 30.   #size of colorbar on actual map.  Fuck all if I know how to automatically make it look nice. I'm pretty bamboozled by all the camera angle nonsense.
 cbarloc = [10,60];
 tloc = [60,100];   #location of title
