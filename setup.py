@@ -16,16 +16,20 @@ export ARCHFLAGS=""
 
 import sys
 import os
-sys.path.append('/Users/anna/anaconda/lib/python2.7/site-packages')
-#sys.path.append('/Users/lieba/anaconda/lib/python2.7/site-packages')
+#on orinoco
+sys.path.append('/Users/lieba/anaconda/lib/python2.7/site-packages')
+#on my macbook air
+#sys.path.append('/Users/anna/anaconda/lib/python2.7/site-packages')
 from distutils.core import setup, Extension
 from Cython.Build import cythonize
 from Cython.Distutils import build_ext
 import numpy
+#on orinoco
 os.environ["CC"] = "gcc-4.9" 
-os.environ["CC"] = "/usr/local/bin/gcc-4.9"
 os.environ["CXX"] = "g++-4.9"
-os.environ["CXX"] = "/usr/local/bin/gcc-4.9"
+#on my macbook air
+#os.environ["CC"] = "/usr/local/bin/gcc-4.9"
+#os.environ["CXX"] = "/usr/local/bin/gcc-4.9"
 setup(ext_modules = cythonize(Extension(
            "allthethings",                                   # the extesion name 
         #sources=["allthethings.pyx", "setupandrun.cpp", "file_output.cc","network.cpp", "levmar.cpp","mp_mat.cpp","str_double.cpp", "mp_mat_double.cpp", "libcla.c"], # the Cython source and additional C++ source files
@@ -40,5 +44,6 @@ setup(ext_modules = cythonize(Extension(
         extra_compile_args=['-fopenmp'],
 	   #on macbook Air
        #include_dirs=[numpy.get_include(),"/Users/lieba", "/usr/local/include"]   #so it can find, e.g. numpy/arrayobject.h
-       include_dirs=[numpy.get_include(),"/Users/anna", "/usr/local/include"]   #so it can find, e.g. numpy/arrayobject.h
+       #on orinoco
+	   include_dirs=[numpy.get_include(),"/Users/anna", "/usr/local/include"]   #so it can find, e.g. numpy/arrayobject.h
 )))
