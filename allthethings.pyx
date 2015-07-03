@@ -121,6 +121,45 @@ cdef extern from "channel.h":
 		void setbVal(vector[Real] x)
 
 cdef class PyPipe_ps:
+	'''	
+	Input Parameters:
+	-------------
+	N: int
+		number of cells
+	D: double
+		pipe diameter (m)
+	L: double
+		pipe length (m)
+	M: int
+		number of time steps 
+	a: double
+		pressure wave speed (m/s)
+		range is ~10-1000 m/s (bigger a -> bigger pain in the ass due to numerical oscillations...)
+	Attributes:
+	-------------
+	q: np.ndarray of doubles, size 2Nx1
+		current state of the variables (A_0...,A_N-1,Q_0,...Q_N-1)
+	q0: np.ndarray of doubles
+		initializing array
+	cmax: double
+		max wave speed encountered during solve
+	dx: double
+		L/N
+	Ts: double
+		Preissman slot width
+	At: double
+		top of circular region (max area where circular geometry applies)
+	Methods:
+	-------------
+	setGeom(): set preissman parameters
+	stepEuler(dt): take an Euler step
+	PhiofA(A,p): finds phi as a function of A (p is bool for pressurized, is irrelevant at present)
+	AofPhi(phi,p): inverse of PhiofA
+	Cgrav(A,p):finds c
+	HofA(A,p): finds H
+	AofH(H,p): inverse of above
+	pbar(A,p): hydrostatic pressure term in conservation law
+	'''
 	cdef Cpreiss *thisptr
 	cdef np.ndarray q        #np array of q data
 	cdef np.ndarray q0       #np array of q data
@@ -172,7 +211,10 @@ cdef class PyPipe_ps:
 
 	property cmax:
 		def __get__(self): return self.thisptr.cmax
-
+	property Ts:
+		def __get__(self): return self.thisptr.Ts
+	property At:
+		def __get__(self): return self.thisptr.At
 
 cdef extern from "network.h":
 	cdef cppclass Network:
