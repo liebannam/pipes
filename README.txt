@@ -135,7 +135,7 @@ Section (2): Calling from Python
 		anyway. (Are you seeing a trend here? GO AWAY, CLANG, NO ONE LIKES YOU.)
 		so if you get an error "unrecognized flag ‘Wconvert 64 to 32' ", then try running
 		export ARCHFLAGS="" 
-		export CFLAGS = "-arch i386 -arch x86_64' 
+		export CFLAGS = "-arch i386 -arch x86_64" 
 
 		...Lots of other things can go wrong, dig in to the file setup.py to look
 	at compilation paths and flags. I have commented out (and labeled) the lines

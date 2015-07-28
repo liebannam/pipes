@@ -28,6 +28,7 @@ cdef extern from "time.h":
 
 #if on macbook air
 sys.path.append('/Users/anna/anaconda/lib/python2.7/site-packages')
+#sys.path.append('/usr/local/Cellar/gcc49/4.9.2_1/lib/gcc/4.9/gcc/x86_64-apple-darwin12.6.0/4.9.2/include-fixed')
 #print sys.path
 np.import_array()
 
