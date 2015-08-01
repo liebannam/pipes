@@ -343,7 +343,7 @@ class Junction1
 
 /**
  * Class for applying boundary conditions at a junction with two channels connected in serial
- * */
+ **/
 class Junction2   
 {
 	public:

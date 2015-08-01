@@ -1,21 +1,23 @@
 
-/************
-*Definitions of functions for class Channel*
-*Definition of functions for classes Junction1, Junction2, and Junction3
-*includes adjoint variable storage/solvers
-*************************************/
+/**
+ * \file Channel.cpp description
+ * Definitions of functions for class Channel*
+ * Definition of functions for classes Junction1, Junction2, and Junction3
+ **/
+
 #include "channel.h"
 
-//Chebyshev coefficients for my interpolation of h(A), phi(A), A(phi)
+/** Number of Chebyshev points*/
 const int Ncheb = 20;
+
+/** Chebyshev points on [-1,1]*/
 const double xx []= {-1.0000000000000000,  -0.9876883405951378,  -0.9510565162951535,  -0.8910065241883679,  
 		     -0.8090169943749475,  -0.7071067811865476,  -0.5877852522924732,  -0.4539904997395468,  
 		     -0.3090169943749475,  -0.1564344650402309,  -0.0000000000000000,  0.1564344650402306,  
 		      0.3090169943749473,  0.4539904997395467,  0.5877852522924730,  0.7071067811865475,  
 		      0.8090169943749473,  0.8910065241883678,  0.9510565162951535,  0.9876883405951377, 1.0000000000000000, };
 
-//polynomial coefficients
-////for h(A)
+/** Chebyshev coefficients for h(A)*/
 const double coeffs_h[]={2.412767243157768248135319100059554e-01, 2.490551009703833796234839617091749e-01, 8.588320472482467973567819078662384e-03,
  			 9.228793157998457405435172914627134e-04, 1.310660974448734367701266018026398e-04, 2.129558025374983921564763711749651e-05,
 			 3.749094616467203989458105646535410e-06, 6.962795341462423230912527993610194e-07, 1.343547052451044239960227996180368e-07,
@@ -24,17 +26,18 @@ const double coeffs_h[]={2.412767243157768248135319100059554e-01, 2.490551009703
 		     	 2.321591726189518874185799075341815e-12, 5.067116805835826216315004584447364e-13, 1.113605910211862088384776819368985e-13,
 		  	 2.467624478577450438100243851682381e-14, 5.743999679585741830689301264332563e-15, 1.221321604072796243118941605439226e-15};
 
-//for phi(A)  when 0<A<=pi/8  
+/** Chebyshev coefficients for phi(A)  when 0<A<=pi/8  */
 const double coeffs_p1[] = {2.6099703290809577, 2.6418910954954722, 0.0407198075367772, 0.0101962412156085, 0.0017585298273079,
        			0.0004510739954107, 0.0001148009501627, 0.0000322213950326, 0.0000093014159914, 0.0000027886790457, 
 			0.0000008553527957, 0.0000002678904977, 0.0000000852610460, 0.0000000275113722, 0.0000000089810480, 
 			0.0000000029602467, 0.0000000009847978, 0.0000000003306886, 0.0000000001120956, 0.0000000000423243, 0.0000000000127085 };
-//for phi(A) when pi/8<=A<=pi
+/** Chebyshev coefficiencts for phi(A) when pi/8<=A<=pi*/
+
 const double coeffs_p2[]= {6.4670122383491355, -0.8635238603246120, -0.2591109614939733, -0.0292512185543841, -0.0076221992053693,
        			-0.0017389019022193, -0.0004503493365253, -0.0001208472298793, -0.0000332374280799, -0.0000093988438938, 
 			-0.0000027068870730, -0.0000007850335833, -0.0000002345070328, -0.0000000682526355, -0.0000000214757085, 
 			-0.0000000059227336, -0.0000000021646739, -0.0000000004279834, -0.0000000002981759, 0.0000000000305111, -0.0000000000597102};
-//for A(phi) when phi<phi(pi/8)
+/** Chebyshev coefficiencts for A(phi) when phi<phi(pi/8)*/
 const double coeffs_a1[] = {0.1262575316112871, 0.1873031261944491, 0.0712845714324142, 0.0092391530562048, -0.0011662365223237,
        			-0.0001871946267119, -0.0000251074200750, -0.0000052509280877, -0.0000011451817876, -0.0000002739189119,
 		       	-0.0000000680431439, -0.0000000175632951, -0.0000000046503898, -0.0000000012589959, -0.0000000003467156, 
@@ -52,7 +55,7 @@ const double pA2 = 5./12.;
 const double pPhi1 = 1.;
 const double pPhi2 = 3./5.;
 
-//height as a function of cross sectional area
+/*\function Height as a function of cross sectional area*/
 double HofA(double A, double D, double At, double Ts, bool P)
 {
 	double y; 
@@ -79,9 +82,9 @@ double HofA(double A, double D, double At, double Ts, bool P)
 }
 
 
-/**Phi(A) = \int_0^A (c(z)/z)dz, where c(z) is the gravity wavespeed as a function of A
+/** Phi(A) = \int_0^A (c(z)/z)dz, where c(z) is the gravity wavespeed as a function of A
  * A = area, D = diameter, At = transition area, Ts = slot width, P = true if pressurized, false otherwise
- */
+ **/
 double PhiofA(double A, double D, double At, double Ts, bool P)
 {
 	if(A<1e-15){return 0.;}
@@ -89,7 +92,7 @@ double PhiofA(double A, double D, double At, double Ts, bool P)
 	if(A<=At)
 	{	
 		A = A/(D*D);
-		if(A<PI*D*D/8.)
+		if(A<PI/8.)
 		{	
 			double Ahat = 2*pow((A*8./PI),pA1)-1.;
 			phi = D*ChebEval(&coeffs_p1[0],Ncheb, Ahat);
@@ -108,7 +111,7 @@ double PhiofA(double A, double D, double At, double Ts, bool P)
 	return phi;
 }
 
-//Inverse of Phi(A)
+/** Inverse of Phi(A)*/
 double AofPhi(double phi, double D, double At, double Ts, bool P)
 {
 	if(phi<1e-15){return 0.;}
@@ -138,23 +141,24 @@ double AofPhi(double phi, double D, double At, double Ts, bool P)
 
 }
 
-/** Cgrav = sqrt(g*A/l)  is the gravity wavespeed (l is the width of the free surface)
- *this routine has some problems near the transition
- * */
-
+/** Cgrav = sqrt(g*A/l)  
+ * is the gravity wavespeed (l is the width of the free surface)
+ **/
 double Cgrav(double A, double D, double At, double Ts, bool P)
 {
 	double c=0.;
-	if(A<1e-15){return 0.;}//check for near-zero area 
+	//check for near-zero area 
+	if(A<1e-15){return 0.;}
 	if(A<At)
 	{
 		double h = HofA(A,D,At,Ts,P);
 		double l = 2.*sqrt(h/D*(1.-h/D));
 		c = sqrt(G*A/l);
 	}
+	//in slot assign pressure wavespeed sqrt(G*Af/Ts = a) (see Sanders 2011 pg. 163)
 	else  
 	{
-		c = sqrt(G*D*D*PI/(4.*Ts));//in slot assign pressure wavespeed sqrt(G*Af/Ts = a) (see Sanders 2011 pg. 163)
+		c = sqrt(G*D*D*PI/(4.*Ts));
 	} 
 	return c;    
 }
@@ -186,10 +190,6 @@ double Eta(double A, double D, double At, double Ts, bool P)
 	return Eta;
 }
 
-
-
-//Channel definitions
-////
 
 //Constructor
 Channel::Channel(int Nin, double win, double Lin, int Min, double a): kn(1.0),w(win),L(Lin),N(Nin),M(Min) 
@@ -232,7 +232,7 @@ Channel::Channel(int Nin, double win, double Lin, int Min, double a): kn(1.0),w(
 
 }
 
-//Destructor
+/** Destructor */
 Channel::~Channel()
 {
 	delete [] q0;
@@ -244,31 +244,32 @@ Channel::~Channel()
 	delete [] bfluxright;
 }
 
-//Display geometry info about this pipe
+/** Display geometry info about uniform cross section channel */
 void Cuniform::showGeom()
 {
-	printf("\nAbout this channel:\n");
-	cout<<"Cross section is uniform\n";
-	printf("|         |\n|<---w--->|\n|_________|\n");	
-	printf("w = %2.1f %21s width (m)\nN = %4d %20s number of grid points\nL = %3.1f %20s length (m)\n", w,"",N,"",L,"");
-	printf("Mr = %1.3f %20s Manning roughness coefficient\nS0 = %1.2f %22s Bed slope\n", Mr, "", S0, "");
+	printf("\nAbout this channel:\n"
+			"Cross section is uniform\n"
+			"|         |\n|<---w--->|\n|_________|\n"	
+			"w = %2.1f %21s width (m)\nN = %4d %20s number of grid points\nL = %3.1f %20s length (m)\n", w,"",N,"",L,""
+			"Mr = %1.3f %20s Manning roughness coefficient\nS0 = %1.2f %22s Bed slope\n", Mr, "", S0, "");
 }
 
+/** Display geometry info about Preissman slot cross section pipe */
 void Cpreiss::showGeom()
 {
-	printf("About this channel:\n\n");
-	cout<<"Cross section is Preissman Slot\n";
-	printf("     Ts\n     <->\n     | |\n     | |      \n   /~~~~~~~\\    ^\n  /         \\   |\n(<----D---->)  |  yt\n \\          /   |\n  \\________/    v\n");	
-	printf("D = %.1f %20s width (m) \nN = %d %20s number of grid points \nL = %.1f %20s length (m)\n", w,"",N,"",L,"");
-	printf("Slot width Ts= %1.5f\nTransition height yt= %1.5f\n",Ts,yt);
-	printf("Mr = %1.3f %20s Manning Roughness coeff\nS0 = %1.2f %20s bed slope\n", Mr, "", S0, "");
+	printf("About this channel:\n\n"
+		"Cross section is Preissman Slot\n"
+		"     Ts\n     <->\n     | |\n     | |      \n   /~~~~~~~\\    ^"
+		"\n  /         \\   |\n(<----D---->)  |  yt\n \\/   |\n  \\________/    v\n"	
+		"D = %.1f %20s width (m) \nN = %d %20s number of grid points \nL = %.1f %20s length (m)\n", w,"",N,"",L,""
+		"Slot width Ts= %1.5f\nTransition height yt= %1.5f%s\n",Ts,yt,""
+		"Mr = %1.3f %20s Manning Roughness coeff\nS0 = %1.2f %20s bed slope\n", Mr, "", S0, "");
 }
 
 
-/**Display current cell values - argument is 0 for q0, 1 for q*/
+/** Display current cell values - argument is 0 for q0, 1 for q*/
 void Channel::showVals(int Iwantq)
 {
-
 	int i;
 	if(Iwantq)
 	{
@@ -285,7 +286,8 @@ void Channel::showVals(int Iwantq)
 		}
 	}	
 }
-/**show pressure*/
+
+/** Show pressure head */
 void Cuniform::showp()
 {
 
@@ -295,7 +297,8 @@ void Cuniform::showp()
 		printf("h[%d] = %f and Q0[%d] = %f\n", i,q[idx(0,i)]/w,i, q[idx(1,i)]); 
 	}
 }
-/**show pressure values*/
+
+/** Show pressure head H=Eta/(g*A)*/
 void Cpreiss::showp()
 {
 
@@ -309,7 +312,7 @@ void Cpreiss::showp()
 }
 
 
-/**Initialize q0 with constant data (A0,Q0)*/
+/** Initialize q0 with constant data (A0,Q0)*/
 void Channel::setq0(double A0, double Q0) 
 {
 	int i;
@@ -333,7 +336,8 @@ void Channel::setq0(double A0, double Q0)
 	p_hist[pj_t(N+1,0)] = p0;
 
 }
-//initialize with nonconstant data A0, Q0
+
+/**Initialize with nonconstant array data A0, Q0*/
 void Channel::setq0(double *A0, double *Q0)
 {
 	int i;
@@ -358,6 +362,7 @@ void Channel::setq0(double *A0, double *Q0)
 	p_hist[pj_t(N+1,0)] = (A0[N-1]>=At);
 }
 
+/** Initialize with nonconstant vector data A0, Q0*/
 void Channel::setq(vector<double>A0, vector<double>Q0)
 {
 	int i;
@@ -382,7 +387,7 @@ void Channel::setq(vector<double>A0, vector<double>Q0)
 	p_hist[pj_t(N+1,0)] = (A0[N-1]>=At);
 }
 
-/**Initialize q with constant data (A0,Q0)*/
+/** Initialize q with constant data (A0,Q0)*/
 void Channel::setq(double A0, double Q0)
 {
 	int i;
@@ -402,18 +407,23 @@ void Channel::setq(double A0, double Q0)
 	p_hist[pj_t(N+1,0)] = p0;
 }		
 
-/////**take M Euler steps of length dt to update conservation law for left state [q1(i), q2(i)] and right state [q1p(i+1), q2(i+1)],using numflux as numerical flux*/
+/** 
+ * Take M Euler steps of length dt to update conservation law
+ *  for left state [q1(i), q2(i)] and right state [q1p(i+1), q2(i+1)]
+ *  using numflux as numerical flux
+ **/
 void Channel::stepEuler(double dt)
 {
 	cmax = 0.;  //reset CFL;
 	double fplus[2] ={0};
 	double fminus[2] ={0};
 	double nu = dt/dx;				
-	double negtol = -dx/10.;		//decide when negative A forces the code throws an error over negative area (vs. just printing a warning) 
+	//decide when negative A forces the code throws an error over negative area (vs. just printing a warning) 
+	double negtol = -dx/10.;		
 	int i,k;
-	//update leftmost cell using externally assigned fluxes bfluxleft
-	//get pressurization information for this cell
+	//get pressurization information for leftmost cell
 	Pnow = P[pj(0)]; 							              
+	//update leftmost cell using externally assigned fluxes bfluxleft
 	numFlux(q0[idx(0,0)], q0[idx(0,1)], q0[idx(1,0)], q0[idx(1,1)],fplus,P[pj(0)], P[pj(1)]);
 	q[idx(0,0)] = q0[idx(0,0)]-nu*(fplus[0]-bfluxleft[0]);           
 	q[idx(1,0)] = q0[idx(1,0)]-nu*(fplus[1]-bfluxleft[1]);	
@@ -458,17 +468,18 @@ void Channel::stepEuler(double dt)
 			throw "Oh damn. Negative area!\n";
 		}
 	}
-	//printf("cmax =%f and CFL=%f",cmax, dt/dx*cmax);
+	if (WTF)printf("cmax =%f and CFL=%f",cmax, dt/dx*cmax);
 }
 
-/** specific physical flux for Preissman slot*/
+/** Physical flux for Preissman slot*/
 void physFluxBetter(double A, double Q, bool P, double D, double At, double Ts, double *flux)
 {
 	flux[0] = Q;
 	flux[1] = (A>0? Q*Q/A:0.) +Eta(A, D, At, Ts, P); 
 }
 
-/*HLL flux
+/**
+ * Harten-Lax-van Leer (HLL) numerical flux
 	 * (what's going on here:
 	 *     sl   :     sr                 sl  sr   :
 	 *      \   u*   /                    ` u*\   :
@@ -477,21 +488,23 @@ void physFluxBetter(double A, double Q, bool P, double D, double At, double Ts, 
 	 * ________\:/_______  or maybe    _________`\:_________ or even...
 	 *          :                                 : 
 	 * um, up are left and right states, u* is center state 
-	 * sl, sr denote shocks )*/ 
-
+	 * sl, sr denote shocks )
+**/ 
 void Channel::numFluxHLL(double q1m, double q1p, double q2m, double q2p, double *flux, bool Pm, bool Pp)                
 {
     
 	double s[2]={0,0};
 	double slow = 1e-5;
-//estimate speeds (Roe or fancier)
+	//estimate speeds (Roe or fancier)
 	speeds(q1m, q1p, q2m, q2p, s, Pm, Pp);
-	if (fabs(s[0])< slow && fabs(s[1])<slow) // check for near zero speeds
+	// check for near zero speeds
+	if (fabs(s[0])< slow && fabs(s[1])<slow) 
 	{                                                       
 		flux[0] = 0;
 		flux[1] = 0;
 	}
-	else // Update with HLL flux
+	// Update with HLL flux
+	else 
 	{                                                                                           
         if(s[0]>=0){physFlux(q1m,q2m,flux, Pp);}
     else if(s[0]<0 && s[1]>0)
@@ -550,7 +563,7 @@ void Cuniform::speedsHLL(double q1m, double q1p, double q2m, double q2p, double 
     }
 }
 
-/**because C89 is too ghetto to have a predefined min function*/
+/** Because C89 is too ghetto to have a predefined min function*/
 double Channel::min3(double a, double b, double c)                       
 {
 	return min(min(a,b),c);
@@ -560,7 +573,7 @@ double Channel::max3(double a, double b, double c)
 	return max(max(a,b),c);
 }
 
-/*****
+/**
  * Step source term S in u_t+F(u)_x = S as follows:
  * q(t+dt) = q(t) +dt*S(q(t)+dt/2*S(q))
  ****/
@@ -574,10 +587,11 @@ void Channel::stepSourceTerms(double dt){
 	
 }
 
-/**evaluate source term S - friction slope (Manning Eqn) and actual slope S0 = -dz/dx (S0 should be a non-negative constant)
- *should I have another option for frictions slope?? Eg. Hazen Williams, Darcy-Weishback?
- *in the past this has posed some issues for very small A...be careful...
- * */
+/**
+ * Evaluate source term S - friction slope (Manning Eqn) and actual slope S0 = -dz/dx (S0 should be a non-negative constant)
+ * should I have another option for frictions slope?? Eg. Hazen Williams, Darcy-Weishback?
+ * in the past this has posed some issues for very small A...be careful...
+ **/
 double Channel::getSourceTerms(double A, double Q){
 	double Sf=0;
 	double tol = 1e-1;
@@ -589,10 +603,10 @@ double Channel::getSourceTerms(double A, double Q){
 	return (S0-Sf)*G*A;
 }
 
-
-
-
-/**get the volume of water in the channel--just sum up cell values of A multiplied by cell width*/
+/**
+ * Get the volume of water in the channel
+ * V = (Sum of cell values of A) x (cell width dx)
+ * **/
 double Channel::getTheGoddamnVolume()
 {
 	double evol=0.;
@@ -603,7 +617,10 @@ double Channel::getTheGoddamnVolume()
 	return evol;
 }
 
-//add up u^2/2g
+/**
+ * Estimate kinetic energy via
+ * KE = \sum_{k=0}^{N-1}u_i^2*A_i/(2g) where u_i = Q_i/A_i
+ **/
 double Channel::getKE(int i)
 {
 	double ui =0,KE=0;
@@ -616,6 +633,9 @@ double Channel::getKE(int i)
 	return KE;
 }
 
+/*Estimate potential energy via
+ *PE = Ah-pbar/(gA) 
+ **/
 double Channel::getPE(int i)
 {
 	double hi =0,PE=0;
@@ -628,28 +648,34 @@ double Channel::getPE(int i)
 	return PE;
 }
 
-//get <dh/dx> at time t_i
-//add up |h_{k+1}-h_k| for all k (it's just |(h_{k+1}-h{k})/dx|*dx	
+/**
+ * Estimate <dh/dx> at time t_i where h is the PRESSURE HEAD NOT WATER HEIGHT. OOPS.
+ * add up |h_{k+1}-h_k| for all k (it's just |(h_{k+1}-h{k})/dx|*dx	
+ **/
 double Channel::getAveGradH(int i)
 {
 	bool p = false;
-	double h1, h2;
-	h1 = HofA(q_hist[idx_t(0,1,i)],p);
-	h2 = HofA(q_hist[idx_t(0,2,i)],p);
+	double h1, h2,a1,a2;
+	a1 = q_hist[idx_t(0,1,i)];
+	a2 = q_hist[idx_t(0,2,i)];
+	h1 = a1>0 ? (pbar(a1,p)/a1) : 0.;
+	h2 = a2>0 ? (pbar(a2,p)/a2) : 0.;
 	double I = 0;
 	for (int k = 1; k<N+1; k++)
 	{
 		I+= abs(h2-h1);
 		h1 = h2;
-		h2 = HofA(q_hist[idx_t(0,k+1,i)],p); 
+		a1 = a2;
+		a2 = q_hist[idx_t(0,k+1,i)]; 
+		h2 = a2>0 ? (pbar(a2,p)/a2) : 0.;
 	}
 	return I;
 }
 
 
-
-/**write q information to M/Mi files 
- * these are in theory readable by smartputittogether.py or maybe something else.py...(!???)
+/**
+ * Write q information to (M/Mi) files 
+ * These are in theory readable by smartputittogether.py or maybe something else.py...(!???)
  * */
 int Channel::writeqToFile(int Mi, double dt)
 {	
@@ -658,7 +684,6 @@ int Channel::writeqToFile(int Mi, double dt)
 	{
 		char fname[100];
 		snprintf(fname, sizeof fname, "../movie/howdy%03d.txt", kk/Mi);
-	//	cout<<fname<<endl;
 		FILE *fp = fopen(fname, "w");
 		if(fp==NULL)
 		{
@@ -677,7 +702,9 @@ int Channel::writeqToFile(int Mi, double dt)
 	return 0;
 }
 
-/**write characteristics Q/A+sign*phi(A) to file in format readable by gnuplot*/
+/**
+ * Write characteristics Q/A+sign*phi(A) to file in format readable by gnuplot
+ * */
 int Channel::writeRItofile(double dt, int sign) 
 {
 		char fname[100];
@@ -710,18 +737,19 @@ int Channel::writeRItofile(double dt, int sign)
 	return 0;
 }
 
-/**quickly write out some run time info!
+/*
+ * Quickly write out some run time info
  * where is either times or places (if which[k] = 0, then where is a time; else it's a place)
  * K is the length of where
- */
+ **/
 void Channel::quickWrite(double *where, int *which, int K, double T, int skip)
 {
 	int i, MN;
 	double ds;
 	for (int k=0; k<K; k++)
 	{	
-		if(which[k]==0)//write variables at all locations at time where[k] 
-
+		//write variables at all locations at time where[k] 
+		if(which[k]==0)
 		{
 			i = round(where[k]*(double)M/K);
 			if(i>=M){i=M;}
@@ -730,7 +758,8 @@ void Channel::quickWrite(double *where, int *which, int K, double T, int skip)
 			MN = N;
 			ds = dx;
 		}
-		else  //write variables at all times at location where[k]
+		//write variables at all times at location where[k]
+		else  
 		{
 			i = round(where[k]*(double)N/L);
 			if(i>=N){i=N-1;}
@@ -763,7 +792,9 @@ void Channel::quickWrite(double *where, int *which, int K, double T, int skip)
 		}
 	}	
 }
- /**Set Preissman parameters 
+
+/**
+ * Set Preissman parameters 
  * a is the pressure wave speed for this pipe -- defaults to 1200
  ***/
 void Cpreiss::setGeom(double a_)
@@ -775,7 +806,7 @@ void Cpreiss::setGeom(double a_)
 	tt = 2*(PI-asin(Ts/D));// theta such that c(A(theta)) = a
 	yt = D/2.*(1-cos(tt/2.));
 	At = AofH(yt,false);
-//write out a file tabulating A, g, I, c, phi, A(phi), A(h(A)) etc (use as sanity check)
+	//write out a file tabulating A, g, I, c, phi, A(phi), A(h(A)) etc (use as sanity check)
 	char fname1[30];
 	clock_t time1 = clock();
 	int duh = (int)time1;
@@ -827,6 +858,7 @@ double Cpreiss::AofH(double h, bool p)
 	else
 		return At+Ts*(h-yt);
 }
+
 double Cpreiss::pbar(double A, bool p)
 {
 	return Eta(A,D,At,Ts,p);
