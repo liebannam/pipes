@@ -1,9 +1,12 @@
-/***********
- *Class delcarations for Channel, Junction1, Junction2, and Junction3 (definitions in channel.cpp)
- *Class definitions for fRI and dfRI (for Riemann invariant calculation at boundary)
- *Random function prototypes
- *typedef for numerical flux function
- ***********/
+/**
+ * \file channel.h
+ * \brief channel.h file documentation
+ * Contains:
+ * class delcarations for Channel and derived Channel classes (definitions in channel.cpp)
+ * class declarations for Junction1, Junction2, and Junction3 (definitions in channel.cpp)
+ * class definitions for fRI and dfRI (for Riemann invariant calculation at boundary)
+ * random function prototypes, horrifying macros, and other fun detritus
+ **/
 
 
 #ifndef CHANNEL_H
@@ -26,45 +29,44 @@
 #include <vector>
 #include "chebyshevlite.h"
 
-using namespace std;
 
 using std::max;
 using std::min;
 
-//
-//WTF defined as true prints lots of miscellanious debug info...
+/*\def flag for printing miscellanious debug info. Set to false to supress printout.*/
 #define WTF false
-//#define WTF true
 
-///////
-//horrifying macros for numerical flux routines--previously allowed for an exact riemann solver that was slow and crappy)
-//numFluxHLL requires you to define speeds-- 
-//choices are speedsHLL and speedsROE (both dumb)
-/////
+
+/*
+ * \def horrifying macros for numerical flux routines
+ * numFluxHLL requires you to define speeds. 
+ * Current choices are:
+ *	--speedsHLL
+ *	--speedsROE
+*/
 
 #define numFlux(q1m, q1p, q2m, q2p, flux, Pm, Pp)  numFluxHLL(q1m, q1p, q2m, q2p, flux, Pm, Pp) 
-
 #define speeds(q1m, q1p, q2m, q2p, flux, Pm, Pp)   speedsHLL(q1m, q1p, q2m, q2p, flux, Pm, Pp) 
-//#define speeds speedsRoe
 
 
-//Templating magic for streaming into vectors (THANKS ROB!!!!!)
+/**\brief Templating magic for streaming into vectors (Thanks to Rob Saye for help with this)*/
 template<typename T>
 struct AppendToVector
 {
     std::vector<T>& vec;
     AppendToVector(std::vector<T>& vec) : vec(vec) {}
 };
-
+/** streaming operator for use with AppendToVector*/
 template<typename T>
 std::istream& operator>>(std::istream& s, const AppendToVector<T>& app)
 {
     T val;
-    if (s >> val)  //checks to see if this string can be interpretted as type T
+	//check to see if this string can be interpretted as type T
+    if (s >> val) 
         app.vec.push_back(val);
     return s;
 }
-
+/**call for AppendtoVector*/
 template<typename T>
 AppendToVector<T> appendTo(std::vector<T>& vec)
 {
@@ -76,117 +78,167 @@ AppendToVector<T> appendTo(std::vector<T>& vec)
 //various prototype detritus
 //////
 
-//so that you can pass objective function derivative as a function easily...pathetically restrictive at present...
-//typedef double(*drdA_t )(double Am, double A, double Ap, int j, double w, double dx, int N);
+/**height h as a function area A (Preissman slot geometry) */
+double HofA   (double A, double D, double At, double Ts, bool P);
+/**Reimann invariant thing \phi as a function of A (Preissman slot geometry)*/ 
+double PhiofA (double A, double D, double At, double Ts, bool P);
+/**Inverse of Reimann invariant thing \phi as a function of A (Preissman slot geometry)*/ 
+double AofPhi (double phi, double D, double At, double Ts, bool P);
+/**Gravity wave speed as a function of A (Preissman slot geometry)*/ 
+double Cgrav  (double A, double D, double At, double Ts, bool P);
+/**pbar/rho, where pbar is the depth-averaged hydrostatic pressure and rho is the density(Preissman slot geometry)*/ 
+double Eta    (double A, double D, double At, double Ts, bool P);
 
-
+//I'm keeping these for the time being so I can compare other people's power series with ours
 //inline double getTheta(double A, double D);
 //inline double powPhi(double t, double D);
 //
-double HofA   (double A, double D, double At, double Ts, bool P);
-double PhiofA (double A, double D, double At, double Ts, bool P);
-double AofPhi (double phi, double D, double At, double Ts, bool P);
-double Cgrav  (double A, double D, double At, double Ts, bool P);
-double Eta    (double A, double D, double At, double Ts, bool P);
 
-///
-/////
-///Class for channel data 
-/////////
+
+
+/**
+\brief Class for channel data 
+**/
 class Channel
 {
 
 	public:
-		int channeltype;                           //0 for uniform cross section, 1 for Preissman slot
-		const double kn;                           // manning equation unit coeff (1.0 in MKS)
-/****basic geometry*/
-		const double w;                            // channel width
-		const double L;                            // pipe length
-		const int N;                               // number of grid points
-		const int M;				   // number of time steps (each channel instance must specify!)
-	//	const int Mi;				   // number of time steps between recording data in q_hist
-		int n;					   // what time step we're at...		
-		double dx;                                 // grid spacing
-		double At, Af, a, Ts;		           // Preissman parameters (won't get initialized or used for uniform cross section)
-/**** slope and friction terms*/
-		double S0;                                 // bed slope (-dz/dx)
-		double Mr;                                 // Manning Roughness coefficient
-		double cmax;				   // maximum wave speed
+	//Background info	
+		/** Channel cross section type. Current choices are 0 (uniform) and 1 (Preissman slot)*/
+		int channeltype;                           
+	//Basic geometry
+		/** Channel width, (m) (for Preissman slot, this is pipe diameter*/
+		const double w;                            
+		/** Channel length (m) */
+		const double L;                            
+		/** Number of grid points */
+		const int N;                               
+		/** Number of time steps (each channel instance must specify!)*/
+		const int M;				   
+		/** What time step we are currently at*/		
+		int n;					      
+		/** Grid spacing*/
+		double dx;                                 
+		/** Preissman parameters (won't get initialized or used for uniform cross section)*/
+		double At, Af, a, Ts;		           
+	//Slope and friction terms
+		/** bed slope (-dz/L), where dz is the elevation difference between x=0 and x=L*/
+		double S0;                                 
+		/** Manning roughness coefficient*/
+		double Mr;                                 
+		/** Manning equation unit conversion coefficient (1.0 in MKS units)*/
+		const double kn;                           
+		/** Maximum wave speed (m/s)*/
+		double cmax;				   
 
-/****dynamic variables and boundary info
-* initial and final states q0 and q = [q(0,0), q(0,1)...,q(0,N-1), q(1,0),....q(1,N-1)] where q(0,:) is area A andq(1,:) is discharge Q
-* history of states is q_hist laid out as [q(t=0), q(t=dt), ....q(t=dt*(M/Mi-1))] and each q is a row vector arranged as above.
-* associated indexing functions so you don't have to recall how this is laid out
-*** idx: //indexing function to access q(i,j)  where i =0,1 and j= 0,1...N-1
-*** idx_t: indexing function to accessq^n(i,j)with i,j as above and n = 0,...M-1 (n*dt = t at which this slice is taken)
-* pressurization states of each cell are in vector P 
-*if P =[P[0], P[1], ...P[N+1]], P[0] and P[N+1] are ghost cell values; if P(i) = 1, cell i is pressurized--details in Bourdarias 2007, pg 122
-*associate indexing function pj keeps track of this shift*/
-
-		double *q0, *q, *qhat;          // previous, current, and temporary dynamical variables	
-		double *q_hist;           		// history of dynamical variables	  		  			
-		bool *p_hist;					//history of pressurization states
-		vector<bool> P;   			    // pressurization states = [p[leftend], p[0], p[1]....p[N-1], p[rightend]], size is N+2x1
-		bool Pnow; 				        // ''current pressurization'' at cell under consideration-- this is a hilariously bad idea!
-
-		
-		//indexing functions		
+	//dynamic variables and boundary info
+		/** Current state q, organized as q = [q(0,0), q(0,1)...,q(0,N-1), q(1,0),....q(1,N-1)] 
+		* where q(0,:) is area A and q(1,:) is discharge Q*/
+		double *q0;
+		/** Initial state q0*/
+		double *q;
+		/** Temporary state (for RK time steppingi)*/	
+	    double *qhat;          
+		/** History of states q_hist laid out as [q(t=0), q(t=dt), ....q(t=dt*(M/Mi-1))] 
+		 * where each q(t) is a row vector arranged as above.*/
+		double *q_hist;           	 		  			
+		/** Indexing function to access q. obtain q(i,j)  where i =0,1 and j= 0,1...N-1*/
 		int idx(int i_in, int j_in){return (N*i_in+j_in);}    //access q(i,j)  where i =0,1 and j= 0,1...N-1
-		int idx_t(int i_in, int j_in, int n_in){return (2*(N+2)*n_in+(N+2)*i_in+j_in);} //accessq^n(i,j)with i,j as above and n = 0,...M-1 (n*dt = t at which this slice is taken)
-
-		int pj(int i){return i+1;} 		    // indexing for pressurization states vector 
-		int pj_t(int i,int n){return (N+2)*n+i;}; //indexing for history of pressurization states, i = 0, [1,...N] N+1 
-		double *bfluxleft, *bfluxright;         // left and right boundary fluxes
+		/** Indexing function to access qhist. obtain q^n(i,j) with i,j as above and n = 0,...M-1 (n*dt = t at which this slice is taken)*/
+		int idx_t(int i_in, int j_in, int n_in){return (2*(N+2)*n_in+(N+2)*i_in+j_in);} 
+		/** Pressurization states of each cell [p[leftend], p[0], p[1]....p[N-1], p[rightend]], size is N+2x1
+		 *P =[P[0], P[1], ...P[N+1]], P[0] and P[N+1] are ghost cell values; if P(i) = 1, cell i is pressurized--details in Bourdarias 2007, pg 122*/
+		vector<bool> P;   			    
+		/** Indexing function pj to acceess elements of P correctly*/
+		int pj(int i){return i+1;} 		     
+		/** History of pressurization states*/
+		bool *p_hist;				
+		/**indexing for history of pressurization states, i = 0, [1,...N] N+1 */
+		int pj_t(int i,int n){return (N+2)*n+i;}; 
+		/** Current pressurization at cell under consideration-- this is a hilariously bad idea*/
+		bool Pnow; 				        
+		/** Left and right boundary fluxes*/
+		double *bfluxleft, *bfluxright;         
 		
-/*****Methods*/
-		Channel (int Nin, double win, double Lin, int Min, double a); // constructor
+	//Various methods
+		/** Constructor */
+		Channel (int Nin, double win, double Lin, int Min, double a); 
+		/** Destructor*/
 		~Channel();
-		void showVals(int Iwantq);                 // show values of q		
-		virtual void showGeom() =0;		   // show geometry paramters	
-		
-		void setq0(double A0, double Q0);          // set q0 to (A0,Q0)  = const
-		void setq(double A0, double Q0);           // set q0 to (A0,Q0)  = const
-		void setq0(double *A0, double *Q0);	   // set q to nonconst value	
-		void setq(vector<double>A0, vector<double>Q0);	   // set q and q0 to nonconst value	
-		
-		void stepEuler(double dt);                          // Take an Euler step
-		void numFluxHLL(double q1m, double q1p, double q2m, double q2p, double *flux, bool Pm, bool Pp);      //HLL Flux (need to define speeds)
-		
-
+	   	/** Show values of q (1) or q0 (0)*/		
+		void showVals(int Iwantq);                
+	   	/** Show geometry paramters	*/
+		virtual void showGeom() =0;		  
+		/**set q0 to (A0,Q0)  = const*/
+		void setq0(double A0, double Q0);          
+		/**set q to (A0,Q0)  = const*/
+		void setq(double A0, double Q0);           
+		/** set q0 to nonconst value*/	
+		void setq0(double *A0, double *Q0);	      
+		/** Set q and q0 to nonconst value*/	
+		void setq(vector<double>A0, vector<double>Q0);	   
+		/** Take an Euler step */
+		void stepEuler(double dt);
+		/** Compute numerical HLL flux (requires the function speeds to be defined)*/
+		void numFluxHLL(double q1m, double q1p, double q2m, double q2p, double *flux, bool Pm, bool Pp);      
+		/** Physical flux (i.e. the actual conservation law flux)*/
 		void physFlux(double q1, double q2, double *flux, bool P);
+		/**HLL speeds--defined for given cross sectional geometry in derived class*/
 		virtual void speedsHLL(double q1m, double q1p, double q2m, double q2p, double *s, bool Pm, bool Pp)=0;
+		/**Roe speeds--defined for given cross sectional geometry in derived class*/
 		virtual void speedsRoe(double q1m, double q1p, double q2m, double q2p, double *s, bool Pm, bool Pp)=0;
-/**Specify geometry of specific cross section in a derived class:*/
+	//Functions specific to cross-sectional geometry, definitions in the derived class*/
 		virtual void showp()=0;
-		virtual double pbar(double A, bool p) = 0;		         // pbar = average hydrostatic pressure term 
-		virtual double HofA(double A, bool p)=0;		 	 //height as a function of cross sectional area
-		virtual double fakehofA(double A, bool p)=0;		 	 //for ``negative Preissman'' model, height as a function of cross sectional area
+		/** Pressure term in conservation law = A \bar{p}/\rho where \bar{p} is average hydrostatic pressure and \rho is density*/ 
+		virtual double pbar(double A, bool p) = 0;		         
+		/** Height as a function of cross sectional area*/
+		virtual double HofA(double A, bool p)=0;		 	 
+		/** For ``negative Preissman'' model, height as a function of cross sectional area (not supported at present) */
+		virtual double fakehofA(double A, bool p)=0;		 	 
+		/** For ``negative Preissman'' model, cross sectional area as a function of height (not supported at present) */
 		virtual double fakeAofh(double h, bool p) =0;
-		virtual double AofH(double h, bool p)=0;			  	//crosssectional area as a function of height
-		virtual double Cgrav(double A, bool p)=0;                   		//gravity wavespeed actually redudant, I think!?!?!?
-		virtual double getHydRad(double A)=0;               		// Hydraulic radius =(Area/Wetted Perimeter)	
-		virtual double PhiofA(double A, bool p) = 0;				//integral (c(x)/x)dx
-		virtual double AofPhi(double phi, bool p) =0;				//solve A = phi(x) for x
-//random detritus
-		double min3(double a, double b, double c);
-		double max3(double a, double b, double c);
-//source terms
+		/** Cross sectional area as a function of height*/
+		virtual double AofH(double h, bool p)=0;			  	
+		/** Gravity wavespeed c=sqrt(gA/l(A)) where l(A) is the width of the free surface corresponding to height A */
+		virtual double Cgrav(double A, bool p)=0;                   		
+		/** Hydraulic radius =(Area/Wetted Perimeter)*/	
+		virtual double getHydRad(double A)=0;               		
+		/** From Reimann invariant expression, \phi = \int_0^A (c(x)/x)dx*/
+		virtual double PhiofA(double A, bool p) = 0;				
+		/** Inverse of PhiofA, i.e. solve A = phi(x) for x*/
+		virtual double AofPhi(double phi, bool p) =0;			
+		/** Take an RK2 step to update with source terms*/
 		void stepSourceTerms(double dt);
-		double getSourceTerms(double A, double Q); // evaluate source terms for given A and Q
-/** Other quantities of interest*/		
+		/** Evaluate source terms for given A and Q */
+		double getSourceTerms(double A, double Q); 
+		/** Get the volume of water in the pipe*/		
 		double getTheGoddamnVolume();
-		double getAveGradH(int i);  //returns int_0^L(dh/dx) dx at time ti (probably not accurate enough...) 
+		/** Get average gradient of pressure head h. Returns int_0^L(dh/dx) dx at time ti (probably not accurate enough...)*/ 
+		double getAveGradH(int i);  
+		/** Get total kinetic energy at time t_i*/
 		double getKE(int i);
+		/** Get total potential energy at time t_i*/
 		double getPE(int i);
-/**Write stuff */
-		int writeqToFile(int Mi, double dt);    //write all information to file at intervals of dt*Mi/M 
-		int writeRItofile(double dt, int sign); //Write Riemann Invariants to file
-		void quickWrite(double *where, int *which, int K, double T, int skip);        //quickly output end results at location x = places[i] for i = 1...length(places)	
+	//Functions to write output
+	   	/** Write all information to file at intervals of dt*Mi/M */
+		int writeqToFile(int Mi, double dt);   
+		/** Write Riemann invariants to file*/
+		int writeRItofile(double dt, int sign); 
+	   	/** Output results at either locations x_i or time t_i to terminal. 
+		 * x_i (or t_i) = where[i] for i = 1...length(where). which[i] =0/1 means it's a time/place*/
+		void quickWrite(double *where, int *which, int K, double T, int skip);       
+
+		/** min of three numbers*/
+		double min3(double a, double b, double c);
+		/** max of three numbers*/
+		double max3(double a, double b, double c);
 };
 
 
 
-//uniform cross section with width w
+/**
+ * \brief Derived channel class for uniform cross section with width w
+ * */
 class Cuniform: public Channel
 {
 	public:
@@ -212,12 +264,16 @@ class Cuniform: public Channel
 };
 
 
-//preissmann slot geometry
+/**
+ * \brief Derived channel class for Preissmann slot geometry
+ **/
 class Cpreiss: public Channel{
 	public:
-		
-		double D, yt, tt;  //Preissman parameters
+		/** Preissman parameters*/
+		double D, yt, tt;  
+		/** Initialize parameters and set up geometry*/
 		void setGeom(double a_);	
+		/** Constructor */
 		Cpreiss(int Nin, double win, double Lin, int Min, double a =1200.):Channel(Nin, win, Lin, Min,a)
 		{
 			D = win;
@@ -228,7 +284,7 @@ class Cpreiss: public Channel{
 		void showp();	
 		double pbar(double A, bool p);
 		double HofA(double A,bool p){return ::HofA(A, D, At, Ts, p);}
-	        double hofAold(double A);	
+	    double hofAold(double A);	
 		double fakehofA(double A, bool p);
 		double fakeAofh(double h, bool p);
 		double AofH(double h, bool p);
@@ -242,66 +298,94 @@ class Cpreiss: public Channel{
 		void speedsHLL(double q1m, double q1p, double q2m, double q2p, double *s, bool Pm, bool Pp);
 		void speedsRoe(double q1m, double q1p, double q2m, double q2p, double *s, bool Pm, bool Pp);
 };
+
 ///////
 //Junction class definitions 
 ///////////
 
-//////
-///Junction1: impose either Q or A according to external specification
-//////
-
+/**
+ *\brief Class for applying boundary conditions at external boundary of single pipe. 
+ **/
 class Junction1
 {
 	public:
+		/** The channel this is the boundary of */
 		Channel &ch0;
+		/** Number of gridpoints in this channel */
 		int N;					
-		double w; 			    //width of associated channel
-		int bvaltype;			//type of externally specified quantity.(bvaltype =0 specifies A; bvaltype  =1  specifies Q) 
-		double *bval;			//value of externally specified quantity 
-		int whichend;			//which end of pipe connects to this junction; 0 corresponds to left, 1 corresponds to right
+		/** Channel width*/
+		double w; 			    
+		/** Type of externally specified quantity.(bvaltype =0 specifies A; bvaltype  =1  specifies Q)*/ 
+		int bvaltype;			
+		/** Instruction to use reflect or extrapolate: -/+1 means do (A,+/-Q) at boundary rather. 0 means use specified quantity.*/
+		int reflect;        
+		/** Values of externally specified quantity at each of the M+1 time steps. */
+		double *bval;			
+		/** Which end of pipe connects to this junction; 0 corresponds to left, 1 corresponds to right */
+		int whichend;
+		/** Constructor*/		
 		Junction1(Channel &a_ch0, int a_which, double a_bval, int a_bvaltype);
+		/**Set boundary value to constant*/
 		void setbVal(double bvalnew);		
+		/**Set boundary value to nonconstant in valarray<Real>*/
 		void setbVal(valarray<Real> x);
+		/**Set boundary value to nonconstant in array of doubles*/
 		void setbVal(double *x);
+		/**Set boundary value to nonconstant in vector of Reals*/
 		void setbVal(vector<Real> x);
+		/** Destructor */
 		~Junction1();
+		/*Apply numerical flux function to get boundary fluxes for ch0*/
 		void boundaryFluxes();//	
-		double getFlowThrough(double dt);//compute total flow from left to right 	
-		int reflect;        //reflect=-/+1 means do (A,+/-Q) at boundary rather than try RI thing
-};
+		/** Compute total flow from left to right */	
+		double getFlowThrough(double dt);
+	};
 
-///////
-///Junction2: class for two channels connected in serial
-//////
+/**
+ * Class for applying boundary conditions at a junction with two channels connected in serial
+ * */
 class Junction2   
 {
 	public:
+		/** The channels connected here*/
 		Channel &ch0, &ch1;
-		int N0, N1, Ns0, Ns1; //to find and store boundary values correctly depending on which end we're at
-		double valveopen; // set to 1 for open, 0 for closed (default is open)
-		vector<double>valvetimes;//time series of valve timings
-		double offset; //change in elevation as you go from pipe 1 to pipe 0. positive value means pipe 0 is above pipe 1. initialized to zero.
+		/** Indices to find and store boundary values correctly depending on which end we're at*/
+		int N0, N1, Ns0, Ns1; 
+		/** Set to 1 for open, 0 for closed (default is open)*/
+		double valveopen; 
+		/** Time series of valve timings*/
+		vector<double>valvetimes;
+		/** Change in elevation as you go from pipe 1 to pipe 0. positive value means pipe 0 is above pipe 1. initialized to zero.*/
+		double offset; 
+		/** Which end of each channel we are at.*/
 		int whichend0, whichend1;
+		/** Constructor */
 		Junction2(Channel &a_ch0, Channel &a_ch1, int a_which1, int a_which2, double a_valveopen);
+		/** Set valve times to valarray of Reals*/
 		void setValveTimes(valarray<Real>x);
+		/** Set valve times to vector of Reals*/
 		void setValveTimes(vector<Real>x);
-		void boundaryFluxes(); // assign boundary fluxes to last cell of pipeleft and first cell of pipe left
+		/**assign boundary fluxes to last cell of ch0 and first cell of ch1*/
+		void boundaryFluxes(); 
 };
 
-//////
-///Junction 3: class for junction where 3 channels come together and !&^# gets real
-////
-class Junction3///time for excitement...
+/**
+ * Class for applying boundary conditions at a junction where 3 channels come together and !&^# gets real
+**/
+class Junction3
 {
 	public:
+		/** The channels involved*/
 		Channel &ch0, &ch1, &ch2;
+		/** The junction2s between each pair*/
 		Junction2 j2_01, j2_12, j2_21, j2_20;
-		int Ns[3], whichend[3];               // number of cells and which end connects to junction, for each pipe respectively
-		Junction3(Channel &ch0_, Channel &ch1_, Channel &ch2_, int which1, int which2, int which3);
-				  
+		/** Number of cells and which end connects to the junction, for each pipe respectively*/
+		int Ns[3], whichend[3];               
+		/** Constructor*/
+		Junction3(Channel &ch0_, Channel &ch1_, Channel &ch2_, int which1, int which2, int which3);	  
 		//offsets = [off01, off12, off20] is offsets between each pair. there should be some compatibility here or it will be whack.
-
-		void boundaryFluxes(); // assign all the bloody boundary fluxes according to some voodoo magic	
+		/**assign all the bloody boundary fluxes according to some voodoo magic	*/
+		void boundaryFluxes(); 
 
 };
 
@@ -310,7 +394,8 @@ class Junction3///time for excitement...
 //for writing data to binary file 
 //int binaryWrite(std::vector<double> x, int n, char* filename);
 //
-/**function we need to find zero of to deal with uniform cross section Riemman invariants at boundaries*/
+
+/**\brief Class for function we need to use to rootfind when dealing with uniform cross section Riemman invariants at boundaries*/
 class fRI   
 {
 	public:
@@ -331,8 +416,7 @@ class fRI
 		}		
 };
 
-/**derivative of fRI (for Newton sovler)*/
-
+/**\brief Class for derivative of function fRI (for Newton sovler)*/
 class dfRI  
 {
 	public:
@@ -345,10 +429,7 @@ class dfRI
 		double 	operator()(double x){ return -c2/(2.*sqrt(x))+c3/(x*x);}
 };
 
-
-
-
-/**function for setting up geometry info for Preissman slot*/
+/**\brief Class for function used in setting up geometry info for Preissman slot*/
 class ftheta 
 {
 public:
@@ -362,7 +443,7 @@ public:
 	double operator()(double x) { return D*D/8.*(x-sin(x))-A; }
 };
 
-/**for refining theta estimates with a few steps of Newton*/
+/**\brief Class for refining theta estimates with a few steps of Newton*/
 class dftheta 
 {
 public:
@@ -379,8 +460,8 @@ template <typename T> int sgn(T val)
 {
 		return (T(0)<val)-(val<T(0));
 }
-/**all purpose function to evaluate things that have zeros of Riemann invariants
- *
+/**
+ *\brief Class for "all-purpose" function to evaluate things that have to do with zeros of Riemann invariants
  * evaluate lhs - (cq*Qext/x +sign*phi(x)+cc*c(x))  c is wavespeed */
 class fallpurpose{       
 public:

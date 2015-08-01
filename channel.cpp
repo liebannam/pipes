@@ -159,10 +159,15 @@ double Cgrav(double A, double D, double At, double Ts, bool P)
 	return c;    
 }
 
-//Eta = g*\int_0^h(A)((h(A)-z)l(z)) dz  = ghA - g\bar{y}
-//is the average 
-//where g =9.8 m/s^2 is acceleration due to gravity
-//\bar{y} is the centroid of the flow, \bar{y} = (\int_0^h(A) zl(z) dz)/A 
+/**
+ * \eta = g*\int_0^{h(A)}((h(A)-z)l(z)) dz  = ghA - g\bar{y}
+ * where g =9.8 m/s^2 is acceleration due to gravity
+ * \bar{y} is the centroid of the flow, \bar{y} = (\int_0^h(A) zl(z) dz)/A 
+ * note that
+ * \eta = A*\bar{p}/\rho
+ *    where \bar{p} is the average hydrostatic pressure
+ *    and \rho is the density 
+ * */
 double Eta(double A, double D, double At, double Ts, bool P)
 {
 	double Eta;
