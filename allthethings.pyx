@@ -116,7 +116,7 @@ cdef extern from "channel.h":
 		double PhiofA(double, bool)
 		double AofPhi(double, bool)
 		double Cgrav(double, bool)
-		double pbar(double, bool)
+		double Eta(double, bool)
 	cdef cppclass Junction1:
 		Junction1(Cpreiss, int, double, int)
 		void setbVal(vector[Real] x)
@@ -159,7 +159,7 @@ cdef class PyPipe_ps:
 	Cgrav(A,p):finds c
 	HofA(A,p): finds H
 	AofH(H,p): inverse of above
-	pbar(A,p): hydrostatic pressure term in conservation law
+	Eta(A,p): hydrostatic pressure term in conservation law A\bar{p}/\rho
 	'''
 	cdef Cpreiss *thisptr
 	cdef np.ndarray q        #np array of q data
@@ -188,8 +188,8 @@ cdef class PyPipe_ps:
 		return self.thisptr.HofA(A,P)
 	def AofH(self, double H, bool P):
 		return self.thisptr.AofH(H, P)
-	def pbar(self, double A, bool P):
-		return self.thisptr.pbar(A,P)
+	def Eta(self, double A, bool P):
+		return self.thisptr.Eta(A,P)
 	#various properties we may want to access 
 	property N:
 		def __get__(self): return self.thisptr.N

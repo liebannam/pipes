@@ -531,7 +531,7 @@ void Channel::numFluxHLL(double q1m, double q1p, double q2m, double q2p, double 
 void Channel::physFlux(double q1, double q2, double *flux, bool P)                  
 {
     flux[0] = q2;
-    flux[1] = (q1>0? q2*q2/q1:0.) +pbar(q1,P);  
+    flux[1] = (q1>0? q2*q2/q1:0.) +Eta(q1,P);  
 }
 
 /** HLL speeds (uniform channel)*/
@@ -634,7 +634,7 @@ double Channel::getKE(int i)
 }
 
 /*Estimate potential energy via
- *PE = Ah-pbar/(gA) 
+ *PE = Ah-Eta/(gA) 
  **/
 double Channel::getPE(int i)
 {
@@ -643,7 +643,7 @@ double Channel::getPE(int i)
 	for (int j = 0; j<N; j++)
 	{
 		double ai = q_hist[idx_t(0,j+1,i)];
-		PE+= (ai*HofA(ai,p)-(ai>0?  pbar(ai,p)/(G*ai):0)); 
+		PE+= (ai*HofA(ai,p)-(ai>0?  Eta(ai,p)/(G*ai):0)); 
 	}
 	return PE;
 }
@@ -658,8 +658,8 @@ double Channel::getAveGradH(int i)
 	double h1, h2,a1,a2;
 	a1 = q_hist[idx_t(0,1,i)];
 	a2 = q_hist[idx_t(0,2,i)];
-	h1 = a1>0 ? (pbar(a1,p)/a1) : 0.;
-	h2 = a2>0 ? (pbar(a2,p)/a2) : 0.;
+	h1 = a1>0 ? (Eta(a1,p)/a1) : 0.;
+	h2 = a2>0 ? (Eta(a2,p)/a2) : 0.;
 	double I = 0;
 	for (int k = 1; k<N+1; k++)
 	{
@@ -667,7 +667,7 @@ double Channel::getAveGradH(int i)
 		h1 = h2;
 		a1 = a2;
 		a2 = q_hist[idx_t(0,k+1,i)]; 
-		h2 = a2>0 ? (pbar(a2,p)/a2) : 0.;
+		h2 = a2>0 ? (Eta(a2,p)/a2) : 0.;
 	}
 	return I;
 }
@@ -822,7 +822,7 @@ void Cpreiss::setGeom(double a_)
 		 double aa = D*D/8.*(tt-sin(tt));
 		 double ht = 0.5*D*(1-cos(tt*.5));
 		 double h = HofA(aa,pp);
-		 double I = pbar(aa,pp);
+		 double I = Eta(aa,pp);
 		 double ah = AofH(ht,pp);
 		 double c = Cgrav(aa,pp);
 		 double phi = PhiofA(aa,pp);
@@ -859,9 +859,9 @@ double Cpreiss::AofH(double h, bool p)
 		return At+Ts*(h-yt);
 }
 
-double Cpreiss::pbar(double A, bool p)
+double Cpreiss::Eta(double A, bool p)
 {
-	return Eta(A,D,At,Ts,p);
+	return ::Eta(A,D,At,Ts,p);
 }
 
 
@@ -981,7 +981,8 @@ void Cpreiss::speedsHLL(double q1m, double q1p, double q2m, double q2p, double *
 		printf("q1p is %f and q2p is %f, um is %f, up is %f\n", q1p, q2p, um, q2p);
 		exit (1);
 	}
-	if(s[0]>s[1]) 	//check that HLL speeds have s0<s1; really, this should never bloody happen!
+	//check that HLL speeds have s0<s1; really, this should never bloody happen!
+	if(s[0]>s[1]) 	
 	{  
 	if(WTF)	printf("The hell? s[0]>s[1], with q1m = %f, q2m = %f, q1p =%f, q2p =%f, s[0] = %f, s[1] = %f\n",q1m,q2m,q1p,q2p,s[0],s[1]);
 	//use Sanders wave speed estimates instead if this happens
@@ -998,7 +999,7 @@ double Cpreiss::findOmega(double Astar, double Ak, bool Ps, bool Pk)
 	double eps = 1e-8;
    if (Astar>Ak+eps)
 		{
-			omega = sqrt((Eta(Astar, w, At, Ts, Ps)-Eta(Ak, w, At, Ts, Pk))*Astar/(Ak*(Astar-Ak)));
+			omega = sqrt((Eta(Astar, Ps)-Eta(Ak, Pk))*Astar/(Ak*(Astar-Ak)));
 		} 
 	else
     	{

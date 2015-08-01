@@ -86,7 +86,7 @@ double PhiofA (double A, double D, double At, double Ts, bool P);
 double AofPhi (double phi, double D, double At, double Ts, bool P);
 /**Gravity wave speed as a function of A (Preissman slot geometry)*/ 
 double Cgrav  (double A, double D, double At, double Ts, bool P);
-/**pbar/rho, where pbar is the depth-averaged hydrostatic pressure and rho is the density(Preissman slot geometry)*/ 
+/**\eta=A pbar/rho, where pbar is the depth-averaged hydrostatic pressure and rho is the density(Preissman slot geometry)*/ 
 double Eta    (double A, double D, double At, double Ts, bool P);
 
 //I'm keeping these for the time being so I can compare other people's power series with ours
@@ -189,8 +189,8 @@ class Channel
 		virtual void speedsRoe(double q1m, double q1p, double q2m, double q2p, double *s, bool Pm, bool Pp)=0;
 	//Functions specific to cross-sectional geometry, definitions in the derived class*/
 		virtual void showp()=0;
-		/** Pressure term in conservation law = A \bar{p}/\rho where \bar{p} is average hydrostatic pressure and \rho is density*/ 
-		virtual double pbar(double A, bool p) = 0;		         
+		/** Pressure term in conservation law eta= A \bar{p}/\rho where \bar{p} is average hydrostatic pressure and \rho is density*/ 
+		virtual double Eta(double A, bool p) = 0;		         
 		/** Height as a function of cross sectional area*/
 		virtual double HofA(double A, bool p)=0;		 	 
 		/** For ``negative Preissman'' model, height as a function of cross sectional area (not supported at present) */
@@ -247,7 +247,7 @@ class Cuniform: public Channel
 			channeltype = 0;
 		}	
 		void showp();
-		double pbar(double A, bool p){return G/(2.*w)*A*A;}
+		double Eta(double A, bool p){return G/(2.*w)*A*A;}
 		double HofA(double A, bool p){return A/w;}
 		double fakehofA(double A, bool p){return A/w;}
 		double fakeAofh(double h, bool p){return h*w;}
@@ -282,7 +282,7 @@ class Cpreiss: public Channel{
 		}
 		
 		void showp();	
-		double pbar(double A, bool p);
+		double Eta(double A, bool p);
 		double HofA(double A,bool p){return ::HofA(A, D, At, Ts, p);}
 	    double hofAold(double A);	
 		double fakehofA(double A, bool p);

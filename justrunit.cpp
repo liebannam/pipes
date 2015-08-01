@@ -100,7 +100,7 @@ void testallthiscrap() //print out all the crap I'm computing to see if it makes
 		 double aa = D*D/8.*(tt-sin(tt));
 		 double ht = 0.5*D*(1-cos(tt*.5));
 		 double h = ch0.HofA(aa,pp);
-		 double I = ch0.pbar(aa,pp);
+		 double I = ch0.Eta(aa,pp);
 		 double ah = ch0.AofH(ht,pp);
 		 double c = ch0.Cgrav(aa,pp);
 		 double phi = ch0.PhiofA(aa,pp);
@@ -119,13 +119,13 @@ void testallthiscrap() //print out all the crap I'm computing to see if it makes
 	 t1 = clock();
 	 for (int i = 1; i<MM; i++) {yy =ch0.HofA((float)i/MM*PI*D*D/4.,false); } 
 	 t2  = clock();
-	 for (int i = 1; i<MM; i++){yy =ch0.pbar((float)i/MM*PI*D*D/4., false);}
+	 for (int i = 1; i<MM; i++){yy =ch0.Eta((float)i/MM*PI*D*D/4., false);}
 	t3 = clock();
 	for (int i = 1; i<MM; i++){yy =ch0.AofH((float)i/MM*PI*D*D/4.,false); }
 	t4 = clock();
 	for (int i = 1; i<MM; i++){ yy =ch0.PhiofA((float)i/MM*PI*D*D/4.,false); }
 	t5 = clock();
-	for (int i = 1; i<MM; i++){yy =ch0.pbar((float)i/MM*PI*D*D/4., false); }
+	for (int i = 1; i<MM; i++){yy =ch0.Eta((float)i/MM*PI*D*D/4., false); }
 	t6 = clock();
 	printf("%d evaluations\n", MM);
 	cout<<"h(A) chebyshev eval time =          "<<(t1-t0)/(double)CLOCKS_PER_SEC<<endl;
