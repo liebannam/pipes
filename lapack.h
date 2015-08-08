@@ -30,8 +30,8 @@ int idamax(int n, double *x, int incx);
 void dtpsv(char uplo, char transA, char diag, int n, double *A,
 	   double *y, int incy);
 /* matrix vector multiply */
-void dgemv(char trans, int m, int n, double alpha, double *A, int lda,
-	   double *x, int incx, double beta, double *y, int incy);
+void dgemv(char *trans, int *m, int *n, double *alpha, double *A, int *lda,
+	   double *x, int *incx, double *beta, double *y, int *incy);
 /* C = alpha op(A)*op(B) + beta C, op(A) MxK, op(B) KxN, op(X) = X or X' */
 void dgemm(char transA, char transB, int m, int n, int k, double alpha,
 	   double *A, int lda, double *B, int ldb, double beta, double *C,
@@ -113,12 +113,12 @@ void zgeev(char jobvl, char jobvr, int n, Complex *A, int lda,
 	   Complex *W, Complex *VL, int ldvl,
 	   Complex *VR, int ldvr, int *info);
 
-void dgesvd(char jobu, char jobvt, int m, int n, double *A, int lda,
-	    double *S, double *U, int ldu, double *VT, int ldvt,
-	    int *info);
-void zgesvd(char jobu, char jobvt, int m, int n, Complex *A, int lda,
-	    double *S, Complex *U, int ldu, Complex *VT, int ldvt,
-	    int *info);
+void dgesvd(char* jobu, char *jobvt, int *m, int *n, double *A, int *lda,
+	    double *S, double *U, int *ldu, double *VT, int *ldvt, 
+	    double *work, int *lwork, int *info);
+void zgesvd(char* jobu, char *jobvt, int *m, int *n, Complex *A, int *lda,
+	    double *S, Complex *U, int *ldu, Complex *VT, int *ldvt,
+	    double *work, int *lwork, int *info);
 
 void dsyev(char jobz, char uplo, int n, double *A, int lda,
 	   double *W, int *info);

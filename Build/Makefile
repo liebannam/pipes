@@ -15,6 +15,8 @@ test_levmar : test_levmar.o levmar.o mp_mat.o mp_mat_double.o \
 	str_double.o
 	$(CC) -o $@ $(CFLAGS) $^ $(LIBS)
 
+test_dgesvd : test_dgesvd.o
+	$(CC) -o $@ $(CFLAGS) $^ $(LIBS)
 
 
 %: %.o

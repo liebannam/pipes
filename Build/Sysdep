@@ -1,13 +1,13 @@
 cc     = gcc
 CC     = g++
 #using a different version of g++ to enable openmp
-CC = g++-4.9 -fopenmp
+CC = g++
 NVCC   = nvcc
 MPICC  = mpic++
 
 #CFAST  = -O3 -Wall -fopenmp -DUSEOMP
-CFAST  = -O3 -Wall -g -fopenmp  
-CFAST  = -O0 -Wall -g -fopenmp  -Dcommandline=1 #for debugging with valgrind 
+CFAST  = -O3 -Wall -g  
+CFAST  = -Wall -g -Dcommandline=1 #for debugging with valgrind 
 cFLAGS = $(CFAST)
 CFLAGS = $(CFAST)
 CFLAGSD = -g -Wall
@@ -16,12 +16,12 @@ ROOT   = /Users/lieba
 #if on Macbook Air
 #ROOT   = /Users/anna
 
-INC    = -I$(ROOT)/include  -I/opt/local/include
+INC    = -I/opt/local/include
 
-LA     = -llapack -lblas  -lcblas
+LA     = -framework Accelerate
 
 #LIBS   = -L. -L/opt/local/lib -L$(ROOT)/lib -lcla $(LA) -lqd -lfftw3 -lm
 #LIBS   = -L. -L/opt/local/lib -L//usr/lib $(LA) -lqd -lfftw3 -lm
 #LIBS   = -L. -L//usr/lib $(LA) -lqd -lfftw3 -lm
 #LIBS   = -L. -L$(ROOT)/lib -lcla $(LA) -lqd -lfftw3 -lm 
-LIBS   = -L. -L$(ROOT)/lib  $(LA) -lqd -lfftw3 -lm 
+LIBS   = -L. -L/opt/local/lib  $(LA) -lqd -lfftw3 -lm 

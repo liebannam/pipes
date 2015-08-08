@@ -92,7 +92,7 @@ template<> void
 dgemv(char trans, double a, mp_mat<double> &A, double *x, int incx,
       double b, double *y, int incy)
 {
-    dgemv(trans, A.m, A.n, a, A.p, A.m, x, incx, b, y, incy);
+    dgemv(&trans, &A.m, &A.n, &a, A.p, &A.m, x, &incx, &b, y, &incy);
 }
 
 template<>
@@ -101,7 +101,6 @@ vector<double> dgesvd(char jobu, char jobv, mp_mat<double>& A,
 {
     // A=USV^T, return diag(S)
     // jobu,v = 'N', 'O', 'S', 'A'  (none, overwrite, compact, all)
-    
     mp_mat<double> *U = (mp_mat<double> *) UU;
     mp_mat<double> *VT = (mp_mat<double> *) VV;
     
@@ -131,7 +130,6 @@ vector<double> dgesvd(char jobu, char jobv, mp_mat<double>& A,
 
     }
     int nzr=A.m, nzc=A.n;
-
     if (jobu != 'A')
 	for ( ; nzr>nzc; nzr--) {
 	    int j;
@@ -148,8 +146,14 @@ vector<double> dgesvd(char jobu, char jobv, mp_mat<double>& A,
 	}
      printf("%d %d %d %d\n", A.m, A.n, nzr, nzc);
 
-    dgesvd(jobu, jobv, nzr, nzc, A.p, A.m,
-	   &svals[0], Up, ldu, VTp, ldv, &info);
+
+    int lwork=-1;
+    double wkopt;
+    dgesvd(&jobu, &jobv, &nzr, &nzc, A.p, &A.m, &svals[0], Up, &ldu, VTp, &ldv, &wkopt, &lwork, &info);
+    lwork=(int)wkopt;
+    double *work=(double*)malloc( lwork*sizeof(double) );
+    dgesvd(&jobu, &jobv, &nzr, &nzc, A.p, &A.m, &svals[0], Up, &ldu, VTp, &ldv, work, &lwork, &info);
+    free(work);
     
    cout<<"svd3\n"<<endl; 
     if (info != 0)
