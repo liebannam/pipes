@@ -465,6 +465,7 @@ cdef extern from "optimizeit.h":
 		double xfake0;
 		double mydelta;
 		bc_opt_dh_c(int , int , vector[double], Network*, double , int, double, int)
+		void setBCTimeSeries(vector[double], vector[double])
 	cdef cppclass mystery_bc(levmar):
 		int whichnode
 		int M
@@ -639,6 +640,15 @@ cdef class PyBC_opt_dh:
 		for k in range(0,self.ndof):
 			xfake.push_back(self.x[k])
 		getTimeSeries(bvals, xfake, self.ndof+1, self.thisptr.M, self.thisptr.T, self.thisptr.modetype)
+		return bvals
+	def getBCTimeSeries2(self):
+		cdef vector[Real] bvals
+		for k in range(self.M+1):
+			bvals.push_back(0)
+		cdef vector[Real] xx
+		for k in range(self.ndof):
+			xx.push_back(self.x[k])
+		self.thisptr.setBCTimeSeries(xx, bvals)
 		return bvals
 	property x:
 		def __get__(self): return self.thisptr.x

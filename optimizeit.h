@@ -59,32 +59,14 @@ public:
 			printf("i = %d, x0 = %f\n ", i,x0[i]);
 		}
 
-		vector <Real> xfake(Ndof+1);
-		for (int k = 0; k<Ndof; k++)
-			{
-				xfake[k+1] = x0[k];
-			}
-		
-		if (modetype==1){xfake0 = 2.*Vin/T;}//fourier constant mode = 2Vin/T
-		else{//set Q(0,0) value
-			double sumQ = 0;
-			double Dt =  2.*T/((double)Ndof-1);//spline dt. 
-			for (int k=0;k<Ndof/2; k++)
-			{
-				sumQ+=x0[2*k+1];
-			}
-			sumQ -= x0[Ndof-1]/2.;
-			printf("sumQ = %f  2vin/Dt = %f\n", sumQ, 2*Vin/Dt);
-		   xfake0 = 2*(Vin/Dt-sumQ-Dt/12.*(x[0]-x[Ndof-1]));
-		}
-		xfake[0] = xfake0;
 		vector <Real> bvals(M+1);
-		getTimeSeries(bvals, xfake, Ndof+1,M,T,modetype);
+		setBCTimeSeries(x0,bvals);
 		Ntwk.junction1s[whichnode]->setbVal(bvals);
 	}
 	void compute_r();
 	void compute_J();
 	void compute_r(vector<Real> &rr, vector <Real>&xx);
+	void setBCTimeSeries(vector<Real>xx, vector <Real> &bvals);
 
 };
 
@@ -98,22 +80,29 @@ void bc_opt_dh_c::compute_r(vector<Real> &rr, vector <Real>&xx)
 {	 
 	
 	Network Ntwk0(Ntwk);
-	for(int i=0; i<Ntwk0.Nedges; i++){
+	for(int i=0; i<Ntwk0.Nedges; i++)
+	{
 		Ntwk0.channels[i]->setq(a0[i],q0[i]);
 		Ntwk0.channels[i]->n = 0;
 	}
 	Ntwk0.nn = 0;
-
-	vector <Real> xfake(Ndof+1);
 	vector <Real> bvals(M+1);
-//	cout<<"here? (this is x)\n";	
-//	for(int i=0;i<n; i++){
-//			cout<<x[i]<<endl;
-//	}
+	setBCTimeSeries(xx,bvals);
+	Ntwk0.junction1s[whichnode]->setbVal(bvals);
+
+	Ntwk0.runForwardProblem(dt);
+	for(int i=0; i<M+1; i++)
+	{
+		rr[i] = sqrt(Ntwk0.getAveGradH(i));
+	}
+}
+
+void bc_opt_dh_c::setBCTimeSeries(vector<Real>xx, vector <Real> &bvals)
+{
+	vector <Real> xfake(Ndof+1);
 	for (int k = 0; k<Ndof; k++)
 	{
 		xfake[k+1] = xx[k];
-	//	cout<<"k="<<k<<" xfake = "<<xfake[k]<<endl;
 	}
 	if (modetype==1){xfake0 = 2.*Vin/T;}//fourier constant mode = 2Vin/T
 	else//set Q(0,0) value
@@ -124,19 +113,12 @@ void bc_opt_dh_c::compute_r(vector<Real> &rr, vector <Real>&xx)
 		{
 			sumQ+=x0[2*k+1];
 		}
-		sumQ -= x0[Ndof-1]/2.;
+		sumQ -= x0[Ndof-2]/2.;
 		xfake0 =  2*(Vin/Dt-sumQ-Dt/12.*(x[0]-x[Ndof-1]));
-		printf("sumQ = %f, x[0] = %f\n", sumQ, xfake[0]);
+		printf("sumQ = %f, x[0] = %f, Dt = %f\n", sumQ, xfake[0], Dt);
 	}
 	xfake[0] = xfake0;
 	getTimeSeries(bvals, xfake, Ndof+1,M,T,modetype);
-	Ntwk0.junction1s[whichnode]->setbVal(bvals);
-
-	Ntwk0.runForwardProblem(dt);
-	for(int i=0; i<M+1; i++)
-	{
-		rr[i] = sqrt(Ntwk0.getAveGradH(i));
-	}
 }
 
 void bc_opt_dh_c::compute_J()
@@ -151,7 +133,7 @@ void bc_opt_dh_c::compute_J()
 	{
 
 	//	int NT = omp_get_num_threads();
-	//	printf("number of threads is %d\n",NT);
+//		printf("number of threads is %d\n",NT);
         vector<Real> rp(M+1);
 		vector<Real> rm(M+1);
 		vector<Real> x2(x);

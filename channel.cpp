@@ -55,7 +55,14 @@ const double pA2 = 5./12.;
 const double pPhi1 = 1.;
 const double pPhi2 = 3./5.;
 
-/*\function Height as a function of cross sectional area*/
+/**
+ * Height as a function of cross sectional area
+ * \param [in] A cross sectional area (m^2)
+ * \param [in] D pipe diameter (m)
+ * \param [in] At transition cross-sectional area (m^2) (above this, we're in Preissman slot)
+ * \param [in] Ts preissman slot width (m)
+ * \param [in] P pressurization (bool; true or false)
+ **/
 double HofA(double A, double D, double At, double Ts, bool P)
 {
 	double y; 
@@ -83,7 +90,11 @@ double HofA(double A, double D, double At, double Ts, bool P)
 
 
 /** Phi(A) = \int_0^A (c(z)/z)dz, where c(z) is the gravity wavespeed as a function of A
- * A = area, D = diameter, At = transition area, Ts = slot width, P = true if pressurized, false otherwise
+ * \param [in] A  cross sectional area (m^2)
+ * \param [in] D  pipe diameter (m)
+ * \param [in] At transition cross-sectional area (m^2) (above this, we're in Preissman slot)
+ * \param [in] Ts Preissman slot width (m)
+ * \param [in] P  pressurization (bool; true or false)
  **/
 double PhiofA(double A, double D, double At, double Ts, bool P)
 {
@@ -111,7 +122,13 @@ double PhiofA(double A, double D, double At, double Ts, bool P)
 	return phi;
 }
 
-/** Inverse of Phi(A)*/
+/** Inverse of Phi(A)
+ * \param [in] A  cross sectional area (m^2)
+ * \param [in] D  pipe diameter (m)
+ * \param [in] At transition cross-sectional area (m^2) (above this, we're in Preissman slot)
+ * \param [in] Ts Preissman slot width (m)
+ * \param [in] P  pressurization (bool; true or false)
+ * */
 double AofPhi(double phi, double D, double At, double Ts, bool P)
 {
 	if(phi<1e-15){return 0.;}
@@ -141,8 +158,13 @@ double AofPhi(double phi, double D, double At, double Ts, bool P)
 
 }
 
-/** Cgrav = sqrt(g*A/l)  
- * is the gravity wavespeed (l is the width of the free surface)
+/** 
+ * Cgrav = sqrt(g*A/l) is the gravity wavespeed (l is the width of the free surface)
+ * param [in] A  cross sectional area (m^2)
+ * param [in] D  pipe diameter (m)
+ * param [in] At transition cross-sectional area (m^2) (above this, we're in Preissman slot)
+ * param [in] Ts Preissman slot width (m)
+ * param [in] P  pressurization (bool; true or false)
  **/
 double Cgrav(double A, double D, double At, double Ts, bool P)
 {
@@ -171,6 +193,12 @@ double Cgrav(double A, double D, double At, double Ts, bool P)
  * \eta = A*\bar{p}/\rho
  *    where \bar{p} is the average hydrostatic pressure
  *    and \rho is the density 
+ *
+ * \param [in] A cross sectional area (m^2)
+ * \param [in] D pipe diameter (m)
+ * \param [in] At transition cross-sectional area (m^2) (above this, we're in Preissman slot)
+ * \param [in] Ts preissman slot width (m)
+ * \param [in] P pressurization (bool; true or false)   
  * */
 double Eta(double A, double D, double At, double Ts, bool P)
 {
@@ -191,7 +219,19 @@ double Eta(double A, double D, double At, double Ts, bool P)
 }
 
 
-//Constructor
+/**
+ * Channel is a class with dynamical variables (A, Q) in array q
+ * has methods to update them according to de St. Venant Equations
+ * instantiate a derived class to 
+ * q is laid at as follows:
+ *		q = [q(0,0), q(0,1)...,q(0,N-1), q(1,0),....q(1,N-1)] 
+ * where q(0,:) is area A (m^2) and q(1,:) is discharge Q (m^3/s)
+ * \param[in] Nin is the number of x gridpoints
+ * \param[in] win is the width of the channel (m). Interpreted as pipe diameter for Preissman slot
+ * \param[in] Lin is the length of the channel (m).
+ * \param[in] Min is the number of time steps 
+ * \param[in] a is the pressure wave speed (m/s) only relevant to Preissman slot
+ **/
 Channel::Channel(int Nin, double win, double Lin, int Min, double a): kn(1.0),w(win),L(Lin),N(Nin),M(Min) 
 {
 	q0 = new double[2*N];
@@ -465,6 +505,7 @@ void Channel::stepEuler(double dt)
 		if (q0[idx(0,i)]<negtol)
 		{
 			q0[idx(0,i)] = 0.0;
+			printf("!!Negative area!!!\n with a[%d] = %f at time %f\n ", i, q0[i], dt*(double)n);
 			throw "Oh damn. Negative area!\n";
 		}
 	}
@@ -878,7 +919,9 @@ double Cpreiss::getHydRad(double A)
 		return A/perim;
 	}  
 
-// HLL speeds with Roe estimates
+/**
+ *  Roe estimates for wavespeeds
+ **/
 void Cpreiss::speedsRoe(double q1m, double q1p, double q2m, double q2p, double *s, bool Pm, bool Pp) 
 {
 
@@ -910,12 +953,15 @@ void Cpreiss::speedsRoe(double q1m, double q1p, double q2m, double q2p, double *
 }
 
 
-//HLL speeds from Leon 2009 - they seem terrible...
+/**
+ * HLL speed estimates from Leon 2009 
+ * */
 void Cpreiss::speedsHLL(double q1m, double q1p, double q2m, double q2p, double *s, bool Pm, bool Pp){
 	double dry = 1e-6*At;;                                                  //pay attention to this!?
     double cbar,Astar, ym,yp,cm, cp, um =0 , up= 0;	
 	double Astarp;
-	double sl1, sl2, sr1, sr2;//other wave speed estimates from Sanders 2011 (keep around for comparison purposes?)
+	//other wave speed estimates from Sanders 2011 (keep around for comparison purposes?)
+	double sl1, sl2, sr1, sr2;
 	ym = HofA(q1m,Pm);
 	yp = HofA(q1p,Pp);
 	cm = Cgrav(q1m, Pm);
@@ -925,12 +971,14 @@ void Cpreiss::speedsHLL(double q1m, double q1p, double q2m, double q2p, double *
 		cbar = (cp+cm)/2.;
 		um = q2m/q1m;
 		up = q2p/q1p;
-	//	Astar = (q1m+q1p)/2.*(1+(um-up)/(PhiofA(q1p,Pp)+PhiofA(q1m,Pm))); //this verstion uses depth positivity condition
-		Astar = (q1m+q1p)/2.*(1+( (cbar>1e-6)? (um-up)/(2.*cbar): 0));  //this is linearized version
+		//this verstion uses depth positivity condition
+		//Astar = (q1m+q1p)/2.*(1+(um-up)/(PhiofA(q1p,Pp)+PhiofA(q1m,Pm))); 
+		//this is linearized version
+		Astar = (q1m+q1p)/2.*(1+( (cbar>1e-6)? (um-up)/(2.*cbar): 0));  
 		bool Ps = (Pm && Pp);
 		s[0] = um - findOmega(Astar, q1m, Ps, Pm);
 		s[1] = up + findOmega(Astar, q1p, Ps, Pp);
-	// Sanders estimates (not very good--use them if the other estimate messes up(??!))
+		// Sanders estimates (not very good--use them if the other estimate messes up(??!))
 		double Vs, cs, phip, phim;
 		phim = PhiofA(q1m, Pm);
 		phip = PhiofA(q1p, Pp);
@@ -946,7 +994,7 @@ void Cpreiss::speedsHLL(double q1m, double q1p, double q2m, double q2p, double *
 		sr1 = up + cp;
 		sr2 = Vs + cs;
 		if (WTF){
-			cout<<"phis = "<<phis<<" cs = "<<cs<<endl;
+			printf("phis = %f, cs = %f\n",phis, cs);
 			printf("Atsar = %f, Astard = %f, AstarS = %f\nwith q1m = %f and q1p = %f, um =%f, up = %f\n",Astar, Astarp, Astars, q1m, q1p, um, up);
 			printf("sL = %f, sR = %f, Sanders speeds (vl-cl, vs-cs) = (%f, %f) and (vr+cR, vr+cr) = (%f,%f)",s[0], s[1], sl1, sl2, sr1, sr2);
 		}
@@ -956,18 +1004,21 @@ void Cpreiss::speedsHLL(double q1m, double q1p, double q2m, double q2p, double *
 			
 	}
 	else{
-		if(fmax(ym,yp)<dry)     // Both sides dry - both stay dry
+		// Both sides dry - both stay dry
+		if(fmax(ym,yp)<dry)     
 		{
 			s[0] = 0.;
 			s[1] = 0.;
 		}
-		else if(ym<dry)  //left side dry
+		//left side dry
+		else if(ym<dry)  
 		{
 			up = q2p/q1p;
 			s[0] = up - PhiofA(q1p,Pp);
 			s[1] = up + cp;	
 		}
-		else if(yp<dry) //right side dry
+		//right side dry
+		else if(yp<dry) 
 		{
 			um = q2m/q1m;
 			s[0] = um - cm;
@@ -992,7 +1043,9 @@ void Cpreiss::speedsHLL(double q1m, double q1p, double q2m, double q2p, double *
 	cmax = max(cmax, max(fabs(s[0]),fabs(s[1]))); 		   
 }
 
-
+/**
+ * Compute Omega (used by speedsHLL estimate)
+ **/
 double Cpreiss::findOmega(double Astar, double Ak, bool Ps, bool Pk)
 {
 	double omega;
@@ -1010,38 +1063,35 @@ double Cpreiss::findOmega(double Astar, double Ak, bool Ps, bool Pk)
 
 
 
-////
-//Junction definitions
-////
-
+/**
+ * The class constructor initializes parameters and allocates memory for and sets the boundary value time series.
+ * \param[in] &ch0 the channel whose ghost cell is informed by this routine
+ * \param[in] a_which the
+ **/
 Junction1::Junction1(Channel &a_ch0, int a_which, double a_bval, int a_bvaltype):ch0(a_ch0)
 {
 	N = ch0.N;
 	bval = new double[ch0.M+1];
 	for(int i=0;i<ch0.M+1; i++){bval[i] = a_bval;}
-
-//	printf("bval[0] = %f\n", bval[0]);
 	bvaltype = a_bvaltype;
 	whichend = a_which;
 	w = ch0.w;
-	reflect = 0; //default is to use RI
+	//default is to use RI
+	reflect = 0; 
 }
 
 /**apply boundary conditions at the end of a single pipe. Several options.
  **What computation happens depends on these parameters:
- **** reflect = +1, -1, 0  (see below for details)
- **** whichend = 0, 1   (0 for left (x=0) end, 1 for right (x=L) end. Matters for signs of things.)  
- **** bvaltype = 0, 1   (0 for A, 1 for Q)  
+ * --reflect = +1, -1, 0  (see below for details)
+ * --whichend = 0, 1   (0 for left (x=0) end, 1 for right (x=L) end. Matters for signs of things.)  
+ * --bvaltype = 0, 1   (0 for A, 1 for Q)  
  * Reflect: reflect all incoming waves (hard boundary), set reflect =1
  * Extrapolate: let all incoming waves through (ghost cell has same values as last interior cell), set reflect = -1
  * Specify: specify Q,A
  *			specify f(Q,A) = 0 (not implemented yet) 
- *     following a characteristcic out of the domain to solve for unknown value, then updating boundary fluxes accordingly.
- * */
-
-void Junction1::boundaryFluxes()
-{
-	/*New Strategy!
+ *     follows a characteristcic out of the domain to solve for unknown value, then updating boundary fluxes accordingly.
+ * 
+ * Summary of cases:
 	  case 0: reflect everything
 	  case 1: reflect nothing
 	  case 2: supercritical 
@@ -1054,7 +1104,9 @@ void Junction1::boundaryFluxes()
 					3.1.2 specify A
 				3.2 can't solve using RI, set A = Ain
 	  case 4: orifice outflow
-   */
+ **/
+void Junction1::boundaryFluxes()
+{
 	int bccase, Nq, Npi, Npe;	
 	double Ain, Qin, Aext, Qext;
 	double Cc=0, Cd = 0, dp0 = 0, eext=0;//random crap for dysfunctional orifice routine
@@ -1068,7 +1120,8 @@ void Junction1::boundaryFluxes()
 		Npe = N+1;
 		Npi = N;
 	}
-	else								  //if we're on the left side of the pipe
+	//if we're on the left side of the pipe
+	else								  
 	{
 		Nq = 0;
 		Npe = 0;
@@ -1080,7 +1133,6 @@ void Junction1::boundaryFluxes()
 	ch0.Pnow = ch0.P[Nq];
 	Pin = ch0.P[Npi];
 	Pext = ch0.P[Npe];
-//	cout<<"reflect= "<<reflect<<endl;
 	if(reflect ==1) bccase = 0;
 	else if(reflect ==-1) bccase =1;
 	else
@@ -1258,7 +1310,6 @@ void Junction1::boundaryFluxes()
 	ch0.q_hist[ch0.idx_t(0,Npe,ch0.n)] = Aext;
 	ch0.q_hist[ch0.idx_t(1,Npe,ch0.n)] = Qext;
 	//update boundary pressurization states
-//	if(reflect ==1||reflect==-1){ch0.P[Npe] =ch0.P[Npi];}//for some reason this cannot be messed with, sigh.
 	if(reflect ==1||Qext==0){ch0.P[Npe] = true;}//for some reason this cannot be messed with, sigh.
 	if(reflect ==-1){ch0.P[Npe] = ch0.P[Npi];}//for some reason this cannot be messed with, sigh.
 	else if(bvaltype==0 && Aext<ch0.At){ch0.P[Npe] = false;}
@@ -1290,7 +1341,8 @@ double Junction1::getFlowThrough(double dt)
 }
 
 
-/** overloaded functions to set boundary value time series*/
+//overloaded functions to set boundary value time series
+
 /** set boundary value to a constant value*/
 void Junction1::setbVal(double bvalnew)
 {
@@ -1300,7 +1352,7 @@ void Junction1::setbVal(double bvalnew)
 	}
 }
 
-/**set boundary value to a time series stored in various arrays*/
+/** set boundary value to a time series stored in various arrays*/
 void Junction1::setbVal(valarray<Real> x)
 {
 	for(int i =0; i<ch0.M+1; i++)
@@ -1363,16 +1415,17 @@ Junction2::Junction2(Channel &a_ch0, Channel &a_ch1, int a_which0, int a_which1,
 /*fluxes across serial junction - only one reasonable way to do it:
 *
 *
-*  ^ ~~~~~~~~                    channel 0 sees h1 -offset
-*  |        | 			 channel 1 sees h0 +offset			
-*  h0       |
-*  |        |~~~~~~~~~~  ^
-*  v _______|            |  h1    
-*  ^        |            | 
-* offset    |            |
-*..v........|__________  v............ground   
-*           | 
-* channel 0 |channel 1
+*   ^ ~~~~~~~~            channel 0 sees h1 -offset
+*   |        | 			  channel 1 sees h0 +offset			
+*   h0       |
+*   |        |~~~~~~~~~~  ^
+*   v _______|            |  h1    
+*   ^        |            | 
+*  offset    |            |
+* ..v........|__________  v............ground   
+*            | 
+*<-channel 0 | channel 1 ->
+*
 * */
 
 
@@ -1393,7 +1446,8 @@ void Junction2::setValveTimes(valarray<Real>x)
 	}
 }
 
-void Junction2::boundaryFluxes(){	
+void Junction2::boundaryFluxes()
+{	
 	double q1m, q1p, q2m, q2p, q1mfake, q1pfake;
 	valveopen = valvetimes[ch0.n];
 	q1m = ch0.q[ch0.idx(0,N0)];
@@ -1403,27 +1457,26 @@ void Junction2::boundaryFluxes(){
 	bool pm = ch0.P[ch0.pj(N0)];
 	bool pp = ch1.P[ch1.pj(N1)];
 
-//attempt at incorporating valve opening coefficient - wish me luck/facepalm
+	//attempt at incorporating valve opening coefficient
 	if(valveopen>0)
 	{
 		double h0f = ch1.HofA(q1p,pp)-offset;
 		double h1f = ch0.HofA(q1m,pm)+offset;
-		q1pfake = ch0.AofH(h0f,pp);      //what channel 0 sees
-		q1mfake = ch1.AofH(h1f,pm);      //what channel 1 sees
+	   	//what channel 0 sees
+		q1pfake = ch0.AofH(h0f,pp);     
+		//what channel 1 sees
+		q1mfake = ch1.AofH(h1f,pm);      
 		if(whichend0)
 		{
 			ch0.numFlux(q1m,q1pfake, q2m, q2p*valveopen, ch0.bfluxright, pm, pp);
-			//ch1.numFlux(q1mfake, q1p, q2m*valveopen, q2p,  ch1.bfluxleft);
 			ch1.bfluxleft[0] = ch0.bfluxright[0];	
 			ch1.bfluxleft[1] = ch0.bfluxright[1];
-			//printf("bfluxright = [%f,%f] and bfluxleft = [%f,%f]\n", ch0.bfluxright[0], ch0.bfluxright[1], ch1.bfluxleft[0], ch1.bfluxleft[1] ); 
 		}
-		else{
+		else
+		{
 			ch0.numFlux(q1pfake, q1m, q2p*valveopen, q2m, ch0.bfluxleft, pp, pm);
-		//	ch1.numFlux(q1p, q1mfake, q2p, q2m*valveopen, ch1.bfluxright);
 			ch1.bfluxright[0] = ch0.bfluxleft[0];
 			ch1.bfluxright[1] = ch0.bfluxleft[1];
-			//printf("bfluxleft = [%f,%f] and bfluxright = [%f,%f]\n", ch0.bfluxleft[0], ch0.bfluxleft[1], ch1.bfluxright[0], ch1.bfluxright[1] ); 
 		}
 		ch0.q_hist[ch0.idx_t(0,Ns0,ch0.n)] =  q1pfake;
 		ch0.q_hist[ch0.idx_t(1,Ns0,ch0.n)] =  q2p*valveopen;
@@ -1435,9 +1488,9 @@ void Junction2::boundaryFluxes(){
 		else ch0.P[Ns0] = true;
 		ch0.p_hist[ch0.pj_t(Ns0,ch0.n)] = ch0.P[Ns0];
 		ch1.p_hist[ch1.pj_t(Ns1,ch1.n)] = ch1.P[Ns1];
-
 	}
-	else //reflect to get 0 flux...
+	//reflect to get 0 flux
+	else 
 	{
 		ch0.numFlux(q1m, q1m, q2m, -q2m, ch0.bfluxright, ch0.P[Ns0], ch1.P[Ns1]);
 		ch1.numFlux(q1p, q1p, -q2p, q2p,  ch1.bfluxleft, ch0.P[Ns0], ch1.P[Ns1]);
@@ -1460,23 +1513,24 @@ Junction3::Junction3(Channel &ch0, Channel &ch1, Channel &ch2, int which0, int w
 	whichend[2] = which2;
 
 }
-
+/**
+ * this routine assumes you have one incoming (whichend =1) and two outgoing pipes (whichend =0)
+ * To do: set up machinery to have two incoming and one outgong but there's no reason to have anything else
+**/
 void Junction3::boundaryFluxes(){
 	double flux0[2], flux1[2], flux2[2];
 	double Abar[3], Qbar[3];
-	double p01, p02, p10, p12, p20, p21;  //pik is the percentage of flux from pipe k going into pipe i; should have sum_k pik = 1 for each i...
+	//pik is the percentage of flux from pipe k going into pipe i; should have sum_k pik = 1 for each i...
+	double p01, p02, p10, p12, p20, p21;  
 	p01 = 0.5;
 	p02 = 0.5;
 	p10 = 1-p01;
 	p12 = 0.5;
 	p20 = 1-p02;
 	p21 = 1-p12;
-//this routine assumes you have one incoming (whichend =1) and two outgoing pipes (whichend =0)
-//I can see needing to set up the machinery to have two incoming and one outgong but there's no reason to have anything else
-	if((whichend[0]==1 &&whichend[1] ==0 &&whichend[2] ==0) || (whichend[0] ==0&& whichend[1] ==1 &&whichend[2] ==1))
+		if((whichend[0]==1 &&whichend[1] ==0 &&whichend[2] ==0) || (whichend[0] ==0&& whichend[1] ==1 &&whichend[2] ==1))
 	{
 
-		//cout<<whichend[0]<<whichend[1]<<whichend[2]<<"!!!!!!"<<endl;
 		Abar[0] = .5*(ch1.q[ch1.idx(0,0)]+ch2.q[ch2.idx(0,0)]);
 		Qbar[0] = .5*(ch1.q[ch1.idx(1,0)]+ch2.q[ch2.idx(1,0)]);
 		Abar[1] = .5*(ch0.q[ch0.idx(0,ch0.N-1)]+ch2.q[ch2.idx(0,0)]);
@@ -1492,8 +1546,6 @@ void Junction3::boundaryFluxes(){
 		flux1[1] =  p10*ch1.bfluxleft[1];
 	//1-2 is a pain in the neck	
 		ch2.q[ch2.idx(1,0)]= -ch2.q[ch2.idx(1,0)];
-	//	cout<<"ch1.q[0] ="<<ch1.q[ch1.idx(1,0)]<<endl; 
-	//	cout<<"ch2.q[0] ="<<ch2.q[ch2.idx(1,0)]<<endl; 
 		j2_12.boundaryFluxes();	
 		ch2.q[ch2.idx(1,0)]= -ch2.q[ch2.idx(1,0)];
 		flux1[0] += p12*ch1.bfluxleft[0];
@@ -1514,7 +1566,6 @@ void Junction3::boundaryFluxes(){
 		flux2[0] += p20*ch2.bfluxleft[0];
 		flux2[1] += p20*ch2.bfluxleft[1];
 
-	//	for(int i=0; i<2;i++)
 		//set all the fluxes properly
 		ch0.bfluxright[0] = flux0[0];
 		ch0.bfluxright[1] = flux0[1];
@@ -1522,18 +1573,18 @@ void Junction3::boundaryFluxes(){
 		ch1.bfluxleft[1] = flux1[1];
 		ch2.bfluxleft[0] = flux2[0];
 		ch2.bfluxleft[1] = flux2[1];
-	//store away the info
-	ch0.q_hist[ch0.idx_t(0,ch0.N+1,ch0.n+1)] = Abar[0]; 
-	ch0.q_hist[ch0.idx_t(1,ch0.N+1,ch0.n+1)] = Qbar[0];
-	ch1.q_hist[ch1.idx_t(0,0,ch1.n)] =  Abar[1];
-	ch1.q_hist[ch1.idx_t(1,0,ch1.n)] =  Qbar[1];
-	ch2.q_hist[ch2.idx_t(0,0,ch2.n)] =  Abar[2];
-	ch2.q_hist[ch2.idx_t(1,0,ch2.n)] =  Qbar[2];
-//	printf("flux0 = [%f, %f], flux 1 = [%f, %f], flux2 = [%f, %f]\n", flux0[0], flux0[1], flux1[0], flux1[1], flux2[0], flux2[1]);
+		//store away the info
+		ch0.q_hist[ch0.idx_t(0,ch0.N+1,ch0.n+1)] = Abar[0]; 
+		ch0.q_hist[ch0.idx_t(1,ch0.N+1,ch0.n+1)] = Qbar[0];
+		ch1.q_hist[ch1.idx_t(0,0,ch1.n)] =  Abar[1];
+		ch1.q_hist[ch1.idx_t(1,0,ch1.n)] =  Qbar[1];
+		ch2.q_hist[ch2.idx_t(0,0,ch2.n)] =  Abar[2];
+		ch2.q_hist[ch2.idx_t(1,0,ch2.n)] =  Qbar[2];
 	}
-	else{	cout<<"End 0 = "<<whichend[0]<<" End 1 = "<< whichend[1]<<" End 2 = "<<whichend[2]<<endl;
-		cout<<"Have not implemented triple junctions for this configuration!Sorry!\n";}
-
+	else{	
+		cout<<"End 0 = "<<whichend[0]<<" End 1 = "<< whichend[1]<<" End 2 = "<<whichend[2]<<endl;
+		cout<<"Have not implemented triple junctions for this configuration!Sorry!\n";
+	}
 }
 
 

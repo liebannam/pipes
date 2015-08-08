@@ -132,8 +132,7 @@ class Channel
 		double cmax;				   
 
 	//dynamic variables and boundary info
-		/** Current state q, organized as q = [q(0,0), q(0,1)...,q(0,N-1), q(1,0),....q(1,N-1)] 
-		* where q(0,:) is area A and q(1,:) is discharge Q*/
+		/** Current state q*/
 		double *q0;
 		/** Initial state q0*/
 		double *q;
@@ -335,7 +334,7 @@ class Junction1
 		void setbVal(vector<Real> x);
 		/** Destructor */
 		~Junction1();
-		/*Apply numerical flux function to get boundary fluxes for ch0*/
+		/**\brief Apply numerical flux function to get boundary fluxes for ch0*/
 		void boundaryFluxes();//	
 		/** Compute total flow from left to right */	
 		double getFlowThrough(double dt);

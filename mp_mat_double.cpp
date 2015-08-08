@@ -112,7 +112,6 @@ vector<double> dgesvd(char jobu, char jobv, mp_mat<double>& A,
     int info=-1;
     int min_nm = (A.m < A.n) ? A.m : A.n;
     vector<double> svals(min_nm,0.0);
-   cout<<"svd0\n"<<endl; 
     double *Up = NULL;
     double *VTp = NULL;
     int ldu = 1;
