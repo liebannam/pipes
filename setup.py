@@ -30,8 +30,8 @@ import numpy
 #os.environ["CC"] = "gcc-4.9" 
 #os.environ["CXX"] = "g++-4.9"
 #on my macbook air
-os.environ["CC"] = "/opt/local/bin/gcc-mp-4.9"
-os.environ["CXX"] = "/opt/local/bin/gcc-mp-4.9"
+os.environ["CC"] = "/usr/local/bin/gcc-4.9"
+os.environ["CXX"] = "/usr/local/bin/gcc-4.9"
 setup(ext_modules = cythonize(Extension(
            "allthethings",                                   # the extesion name 
         #sources=["allthethings.pyx", "setupandrun.cpp", "file_output.cc","network.cpp", "levmar.cpp","mp_mat.cpp","str_double.cpp", "mp_mat_double.cpp", "libcla.c"], # the Cython source and additional C++ source files

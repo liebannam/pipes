@@ -115,7 +115,7 @@ void bc_opt_dh_c::setBCTimeSeries(vector<Real>xx, vector <Real> &bvals)
 		}
 		sumQ -= x0[Ndof-2]/2.;
 		xfake0 =  2*(Vin/Dt-sumQ-Dt/12.*(x[0]-x[Ndof-1]));
-		printf("sumQ = %f, x[0] = %f, Dt = %f\n", sumQ, xfake[0], Dt);
+        //printf("sumQ = %f, x[0] = %f, Dt = %f\n", sumQ, xfake[0], Dt);
 	}
 	xfake[0] = xfake0;
 	getTimeSeries(bvals, xfake, Ndof+1,M,T,modetype);

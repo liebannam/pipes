@@ -324,12 +324,12 @@ void levmar::solve(int skipJ)
 	}
 	skipJ = 0;
 	
-    cout<<"Damn 1."<<endl;
+    //cout<<"Damn 1."<<endl;
 	flag = take_step(); // update x, compute new r
 	norm_r = compute_norm(r);
     }
     
-    cout<<"Damn 2."<<endl;
+    //cout<<"Damn 2."<<endl;
     if (report_r_stride>0)
 	report_r();
     cout<<"Damn 3."<<endl;
@@ -404,7 +404,7 @@ int levmar::take_step()
 
     compute_diag(n);
     
-    cout<<"Damn 1.8"<<endl;
+   // cout<<"Damn 1.8"<<endl;
     if (verbose>1) {
 	printf("\n%12s %12s\n", "Sig", "D");
 	for (int j=0; j<n; j++)
