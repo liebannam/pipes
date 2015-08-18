@@ -253,7 +253,7 @@ void mystery_bc::compute_r(vector<Real> &rr, vector <Real>&xx)
 	for(int i=0; i<m; i++)
 	{
 		double a = Ntwk0.channels[pj]->q_hist[Ntwk0.channels[pj]->idx_t(0,Nstar,i+delay)]; 
-		double H =  a>0?(Ntwk.channels[pj]->Eta(a,false)/a):0;
+		double H =  Ntwk.channels[pj]->pbar(a,false);
 		rr[i] =H-hdata[i+delay];
 	//	printf("i= %d, hdata = %f  r =  %f  a = %f\n",i,hdata[i],rr[i], a); 
 	}
