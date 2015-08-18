@@ -699,8 +699,8 @@ double Channel::getAveGradH(int i)
 	double h1, h2,a1,a2;
 	a1 = q_hist[idx_t(0,1,i)];
 	a2 = q_hist[idx_t(0,2,i)];
-	h1 = a1>0 ? (Eta(a1,p)/a1) : 0.;
-	h2 = a2>0 ? (Eta(a2,p)/a2) : 0.;
+	h1 = pbar(a1,p);
+	h2 = pbar(a2,p);
 	double I = 0;
 	for (int k = 1; k<N+1; k++)
 	{
@@ -708,7 +708,7 @@ double Channel::getAveGradH(int i)
 		h1 = h2;
 		a1 = a2;
 		a2 = q_hist[idx_t(0,k+1,i)]; 
-		h2 = a2>0 ? (Eta(a2,p)/a2) : 0.;
+		h2 = pbar(a2,p);
 	}
 	return I;
 }

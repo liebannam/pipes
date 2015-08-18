@@ -400,7 +400,11 @@ Network* setupNetwork(char *finp, char *fconfig, int &M, int &Mi, double &T, int
 }
 
 
-////output heightfields and a textfile "runinfo.txt" of maxvalues to accompany them.
+/**output heightfields and a textfile "runinfo.txt" of maxvalues to accompany them.
+ * the output data consists of either 
+ *		pbar (the average pressure head, reported in m) 
+ *	or  log(pbar+1) to make colorbars more informative 
+ * */
 void writeOutputTarga(Network *Ntwk, int M, int Mi, double T, int writelogs)
 {
 //	char sdata[] = "~/Dropbox/Research/Network7.0/output_data/scalings.txt";
@@ -447,12 +451,12 @@ void writeOutputTarga(Network *Ntwk, int M, int Mi, double T, int writelogs)
 					{
 						bool p =  false;//Ntwk.channels[kk]->P_hist[Ntwk.channels[kk]->pidx_t(i+1, ii)]
 						double a = Ntwk->channels[kk]->q_hist[Ntwk->channels[kk]->idx_t(0,i+1, ii)];
-						val = log(Ntwk->channels[kk]->HofA(a,p)+1);
+						val = log(Ntwk->channels[kk]->pbar(a,p)+1);
 					}
 					else{
 						bool p = false;
 						double a = Ntwk->channels[kk]->q_hist[Ntwk->channels[kk]->idx_t(0,i+1, ii)];
-						val = Ntwk->channels[kk]->HofA(a,p);
+						val = Ntwk->channels[kk]->pbar(a,p);
 					}	
 					myfld[i+mm*j] = val;
 				       //cout<<val<<"   ";	
@@ -478,6 +482,7 @@ void writeOutputTarga(Network *Ntwk, int M, int Mi, double T, int writelogs)
 
 }
 
+/*output pressure head (m) to text files*/
 void writeOutputText(Network *Ntwk, int M, int Mi)	
 {
 	
@@ -503,19 +508,14 @@ void writeOutputText(Network *Ntwk, int M, int Mi)
 			int NN = Ntwk->channels[kk]->N;
 			for(int j = 0;j<NN; j++)
 			{
-				val = m_to_psi*Ntwk->channels[kk]->fakehofA(Ntwk->channels[kk]->q_hist[Ntwk->channels[kk]->idx_t(0,j+1, ii)], false);
+				val = Ntwk->channels[kk]->pbar(Ntwk->channels[kk]->q_hist[Ntwk->channels[kk]->idx_t(0,j+1, ii)], false);
 				fprintf(fd, "%.10f     ", val);
-
 			}
 		fprintf(fd, "\n");	
 		}
 		fclose(fd);
 	}
-	printf("Writing psi data to, e.g., ../output_data/txt_out000.txt\n number of writes is %d\n", M/Mi); 
-/*	double Al = Ntwk.channels[0]->q[49];
-	double Ar =  Ntwk.channels[0]->q[49];
-	printf("Al = %f, Ar = %f\n", Al, Ar);
-	testcrappy_f(Al, Ar, Ntwk.channels[0]->w, Ntwk.channels[0]->Ts,Ntwk.channels[0]->At);*/
+	printf("Writing pressure head data to, e.g., ../output_data/txt_out000.txt\n number of writes is %d\n", M/Mi); 
 }
 
 

@@ -192,6 +192,8 @@ class Channel
 		virtual double Eta(double A, bool p) = 0;		         
 		/** Height as a function of cross sectional area*/
 		virtual double HofA(double A, bool p)=0;		 	 
+		/** Average hydrostatic pressure reported as pressure head (units are m)*/
+		virtual double pbar(double A,bool p) = 0;
 		/** For ``negative Preissman'' model, height as a function of cross sectional area (not supported at present) */
 		virtual double fakehofA(double A, bool p)=0;		 	 
 		/** For ``negative Preissman'' model, cross sectional area as a function of height (not supported at present) */
@@ -247,6 +249,7 @@ class Cuniform: public Channel
 		}	
 		void showp();
 		double Eta(double A, bool p){return G/(2.*w)*A*A;}
+		double pbar(double A, bool p){return A/(2.*w);}
 		double HofA(double A, bool p){return A/w;}
 		double fakehofA(double A, bool p){return A/w;}
 		double fakeAofh(double h, bool p){return h*w;}
@@ -283,6 +286,7 @@ class Cpreiss: public Channel{
 		void showp();	
 		double Eta(double A, bool p);
 		double HofA(double A,bool p){return ::HofA(A, D, At, Ts, p);}
+		double pbar(double A, bool p){return (A>0? Eta(A,p)/(G*A)  : 0.);}
 	    double hofAold(double A);	
 		double fakehofA(double A, bool p);
 		double fakeAofh(double h, bool p);
