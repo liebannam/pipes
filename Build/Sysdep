@@ -1,7 +1,7 @@
-cc     = gcc
-CC     = g++
+cc     = gcc-4.9
+CC     = g++-4.9
 #using a different version of g++ to enable openmp
-CC = g++
+CC = g++-4.9
 NVCC   = nvcc
 MPICC  = mpic++
 

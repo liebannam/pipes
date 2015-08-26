@@ -40,25 +40,34 @@ def colorme(x,xmin, xmax):  #return an rgb tuple for x in [xmin,xmax]. Do some k
         print (c[0], c[1], c[2])        	
         return (c[0],c[1],c[2])
 
-nwrites = 299
+#fromabove determines what kind of picture you make: view of pipes or top view of pressure head in m
+fromabove = 1  #set to 0 or 1--see below
+#figure out number of writes by checking lable on last .txt file in directory (this could go wrong if the naming scheme changes)
+fs = os.listdir('output_data')
+lastfile = [ll for ll in fs if 'txt' in ll][-1]
+n = [l.isdigit() for l in list(lastfile)]
+n1 = n.index(True)
+n.reverse()
+n2 = len(n)-n.index(True)
+nwrites = int(lastfile[n1:n2])
 cbarsize = 30.   #size of colorbar on actual map.  Fuck all if I know how to automatically make it look nice. I'm pretty bamboozled by all the camera angle nonsense.
 cbarloc = [10,60];
 tloc = [60,100];   #location of title
 tscale = 2.5;
 ## values for known networks: (7deSeptiembre) cbarsize = 30, cbarloc = [10,60], tloc = [80,90],tscale = 1.5
 ##                            (simple3pipes)  cbarsize = 3, cbarloc = [];
-rscale = 2.;  #scale the radii so that the picture has a nicer aspect ratio
 
-fromabove = 0  #set to 0 or 1--see below
+
 ######
 #cut height fields with rectangles so false color map highlights variations in h
 ##########
 if fromabove:
 #    colormap = "H2Ofalse"
     colormap = "H2Oblues"
-    drawpipes = 0
+    drawpipes = 1
     shape = "cylinder"
     bckgnd = 1
+    rscale = .5;  #scale the radii so that the picture has a nicer aspect ratio
 #######
 #cut height fields with cylinders so it looks realistic (read: amazing!) close up (only shows if pipe is full or not-pressure head not apparent)
 #######
@@ -67,7 +76,7 @@ else:
     #colormap = "H2Ofalse"
     drawpipes = 1
     bckgnd = 1
-
+    rscale = 2.;  #scale the radii so that the picture has a nicer aspect ratio
 
 ###########
 #read in network data from file created by setupandrun.cpp
@@ -307,9 +316,14 @@ for i in range(Nnodes):
 		i_sph.append("sphere{<%.5f,%.5f,%.5f>, %.5f}\n"%(x[i], y[i], R*1.01, R*1.01));	
 print "Goddamnit"
 
-
+print hs
+print r
+print "len(r) is %d"% len(r)
+print "len(hs) is %d"%len(hs)
+print "Nedges 9s %d" %Nedges
 ###write temporary povray plotting file with data from each time step
 count = nwrites
+#count =100
 for i in range(0,count+1):
 	istring = "%03d"%i
 	lines = [];
@@ -349,15 +363,18 @@ for i in range(0,count+1):
         fout.write("texture{pigment{gradient <0,0,1> color_map {"+colormap+cscale +"finish{ambient 1.0 diffuse 0.}}}")
         
         #write the colorbar
-        fout.write("#declare cbarmax = %.2f;\n" %cbarsize)
-        fout.write("union {box {<0,0,0>,<1,cbarmax,0.001>pigment {gradient y color_map {"+colormap+"}scale cbarmax} finish{ambient 1.0 diffuse 0.}}")
+        if fromabove:
+                fout.write("#declare cbarmax = %.2f;\n" %cbarsize)
+                fout.write("union {box {<0,0,0>,<1,cbarmax,0.001>pigment {gradient y color_map {"+colormap+"}scale cbarmax} finish{ambient 1.0 diffuse 0.}}")
         
-        Nbars =3  #number of ticks on colorbar
-        for j in range(Nbars):
-            dy = float(j)*cbarsize/float(Nbars-1) 
-            fout.write("box{<-.5,%.2f,0><1.5,%.2f, 0.001> pigment{rgb 1}}\n"%(dy-.1, dy+.1))
-            fout.write(" text{ttf \"/usr/local/share/povray-3.7/include/timrom.ttf\" \"%.3f\" 0.15,0 pigment{rgb 0}scale %.2f translate <2.,%.2f, 0>finish{ambient 1.0 diffuse 0.}}\n"%(colormax/float(Nbars-1)*j+hmin,tscale, dy-.5))
-	fout.write("translate<%.2f,%.2f,0>}\n"%(cbarloc[0], cbarloc[1]))
+                Nbars =3  #number of ticks on colorbar
+                for j in range(Nbars):
+                        dy = float(j)*cbarsize/float(Nbars-1) 
+                        fout.write("box{<-.5,%.2f,0><1.5,%.2f, 0.001> pigment{rgb 1}}\n"%(dy-.1, dy+.1))
+                        fout.write(" text{ttf \"/usr/local/share/povray-3.7/include/timrom.ttf\" \"%.f\" 0.15,0 pigment{rgb 0}scale %.2f translate <2.,%.2f, 0>finish{ambient 1.0 diffuse 0.}}\n"%(colormax/float(Nbars-1)*j+hmin,tscale, dy-.5))
+
+                fout.write("text{ttf \"/usr/local/share/povray-3.7/include/timrom.ttf\" \"pressure head (m)\" 0.15,0 pigment{rgb 0}scale %.2f translate <-5,-2.5, 0>finish{ambient 1.0 diffuse 0.}}\n"%(tscale))
+                fout.write("translate<%.2f,%.2f,0>}\n"%(cbarloc[0], cbarloc[1]))
         fout.write(" text{ttf \"/usr/local/share/povray-3.7/include/timrom.ttf\" \"%.2f s\" 0.15,0 pigment{rgb 0}scale %.2f translate <%.2f,%.2f,0>finish{ambient 1.0 diffuse 0.}}\n"%(float(i)*dt,tscale, tloc[0], tloc[1]))
         fout.write("background{ rgb %d}" %bckgnd)
         fout.close()
@@ -367,8 +384,8 @@ for i in range(0,count+1):
         else:
             command = "povray +A0.001 -J angleview.pov Output_File_Name=movie/tmp_"+istring +".png"
         print command
-	os.system(command)
+	#os.system(command)
 
 print hs
-print hmax
+print "hmax = %d, colormax == %d"%(hmax,colormax)
 

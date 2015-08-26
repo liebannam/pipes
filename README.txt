@@ -1,8 +1,9 @@
 Howdy there!
 
 This is still very much in development, so please accept my apologies if
-anything is confusing (or worse, wrong!).
+anything is confusing (or worse, wrong!). 
 -Anna Lieb (7/3/2015)
+contact me with comments/suggestions/questions: lieb.anna.m@gmail.com
 
 /\/\/\\/\/\/\\/\/\/\\/\/\/\\/\/\/\\/\/\/\/\\
 Section (0): Introduction
@@ -19,7 +20,7 @@ Section (0): Introduction
 	***********************
 		--a C++ compiler. I use gcc-4.9.
 		--Open MP
-		--Python (I use the anaconda distribution)
+		--Python (I use the Anaconda distribution)
 		--Cython (if you are doing option (1))
 		--Jupyter notebook (latest version of iPython notebook)
 
@@ -29,7 +30,7 @@ Section (0): Introduction
 		--POVRAY (if you want to make fancy plots)
 		--qt_tools or ffmpeg (if you want to make movies of your fancy plots)
 		--EPANET (if you want to draw networks that are complicated)
-		--a stiff drink
+		--a stiff drink (kidding) (sort of)
 
 	***********************
 	Some basics about input and output data:
@@ -119,7 +120,7 @@ Section (2): Calling from Python
 	***********************
 		It's easier to play with parameters and data visualization. You can make
 		lovely figures, change parameters, dig in and look at the data in your
-		networks to see that it is what you hope it is.
+		networks to verify that it is what you think it is.
 	***********************
 	Getting started
 	***********************
@@ -129,8 +130,8 @@ Section (2): Calling from Python
 	Python setup.py build_ext -i
 
 	There are a couple things that usually go wrong for me here:
-		(i) Clang butts in and pretends to be GCC. I force the compiler to be gcc-4.9
-		so this doesn't happen. 
+		(i) Clang butts in and pretends to be GCC, which means that omp.h
+		can't be found. I force the compiler to be gcc-4.9 so this doesn't happen. 
 		(ii) The Cython bit gets confused and tries to pass Clang-specific flags
 		anyway. (Are you seeing a trend here? GO AWAY, CLANG, NO ONE LIKES YOU.)
 		so if you get an error "unrecognized flag ‘Wconvert 64 to 32' ", then try running
@@ -168,14 +169,14 @@ Section (2): Calling from Python
 	(4) You can run a notebook on your own machine just by starting one up:
 	ipython noteboook
 	(5) You can also run one remotely on Orinoco, which is really nice if you
-are having trouble compiling the code on your own machine (or dont' want to
-run a big simulation there). To do this, you start one ssh pipe as follows:
+	are having trouble compiling the code on your own machine (or dont' want to
+	run a big simulation there). To do this, you start one ssh pipe as follows:
 
-	ssh -N -f -L localhost:8889:localhost:8889 lieba@orinoco.dhcp.lbl.gov
+		ssh -N -f -L localhost:8889:localhost:8889 lieba@orinoco.dhcp.lbl.gov
 
-Then you start a new terminal, and ssh in normally:
+	Then you start a new terminal, and ssh in normally:
 	
-	ssh lieba@orinoco.dhcp.lbl.gov
+		ssh lieba@orinoco.dhcp.lbl.gov
 
 And once you're logged in to Orinoco, you start up a notebook with no browser,
 which instead points to the pipe you already made:
@@ -205,7 +206,8 @@ After you run a command line simulation
 
 you will have filled up the folder output_data/ with a bunch of .txt and .tga
 files. You should never ever have to deal with them directly!
-the python script smarterputittogether.py and blockputittogether.py do the
+
+The python script smarterputittogether.py and blockputittogether.py do the
 work of writing povray scripts and running them to create images.
 Smartputitogether.py can do either a topview (with false colors for pressure)
 or an angleview (with pretty glass pipes!).
