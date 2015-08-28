@@ -1588,28 +1588,6 @@ void Junction3::boundaryFluxes(){
 }
 
 
-//Don't actually need these routines but they are potentially useful to compare to other people's evaluation (e.g. Kerger 2011, Leon 2006) of h(A), phi(A), etc.
-inline double getTheta(double A, double D)
-{
-	int count;
-	ftheta th(A,D);
-	double theta =::ridders(th, -.1, 2*PI+1, &count,1e-15, 1e-15);
-//	printf("errr in theta  is %e\n", fabs(A-D*D/8*(theta-sin(theta))));	
-
-//this way is 3x as fast--but! lose a lot of accuracy near the top.
-//	double theta = Ptheta(A/(D*D));
-//	for(int i=0;i<2; i++)
-//	{theta = (A>0.)? (theta -(theta-sin(theta)- 8.*A/(D*D))/(1.-cos(theta))):0.;}
-	return theta;
-}
-
-/*unstable and possibly terrible way to compute Phi in the circular part of the pipe
- * as seen in  (e.g. Kerger 2011, Leon 2006) */
-
-//inline double powPhi(double t, double D){
-//	return sqrt(G*3.*D/8.)*(t-1/80.*t*t*t+19./448000.*t*t*t*t*t
-//		+1./10035200.*t*t*t*t*t*t*t+491./(27.*70647808000.)*t*t*t*t*t*t*t*t*t);}
-
 
 
 /*

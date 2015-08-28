@@ -13,7 +13,133 @@
 	#include "omp.h"
 #endif
 
+//Don't actually need these routines but they are potentially useful to compare to other people's evaluation (e.g. Kerger 2011, Leon 2006) of h(A), phi(A), etc.
+inline double getTheta(double A, double D)
+{
+	int count;
+	ftheta th(A,D);
+	double theta =::ridders(th, -.1, 2*PI+1, &count,1e-15, 1e-15);
+//	printf("errr in theta  is %e\n", fabs(A-D*D/8*(theta-sin(theta))));	
 
+//this way is 3x as fast--but! lose a lot of accuracy near the top.
+//	double theta = Ptheta(A/(D*D));
+//	for(int i=0;i<2; i++)
+//	{theta = (A>0.)? (theta -(theta-sin(theta)- 8.*A/(D*D))/(1.-cos(theta))):0.;}
+	return theta;
+}
+
+/*unstable and possibly terrible way to compute Phi in the circular part of the pipe
+ * as seen in  (e.g. Kerger 2011, Leon 2006) */
+
+inline double powPhi(double t, double D){
+return sqrt(G*3.*D/8.)*(t-1/80.*t*t*t+19./448000.*t*t*t*t*t
+		+1./10035200.*t*t*t*t*t*t*t+491./(27.*70647808000.)*t*t*t*t*t*t*t*t*t);}
+
+
+
+void testallthiscrap() //print out all the crap I'm computing to see if it makes any bloody sense
+{
+	//also wtf is going on with cgrav???!?!?
+	double D = 1;
+	int M = 100;
+	int N = 100;
+	double L = 1000;
+	Cpreiss ch0(N,D,L,M);
+	double Af = PI*D*D/4.;
+	double At = ch0.At;
+       	double Ts = ch0.Ts;	
+	int K = 500;
+	double dk =1./(double)K;
+	bool P = true;
+	double x,hp, h,c,eta,phi, etap, phip, cp, A2;
+
+	ch0.setGeom(1200);
+	printf("#Ts = %f D = %f  a = %f \n#A               h                  eta(free)        eta(pressurized)      h(pressurized)    cgrav phi(free) phi(pressurized)\n", ch0.Ts, ch0.D, ch0.a);
+	for(int j = 1; j<3; j++)
+	{
+	for(int k= 10; k<81; k++)
+	{	
+	       double p = -k/10.;
+	       x = pow(-1.,j)*(pow(10.,p))+Af;
+	       h = ch0.fakehofA(x,false);
+	       hp = ch0.fakehofA(x,true);
+	       etap = Eta(x,D,At,Ts,true);
+	       eta = Eta(x,D,At,Ts,false);
+	       c = Cgrav(x,D,At,Ts,false);
+	       cp = Cgrav(x,D,At,Ts,true);
+	       phi = PhiofA(x,D,At,Ts,false);
+	       phip = PhiofA(x,D,At,Ts,true);
+	       printf("%.10e    %.10f      %.10f     %.10f    %.10f    %.10f    %.10f    %.10f\n", x-Af,h,eta, etap, hp, c, phi, phip);	
+
+	}
+	}
+	 bool pp = false;
+	 x = Af-(1e-7)/2.;
+	 etap = Eta(x,D,At,Ts,true);
+	 eta = Eta(x,D,At,Ts,false);
+	 c = Cgrav(x,D,At,Ts,false);
+	 cp = Cgrav(x,D,At,Ts,true);
+	 phi = PhiofA(x,D,At,Ts,true);
+	 printf("Evaluated at Af = %.10f\n %.10f  (eta free)\n %.10f (eta press)\n %.10f (c)\n %.10f  (cpress)\n%.10f phi", Af,eta, etap, c, cp, phi);
+	 printf("At-Af = %e\n", fabs(ch0.At-x));
+	 printf("A                   h(A)               |A-Af|           |hnew-hold|        |A(theta) - A|\n");
+	 for(int k = 0; k<40; k++)
+	 {
+		 double aa = D*D*PI/4.*(1.-pow(2.,-k-1));
+		 double h = ch0.HofA(aa,pp);
+		 double hold =h;
+		 double th = 2*acos(1-2.*h/D);
+		 printf("%.16f   %.16f   %e   %e   %e\n", aa, h,fabs(aa-D*D*PI/4.), fabs(h-hold), fabs(D*D/8.*(th-sin(th))-aa)); 
+	 }
+	 FILE *fg1 = fopen("geomconfirm1.txt","w");
+	 int Mp= 500;
+	 fprintf(fg1, "#A                  h(A)                   I(A)                  c(A)        phi(A)  phi2(A)                  hA(phi(A))                  A(h(A))   htrue(A) n");
+	 for(int k = 0; k<Mp; k++)
+	 {
+		 //double aa = D*D*PI/(4*Mp)*(double)k;
+		 double tt = PI*2/Mp*(double)k;
+		 double aa = D*D/8.*(tt-sin(tt));
+		 double ht = 0.5*D*(1-cos(tt*.5));
+		 double h = ch0.HofA(aa,pp);
+		 double I = ch0.pbar(aa,pp);
+		 double ah = ch0.AofH(ht,pp);
+		 double c = ch0.Cgrav(aa,pp);
+		 double phi = ch0.PhiofA(aa,pp);
+		 double ae = ch0.AofPhi(ch0.PhiofA(aa,pp),pp);
+		 double tt2 = getTheta(aa,D);
+		 double phi2 = powPhi(tt2,D);
+		 fprintf(fg1,"%.16f   %.16f    %.16f   %.16f   %.16f  %.16f   %.16f   %.16f    %.16f\n", aa, h, I, c, phi, phi2, ae, ah, ht); 
+	 }
+	 fclose(fg1);
+
+
+	 //compare timings
+	 clock_t t0,t1,t2,t3,t4,t5,t6;
+	 t0 = clock();
+	 double yy,tt;
+	 int MM = 10000;
+	 for (int i = 1; i<MM; i++){yy =ch0.HofA((float)i/MM*PI*D*D/4.,false);}
+	 t1 = clock();
+	 for (int i = 1; i<MM; i++) 
+	 {
+		 tt = getTheta((float)i/MM*PI*D*D/4.,D);
+		 yy = D*(1.-cos(tt/2.))/2.;
+	 } 
+	 t2  = clock();
+	  for (int i = 1; i<MM; i++){ 
+		tt = getTheta((float)i/MM*PI*D*D/4.,D);
+		yy = powPhi(tt,D);
+	 }
+	 t3 = clock();
+	for (int i = 1; i<MM; i++){yy =ch0.PhiofA((float)i/MM*PI*D*D/4., false); }
+	t4 = clock();
+	printf("%d evaluations\n", MM);
+	cout<<"h(A) chebyshev eval time =              "<<(t1-t0)/(double)CLOCKS_PER_SEC<<endl;
+	cout<<"h(A) rootfind for theta eval time =     "<<(t2-t1)/(double)CLOCKS_PER_SEC<<endl;
+	cout<<"phi(A) rootfind+power series eval time = "<<(t3-t2)/(double)CLOCKS_PER_SEC<<endl;
+	cout<<"phi(A) chebyshev eval time =             "<<(t4-t3)/(double)CLOCKS_PER_SEC<<endl;
+	
+}
 
 int main(int argc, char *argv[] )	
 {
@@ -79,6 +205,7 @@ int main(int argc, char *argv[] )
 //	{
 //		Ntwk->channels[i]->quickWrite(times, which, 1,T,1);
 //	}
+	testallthiscrap();
 }
 
 /*bunch of random test detritus I probably will never need, but who knows...*/
@@ -89,6 +216,8 @@ double getTheta2(double A, double D)
 	double theta =::ridders(th, -.1, 2*PI+1, &count,1e-15, 1e-15);
 	return theta;
 }
+
+
 
 void testcopyconstructor(Network Nk)
 {
@@ -105,106 +234,6 @@ void testcopyconstructor(Network Nk)
 	}
 }
 
-void testallthiscrap() //print out all the crap I'm computing to see if it makes any bloody sense
-{
-	//also wtf is going on with cgrav???!?!?
-	double D = 1;
-	int M = 100;
-	int N = 100;
-	double L = 1000;
-	Cpreiss ch0(N,D,L,M);
-	double Af = PI*D*D/4.;
-	double At = ch0.At;
-       	double Ts = ch0.Ts;	
-	int K = 500;
-	double dk =1./(double)K;
-	bool P = true;
-	double x,hp, h,c,eta,phi, etap, phip, cp, A2;
-
-	ch0.setGeom(1200);
-	printf("#Ts = %f D = %f  a = %f \n#A               h                  eta(free)        eta(pressurized)      h(pressurized)    cgrav phi(free) phi(pressurized)\n", ch0.Ts, ch0.D, ch0.a);
-	for(int j = 1; j<3; j++)
-	{
-	for(int k= 10; k<81; k++)
-	{	
-	       double p = -k/10.;
-	       x = pow(-1.,j)*(pow(10.,p))+Af;
-	       h = ch0.fakehofA(x,false);
-	       hp = ch0.fakehofA(x,true);
-	       etap = Eta(x,D,At,Ts,true);
-	       eta = Eta(x,D,At,Ts,false);
-	       c = Cgrav(x,D,At,Ts,false);
-	       cp = Cgrav(x,D,At,Ts,true);
-	       phi = PhiofA(x,D,At,Ts,false);
-	       phip = PhiofA(x,D,At,Ts,true);
-	       printf("%.10e    %.10f      %.10f     %.10f    %.10f    %.10f    %.10f    %.10f\n", x-Af,h,eta, etap, hp, c, phi, phip);	
-
-	}
-	}
-	 bool pp = false;
-	 x = Af-(1e-7)/2.;
-	 etap = Eta(x,D,At,Ts,true);
-	 eta = Eta(x,D,At,Ts,false);
-	 c = Cgrav(x,D,At,Ts,false);
-	 cp = Cgrav(x,D,At,Ts,true);
-	 phi = PhiofA(x,D,At,Ts,true);
-	 printf("Evaluated at Af = %.10f\n %.10f  (eta free)\n %.10f (eta press)\n %.10f (c)\n %.10f  (cpress)\n%.10f phi", Af,eta, etap, c, cp, phi);
-	 printf("At-Af = %e\n", fabs(ch0.At-x));
-	 printf("A                   h(A)               |A-Af|           |hnew-hold|        |A(theta) - A|\n");
-	 for(int k = 0; k<40; k++)
-	 {
-		 double aa = D*D*PI/4.*(1.-pow(2.,-k-1));
-		 double h = ch0.HofA(aa,pp);
-		 double hold =h;
-		 double th = 2*acos(1-2.*h/D);
-		 printf("%.16f   %.16f   %e   %e   %e\n", aa, h,fabs(aa-D*D*PI/4.), fabs(h-hold), fabs(D*D/8.*(th-sin(th))-aa)); 
-	 }
-	 FILE *fg1 = fopen("geomconfirm1.txt","w");
-	 int Mp= 500;
-	 fprintf(fg1, "#A                  h(A)                   I(A)                  c(A)                  phi(A)                  hA(phi(A))                  A(h(A))   htrue(A)\n");
-	 for(int k = 0; k<Mp; k++)
-	 {
-		 //double aa = D*D*PI/(4*Mp)*(double)k;
-		 double tt = PI*2/Mp*(double)k;
-		 double aa = D*D/8.*(tt-sin(tt));
-		 double ht = 0.5*D*(1-cos(tt*.5));
-		 double h = ch0.HofA(aa,pp);
-		 double I = ch0.pbar(aa,pp);
-		 double ah = ch0.AofH(ht,pp);
-		 double c = ch0.Cgrav(aa,pp);
-		 double phi = ch0.PhiofA(aa,pp);
-		 double ae = ch0.AofPhi(ch0.PhiofA(aa,pp),pp);
-		 fprintf(fg1,"%.16f   %.16f    %.16f   %.16f   %.16f   %.16f   %.16f    %.16f\n", aa, h, I, c, phi, ae, ah, ht); 
-	 }
-	 fclose(fg1);
-
-
-	 //compare timings
-	 clock_t t0,t1,t2,t3,t4,t5,t6;
-	 t0 = clock();
-	 double yy;
-	 int MM = 10000;
-	 for (int i = 1; i<MM; i++){yy =ch0.HofA((float)i/MM*PI*D*D/4.,false);}
-	 t1 = clock();
-	 for (int i = 1; i<MM; i++) {yy =ch0.HofA((float)i/MM*PI*D*D/4.,false); } 
-	 t2  = clock();
-	 for (int i = 1; i<MM; i++){yy =ch0.pbar((float)i/MM*PI*D*D/4., false);}
-	t3 = clock();
-	for (int i = 1; i<MM; i++){yy =ch0.AofH((float)i/MM*PI*D*D/4.,false); }
-	t4 = clock();
-	for (int i = 1; i<MM; i++){ yy =ch0.PhiofA((float)i/MM*PI*D*D/4.,false); }
-	t5 = clock();
-	for (int i = 1; i<MM; i++){yy =ch0.pbar((float)i/MM*PI*D*D/4., false); }
-	t6 = clock();
-	printf("%d evaluations\n", MM);
-	cout<<"h(A) chebyshev eval time =          "<<(t1-t0)/(double)CLOCKS_PER_SEC<<endl;
-	cout<<"h(A) rootfind for theta eval time = "<<(t2-t1)/(double)CLOCKS_PER_SEC<<endl;
-	cout<<"I(A) rootfind eval time =           "<<(t3-t2)/(double)CLOCKS_PER_SEC<<endl;
-	cout<<"I(A) new eval time =                "<<(t6-t5)/(double)CLOCKS_PER_SEC<<endl;
-	cout<<"A(h) eval time =                    "<<(t4-t3)/(double)CLOCKS_PER_SEC<<endl;
-	cout<<"phi(A) eval time =                  "<<(t5-t4)/(double)CLOCKS_PER_SEC<<endl;
-	
-}
 
 
 
