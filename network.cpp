@@ -1,12 +1,13 @@
 /******
- * implementation of network.h
- * for details, see comment at top of network.h
- ****/
+ *\file network.cpp
+ * \brief network.cpp documentation
+ * Definitions for classes in network.h
+ */ 
 
 #include "network.h"
 
 
-
+/*Find nth instace of */
 int find_nth(std::vector<int> values,  int desired, int n_ordinal, int N)
 {
 	int retval = -1;
@@ -21,36 +22,40 @@ int find_nth(std::vector<int> values,  int desired, int n_ordinal, int N)
 		if(count == n_ordinal){return retval;}
 	}		
 }
-/*
-Network_params::Network_params(std::vector<int> Ns_, std::vector<double> ws_, std::vector<double> Ls_, 
-					std::vector<double> S0s_, std::vector<double> Mrs_, std::vector<double> 
-					a0s_, std::vector<double> q0s_,double a_):a(a_)
-{ 
-	Ns = Ns_;
-	ws = ws_;
-	Ls = Ls_;
-	S0s = S0s_;
-	Mrs = Mrs_;
-	a0s = a0s_;
-	q0s = q0s_;
-			
-}*/
-/*Network::Network(int Nnodes_, std::vector<int> conns_, int Nedges_, int M_,  int channeltype_, Network_params p):
-	        Nnodes(Nnodes_), Nedges(Nedges_), M(M_), channeltype(channeltype_)*/
 
+/** This class constructor sets up Nedges_ instances of channels 
+ * of type channeltype_, connected together according to conns_.
+ * Destructor is kind of involved because the class does possibly shady things with vectors of pointers to classes (which of course contain arrays). There are many creatures born with "new".
+ * \param[in] Nnodes_ the number of nodes, which are presumed to be numbered [0,1, ...Nnodes]. 
+ * \param[in] conns_ an array of length 2*Nedges. Layout: [leftend0, rightend0, leftend1, rightend1,...]
+ *		Describes the network connectivity. pipe 0 goes from leftend0 to rightend 0, etc. 
+ *		So if an element of conns has an (odd/even) index, it corresponds to a (left/right) end.
+ *		The edge corresponding to the ith row of conns is stored in the ith element of channels.
+ * \param[in] Nedges_ is the number of edges in the network (Nedges_= length(conns)/2.) 
+ * \param[in] Ns  an array of length Nedges with number of grid points for each edge
+ * \param[in] ws  an array of length Nedges with widths/diameters for each edge (m)
+ * \param[in] Ls  an array of length Nedges with lengths of each edge (m)
+ * \param[in] S0s an array of length Nedges with channel slopes for each edge 
+ * \param[in] Mrs an array of length Nedges with Manning roughness coeffs for each edge
+ * \param[in] a0s a vector with constant initial cross-sectional area values for each edge (m^2)
+ * \param[in] q0s a vector with constant initial discharge values for each edge (m^3/s)
+ * \param[in] M_  number of time steps
+ * \param[in] channeltype_ is which model to use (Preissman slot or uniform)
+ * \param[in] a wavespeed in pressurized pipe (m/s)
+*/
 Network::Network(int Nnodes_, std::vector<int> conns_, int Nedges_, std::vector<int> Ns, std::vector<double> ws, std::vector<double> Ls, 
 		std::vector<double> S0s, std::vector<double> Mrs, std::vector<double> a0s, std::vector<double> q0s, int M_,  int channeltype_, double a):
 	        Nnodes(Nnodes_), Nedges(Nedges_), M(M_), channeltype(channeltype_)
 {
 	
-	nn = 0; //start with time =0	
+	//start with time =0	
+	nn = 0; 
 	//initialize internal array of connectivity data 
 	for(int k = 0; k<Nedges*2; k++)
 	{
 		conns.push_back(conns_[k]);
 	}
 	//figure out the type of each node (is it connected to 1, 2 or 3 pipes)
-//	nodeTypes = new int[2*Nedges];
 	for (int k=0; k<2*Nedges; k++){nodeTypes.push_back(0.);}
 	for(int k=0; k<2*Nedges; k++)
 	{
@@ -130,8 +135,7 @@ Network::Network(int Nnodes_, std::vector<int> conns_, int Nedges_, std::vector<
 	}
 }
 
-///WELCOME TO THE COPY CONSTRUCTOR! IT'S A...work in progress 
-//
+///WELCOME TO THE COPY CONSTRUCTOR!
 Network::Network(const Network &N_old):Nnodes(N_old.Nnodes), Nedges(N_old.Nedges), M(N_old.M)
 	      {
 	nn = 0;
@@ -345,7 +349,6 @@ Network:: ~Network()
 void Network::EulerStep(double dt)
 {
 	//old way that was first order
-	//
 	for (unsigned int j = 0; j<junction3s.size(); j++){junction3s[j]->boundaryFluxes();}
 	for (unsigned int j = 0; j<junction1s.size(); j++){junction1s[j]->boundaryFluxes();}
 	for (unsigned int j = 0; j<junction2s.size(); j++){junction2s[j]->boundaryFluxes();}

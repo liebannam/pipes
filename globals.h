@@ -1,3 +1,10 @@
+/**\file globals.h
+ * \brief Constants used frequently 
+ *
+ * G (acceleration due to gravity, meters per second)
+ *  PI (if you're using this code you should be ok with this)
+ *  m_to_psi (conversion factor from meters to pounds per square inch)
+ **/
 #ifndef GLOBALS_H
 #define GLOBALS_H
 

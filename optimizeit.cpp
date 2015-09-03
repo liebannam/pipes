@@ -1,14 +1,17 @@
-/////////////////////////
-/*Read in input files and optimize things. THIS IS PRETTY ANNOYING...
-*command line syntax is ../setupandrun example.inp example.config
+/** \brief documentation for optimizeit.cpp
+ * functions to run optimizations command line
+*  functions to read in input files and optimize things.
+*  command line syntax for main is ../setupandrun example.inp example.config
+*  currently a bit messy because this has been mainly used for debugging and testing
+*  preferred optimization framework is via python interface
+*  but if you prefer C++, go for it...
 *where:
 *       example.inp is an EPANET-style file containing network layout information 
 *       example.config is a custom configuration file with run-time parameters (e.g. number of cells, ICs, BCs)
 *TO DO: make this program check everything out to ensure the .inp and .config files match!
 *
-*///////////////////
+*/
 #include "optimizeit.h"
-//
 
 
 int main(int argc, char *argv[] )	

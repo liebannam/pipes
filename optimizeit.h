@@ -1,3 +1,15 @@
+/**
+ * \file optimizeit.h
+ * \brief optimizeit.h documentation
+ * contains classes for optimization via Levenberg-Marquardt
+ * Class declarations AND definitions for:
+ * --bc_opt_dh_c (minimize <dH/dx> by changing boundary conditions at a single node, with consrtained inflow volume
+ * --mystery_bc (recover boundary conditions at a single node by minimizing deviation from a known pressure time series)
+ * --bc1_opt_dc (minimize <dH/dx> by changing boundary conditions at a single node)
+ * --bc_opt_dc (minimize <dH/dx> by changing boundary conditions at multiple nodes)
+ * --opt_eq_outflow (attempt to equalize outflow)(not presently supported)
+ *Note: the first four have many fairly redudant aspects and this could be more elegantly done with a base class for optimization at boundary nodes, with the derived classes being much simpler. But the work's already done and it's working.
+ **/
 
 #ifndef OPTIMIZEIT_H
 #define OPTIMIZEIT_H
@@ -9,8 +21,12 @@
 #endif
 
 
-//constrain volume--set up to work for Fourier discretization only, one node only
-//constant mode a0 is set such that total inflow volume over simulation period = Vin
+/*
+ * \brief Class to minimize <dH/dx> by changing boundary conditions at a single node, with constrained inflow volume
+ * First component is set such that total inflow volume over simulation period = Vin
+ *   --Fourier: constant mode a_0 
+ *   --Hermite: first value x_0 
+*/
 class bc_opt_dh_c:public levmar{ 
 public:
 	//x = [a_0, a_1,...a_m/2, b_1, ,,,,b_m/2-1] 2m values for discrete trig transform 	
@@ -19,7 +35,7 @@ public:
 	vector< vector <double> >  a0, q0; //a0[i][j] is the jth value in edge i...I think?
 	//vector<double> bvals;//M+1 list of actual time series values
 	Network Ntwk;
-	int M;                //number of time steps
+	int M;                //number of time steps	
 	int modetype;         //1 - Fourier (must be this, or else...)   
 	int whichnode;        //at which node we're applying this BC time series...
 	double Vin;			  //desired total flow volutme = integral_0^T(Q(0,t))dt
@@ -149,7 +165,7 @@ void bc_opt_dh_c::compute_J()
 }
 
 
-
+/* \brief Class to recover boundary conditions at a single node by minimizing deviation from a known pressure time series*/
 class mystery_bc: public levmar{
 	public:
 		vector<Real> x0;
@@ -286,7 +302,7 @@ void mystery_bc::compute_J()
 }
 
 
-//trial class to implement optimization machinery for adjusting BCs at a single node to minimize average pressure gradient (IS THIS HARDER??)
+/*\brief Class to minimize <dH/dx> by changing boundary conditions at a single node)*/
 class bc1_opt_dh: public levmar{
 public:
 	//x = [a_0, a_1,...a_m/2, b_1, ,,,,b_m/2-1] 2m values for discrete trig transform 	

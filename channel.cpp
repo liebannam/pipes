@@ -1,6 +1,8 @@
 
 /**
- * \file Channel.cpp description
+ * \file Channel.cpp
+ * \brief Channel.cpp documentation
+ * 
  * Definitions of functions for class Channel*
  * Definition of functions for classes Junction1, Junction2, and Junction3
  **/
@@ -48,7 +50,7 @@ const double coeffs_a2[] = {0.6277322274489641, -0.2023497520119139, -0.03914356
 		       	0.0000000124134323, -0.0000000058741562, 0.0000000029710635, -0.0000000015906890, 0.0000000008960590, 
 			-0.0000000005293791, 0.0000000003289447, -0.0000000002183606, 0.0000000001557247, -0.0000000001192869, 0.0000000000532795};
 
-//powers for scaling x points before evaluation (determined via python-automated trial and error)
+/*powers for scaling x points before evaluation (determined via python-automated trial and error)*/
 const double ph = 2./3.;
 const double pA1 = 1./3.;
 const double pA2 = 5./12.;
@@ -220,11 +222,11 @@ double Eta(double A, double D, double At, double Ts, bool P)
 
 
 /**
- * Channel is a class with dynamical variables (A, Q) in array q
- * has methods to update them according to de St. Venant Equations
- * instantiate a derived class to 
+ * Channel is a class with dynamical variables (A, Q) in array q.
+ * Has methods to update them according to de St. Venant Equations.
+ * Instantiate a derived class to 
  * q is laid at as follows:
- *		q = [q(0,0), q(0,1)...,q(0,N-1), q(1,0),....q(1,N-1)] 
+ *		q = [q(0,0), q(0,1)...,q(0,N-1), q(1,0),....q(1,N-1)], 
  * where q(0,:) is area A (m^2) and q(1,:) is discharge Q (m^3/s)
  * \param[in] Nin is the number of x gridpoints
  * \param[in] win is the width of the channel (m). Interpreted as pipe diameter for Preissman slot
@@ -244,7 +246,8 @@ Channel::Channel(int Nin, double win, double Lin, int Min, double a): kn(1.0),w(
 	for(int i = 0; i<N+1; i++){P.push_back(false);}
 	P.push_back(false);
 	n = 0;
-	if(N*M<1e7){//allocated if there's less than 10 million stored variables, else complain and quit
+	//Array q_hist is allocated if there's less than 10 million stored variables, else complain and quit
+	if(N*M<1e7){
 		q_hist = new double[2*(N+2)*(M+2)]; 
 		p_hist = new bool[2*(N+2)*(M+2)];
 	}

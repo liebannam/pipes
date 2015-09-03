@@ -1,6 +1,7 @@
 /**
  * \file channel.h
  * \brief channel.h file documentation
+ * 
  * Contains:
  * class delcarations for Channel and derived Channel classes (definitions in channel.cpp)
  * class declarations for Junction1, Junction2, and Junction3 (definitions in channel.cpp)
@@ -33,7 +34,7 @@
 using std::max;
 using std::min;
 
-/*\def flag for printing miscellanious debug info. Set to false to supress printout.*/
+/*\def flag for printing miscellaneous debug info. Set to false to supress printout.*/
 #define WTF false
 
 
@@ -44,12 +45,12 @@ using std::min;
  *	--speedsHLL
  *	--speedsROE
 */
-
 #define numFlux(q1m, q1p, q2m, q2p, flux, Pm, Pp)  numFluxHLL(q1m, q1p, q2m, q2p, flux, Pm, Pp) 
 #define speeds(q1m, q1p, q2m, q2p, flux, Pm, Pp)   speedsHLL(q1m, q1p, q2m, q2p, flux, Pm, Pp) 
 
 
-/**\brief Templating magic for streaming into vectors (Thanks to Rob Saye for help with this)*/
+/**\brief Templating magic for streaming into vectors 
+ * (Thanks to R. Saye for help with this)*/
 template<typename T>
 struct AppendToVector
 {
@@ -96,9 +97,7 @@ double Eta    (double A, double D, double At, double Ts, bool P);
 
 
 
-/**
-\brief Class for channel data 
-**/
+/**\brief Class for channel data **/
 class Channel
 {
 
@@ -188,7 +187,8 @@ class Channel
 		virtual void speedsRoe(double q1m, double q1p, double q2m, double q2p, double *s, bool Pm, bool Pp)=0;
 	//Functions specific to cross-sectional geometry, definitions in the derived class*/
 		virtual void showp()=0;
-		/** Pressure term in conservation law eta= A \bar{p}/\rho where \bar{p} is average hydrostatic pressure and \rho is density*/ 
+		/** Pressure term in conservation law. eta= A \bar{p}/\rho where
+		 * \bar{p} is average hydrostatic pressure and \rho is density*/ 
 		virtual double Eta(double A, bool p) = 0;		         
 		/** Height as a function of cross sectional area*/
 		virtual double HofA(double A, bool p)=0;		 	 
@@ -214,7 +214,7 @@ class Channel
 		double getSourceTerms(double A, double Q); 
 		/** Get the volume of water in the pipe*/		
 		double getTheGoddamnVolume();
-		/** Get average gradient of pressure head h. Returns int_0^L(dh/dx) dx at time ti (probably not accurate enough...)*/ 
+		/** Get average gradient of pressure head h. Returns int_0^L(dh/dx) dx at time t_i**/
 		double getAveGradH(int i);  
 		/** Get total kinetic energy at time t_i*/
 		double getKE(int i);
@@ -237,9 +237,7 @@ class Channel
 
 
 
-/**
- * \brief Derived channel class for uniform cross section with width w
- * */
+/** \brief Derived channel class for uniform cross section with width w */
 class Cuniform: public Channel
 {
 	public:
@@ -266,9 +264,7 @@ class Cuniform: public Channel
 };
 
 
-/**
- * \brief Derived channel class for Preissmann slot geometry
- **/
+/** \brief Derived channel class for Preissmann slot geometry */
 class Cpreiss: public Channel{
 	public:
 		/** Preissman parameters*/
@@ -306,9 +302,8 @@ class Cpreiss: public Channel{
 //Junction class definitions 
 ///////////
 
-/**
- *\brief Class for applying boundary conditions at external boundary of single pipe. 
- **/
+/**\brief Class for applying boundary conditions at
+ * external boundary of single pipe. */
 class Junction1
 {
 	public:
@@ -344,9 +339,8 @@ class Junction1
 		double getFlowThrough(double dt);
 	};
 
-/**
- * Class for applying boundary conditions at a junction with two channels connected in serial
- **/
+/** \brief Class for applying boundary conditions at a junction 
+ *  with two channels connected in serial*/
 class Junction2   
 {
 	public:
@@ -372,9 +366,7 @@ class Junction2
 		void boundaryFluxes(); 
 };
 
-/**
- * Class for applying boundary conditions at a junction where 3 channels come together and !&^# gets real
-**/
+/**\brief Class for applying boundary conditions at a junction where 3 channels come together and !&^# gets real*/
 class Junction3
 {
 	public:
@@ -464,8 +456,9 @@ template <typename T> int sgn(T val)
 		return (T(0)<val)-(val<T(0));
 }
 /**
- *\brief Class for "all-purpose" function to evaluate things that have to do with zeros of Riemann invariants
- * evaluate lhs - (cq*Qext/x +sign*phi(x)+cc*c(x))  c is wavespeed */
+ *\brief Class for "all-purpose" function to evaluate things that
+ * have to do with zeros of Riemann invariants
+ * evaluates lhs - (cq*Qext/x +sign*phi(x)+cc*c(x)), where  c is wavespeed */
 class fallpurpose{       
 public:
 	double D, At, Ts, lhs, Q, cq, cc;

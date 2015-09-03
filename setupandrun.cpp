@@ -1,25 +1,37 @@
-/////////////////////////
-/* Various useful functions for running networks and optimizing over BCs:
- * 	--read in network data from .inp file and .config files
- *	--get time series from Hermite or Fourier Coefficients
- *	--write output to targa files
- *	--write output to text files
-*///////////////////
+/**\file setupandrun.cpp
+ * \brief function definitions for setupandrun.h
+ * Contains various useful functions for setting up networks and outputting data:
+ *  	--read in network data from .inp file and .config files
+ *		--get time series from Hermite or Fourier coefficients
+ *		--write output to targa files
+ *		--write output to text files
+ **/
+
 #include "setupandrun.h"
 
-//recover time series
+/*recover time series
+ * \param[in] bvals: time series of M+1 values at t =0, T/M, ...T
+ * \param[in] x: length m vector. 
+ *				either contains Fourier modes (Fourier==1) 
+ *				or Hermite spline components (Fourier ==0)
+ *\param[in] m: interpolation points. 
+ *				have m/2 values in Fourier series or m/2 spline interpolation points. 
+ *				Interpolation dt = 1/(m/2-1)
+ *\param[in] M: output time series with M+1 points
+ *\param[in] T: ending time. i.e. time series is assumed to be [0,T]
+ *\param[in] Fourier: flag for interpolation type.
+				Fourier =1 means Fourier interpolation
+				Fourier =0 means Hermite interpoloation
+ */
 void getTimeSeries(vector<Real> & bvals, vector<Real> &x, const int m, const int M, double T, int Fourier)     	
-//bvals is time series of M+1 values at t =0, T/M, ...T
-//x is a length m vector. either contains Fourier modes (Fourier==1) or of Hermite spline components (Fourier ==0)
-//we have m/2 values in Fourier series or m/2 spline interpolation points. Interpolation dt = 1/(m/2-1)
-//
 {
-	if(Fourier)	//Discrete Fourier modes:
-	//x[k] = a_k (k<=m/2)
-	//x[k] = b_j (where j =k-m/2, for k>m/2)
-	//      x =     [a_0, a_1, ...a_m/2, b_1,   b2   ...b_(m/2-1)] 
-	//                |     |       |     |     |
-	//index, k        0     1      m/2  m/2+1  m/2+2       m-1     
+	/**Discrete Fourier modes:
+	x[k] = a_k (k<=m/2)
+	x[k] = b_j (where j =k-m/2, for k>m/2)
+	      x =     [a_0, a_1, ...a_m/2, b_1,   b2   ...b_(m/2-1)] 
+	                |     |       |     |     |
+	index, k        0     1      m/2  m/2+1  m/2+2       m-1 */    
+	if(Fourier)	
 	{
 		double t;
 		for(int nn = 0; nn<M+1; nn++)
@@ -33,14 +45,14 @@ void getTimeSeries(vector<Real> & bvals, vector<Real> &x, const int m, const int
 			bvals[nn] +=0.5*x[m/2]*cos(PI*(double)m*t);
 		}
 	}
-	else//Hermite Spline
-	//Hermite spline evaluation, adapted from C. Rycroft's code. 
-	// Evaluates spline x at point t, where
-	// x = [f(t0), f'(t0), f(t1), f'(t1), ...f(t_m), f'(tm)]
-	//      |       |        |      |          |       |
-	// i=   0       1        2      3          2*m    2*m+1
-	// x0 = 0, xm = T
-
+	/**Hermite Spline
+	 Hermite spline evaluation, adapted from C. Rycroft's code. 
+	 Evaluates spline x at point t, where
+	 x = [f(t0), f'(t0), f(t1), f'(t1), ...f(t_m), f'(tm)]
+	      |       |        |      |          |       |
+	 i=   0       1        2      3          2*m    2*m+1
+	 x0 = 0, xm = T*/
+	else
 	{
 		double t, Dt,dt;
 		dt = T/M;//time series dt
@@ -73,7 +85,14 @@ void getCoeffSeries(vector< vector <Real> > & bvals, vector< vector <Real> > &x,
 	}
 }
 
-//set up a network based on contents of files finp, fconfig.
+/**set up a network based on contents of files finp, fconfig.
+ * \param[in] finp: path to input file with extension .inp
+ * \param[in] fconfig: path to configuration file with extension .config
+ * \param[in] M: number of simulaiton time steps
+ * \param[in] Mi: number of time steps between writes to output files (1<=Mi<=M)
+ * \param[in] T: total simulation time (s)
+ * \param[in] T: which channel cross section to use. 0 for uniform, 1 for Preissman slot
+ * */
 Network* setupNetwork(char *finp, char *fconfig, int &M, int &Mi, double &T, int channeltype_)
 {
 	//first open .inp file and process information about network layout and components
@@ -401,9 +420,14 @@ Network* setupNetwork(char *finp, char *fconfig, int &M, int &Mi, double &T, int
 
 
 /**output heightfields and a textfile "runinfo.txt" of maxvalues to accompany them.
- * the output data consists of either 
- *		pbar (the average pressure head, reported in m) 
- *	or  log(pbar+1) to make colorbars more informative 
+ * \param[in] Ntwk a network class whose data we want to write
+ * \param[in] M: number of simulation time steps
+ * \param[in] Mi: number of time steps between writes to output files (1<=Mi<=M)
+ * \param[in] T: total simulation time (s)
+ * \param[in] writelogs: whether to write log(1+p) or just p, where p is pressure (to get 
+ *			the output data consists of either 
+ *			writelogs=0: pbar (the average pressure head, reported in m) 
+ *		 or writelogs=1: log(pbar+1) to make colorbars more informative if there's large variation 
  * */
 void writeOutputTarga(Network *Ntwk, int M, int Mi, double T, int writelogs)
 {
@@ -482,7 +506,11 @@ void writeOutputTarga(Network *Ntwk, int M, int Mi, double T, int writelogs)
 
 }
 
-/*output pressure head (m) to text files*/
+/**Output pressure head (m) to text files
+ * \param[in] Ntwk a network class whose data we want to write
+ * \param[in] M: number of simulation time steps
+ * \param[in] Mi: number of time steps between writes to output files (1<=Mi<=M)
+  */
 void writeOutputText(Network *Ntwk, int M, int Mi)	
 {
 	

@@ -1,3 +1,8 @@
+/**\file levmar.h
+ * \brief levmar.h documentation
+ *
+ * This code authored by J. Wilkening, with some modifications by A. Lieb and C. Rycroft.
+ **/
 #ifndef __LEVMAR
 #define __LEVMAR
 
@@ -20,6 +25,7 @@ using namespace std;
 #include "sca.h"
 #endif
 
+/**\brief Class declarations for levmar*/
 class levmar {
 public:
     int m;

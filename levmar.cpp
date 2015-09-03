@@ -1,3 +1,11 @@
+/**
+ * \file levmar.cpp
+ * \brief levmar.cpp documentation 
+ *
+ * Contains class definitions for classes declared in levmar.h
+ * This code authored by J. Wilkening, with some modifications by A. Lieb and C. Rycroft.
+ * */
+
 #include "levmar.h"
 
 #define DEBUG 0
@@ -11,7 +19,11 @@ void dgemv_hi(char trans, int m, int n, double alpha, double *A, int lda,
 	dgemv(&trans,&m,&n,&alpha,A,&lda,x,&incx,&beta,y,&incy);
 }
 
-
+/**Class for performing a Levenberg-Marquardt optimization
+ * to minimize f = 1/2 r^2
+ * where r = r(x)
+ * for mx1 vector r and nx1 vector x
+ **/
 levmar::levmar(int m_, int n_) :
     m(m_), n(n_), 
     x(n,0.0), p(n,0.0), r(m,0.0), g(n,0.0),
