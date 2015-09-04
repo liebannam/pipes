@@ -384,7 +384,7 @@ for i in range(0,count+1):
         else:
             command = "povray +A0.001 -J angleview.pov Output_File_Name=movie/tmp_"+istring +".png"
         print command
-	#os.system(command)
+	os.system(command)
 
 print hs
 print "hmax = %d, colormax == %d"%(hmax,colormax)

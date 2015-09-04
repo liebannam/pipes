@@ -119,7 +119,10 @@ double PhiofA(double A, double D, double At, double Ts, bool P)
 	else
 	{
 		phi = D*ChebEval(&coeffs_p2[0], Ncheb, -1.)+2.*sqrt(G)*(sqrt(A/Ts)-sqrt(At/Ts));
-
+f0 = opt1.f
+print "f is %f" %f0
+print "T is %f" %opt1.T
+print "Using %s modes" %opt1.modetype
 	}
 	return phi;
 }
@@ -508,7 +511,7 @@ void Channel::stepEuler(double dt)
 		if (q0[idx(0,i)]<negtol)
 		{
 			q0[idx(0,i)] = 0.0;
-			printf("!!Negative area!!!\n with a[%d] = %f at time %f\n ", i, q0[i], dt*(double)n);
+			printf("!!TOO MUCH Negative area!!! SHITSHITSHIT\n with a[%d] = %f at time %f\n ", i, q0[i], dt*(double)n);
 			throw "Oh damn. Negative area!\n";
 		}
 	}

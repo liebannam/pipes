@@ -56,6 +56,10 @@ Section (0): Introduction
 	contains other information, such as boundary conditions, number of grid cells,
 	simulation time, pressure wave speed, and number of time steps. Pretty
 	self-evident, I hope.
+
+	the output data goes to a directory called output_data, which the code
+	assumes exists. If you're starting from scratch, you'll need to make this
+	directory.
 	
 	For the python interface, I have made some helper functions to avoid
 	having to deal with .inp and .config files all the time (e.g. when changing a
@@ -83,7 +87,9 @@ Section (1): Calling from command line
 		have this, your simulation will crash when it tries to write output data
 		there, so run 
 		mkdir output_data 
-		if it's not there yet.
+		if it's not there yet. 
+		If it existed already, clear out all the files so that you don't get
+		old data mixed up with the stuff you're about to generate. 
 	--Go to the folder called Build/
 	--The compilation information is in the file called Makefile and the
 		supporting info is in the file called Sysdep. Quite frankly, I think compiling
@@ -154,12 +160,13 @@ Section (2): Calling from Python
 	no reason you can't use a Python script to do the exact same thing if you
 	like.
 	(2.5) check to make sure compiled module allthethings actually works.
-	Sometimes it compiles but can't load libraries or something. Which is sad and
+	Sometimes it compiles but can't load or link libraries. Or something. Which is sad and
 	means...go back to beginning and figure out compiler issues. Sorry :(
 	(3) there are a lot of notebooks, many correspond to examples in the paper.
 	you can use them to see some of the calling syntax and possible uses. Partial
 	list of them:
 		--cythondemo.ipynb (just shows lots of stuff you can do with the wrapped code)
+		--Convergence.ipynb (do a convergence study)
 		--VaryLength.ipynb (vary length of one pipe and simulate new network.
 		demonstrates using the module writeit.py to make networks without touching
 		.config or .inp files)
