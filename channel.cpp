@@ -119,10 +119,7 @@ double PhiofA(double A, double D, double At, double Ts, bool P)
 	else
 	{
 		phi = D*ChebEval(&coeffs_p2[0], Ncheb, -1.)+2.*sqrt(G)*(sqrt(A/Ts)-sqrt(At/Ts));
-f0 = opt1.f
-print "f is %f" %f0
-print "T is %f" %opt1.T
-print "Using %s modes" %opt1.modetype
+
 	}
 	return phi;
 }
@@ -465,7 +462,7 @@ void Channel::stepEuler(double dt)
 	double fminus[2] ={0};
 	double nu = dt/dx;				
 	//decide when negative A forces the code throws an error over negative area (vs. just printing a warning) 
-	double negtol = -dx/10.;		
+	double negtol = -dx/50.;		
 	int i,k;
 	//get pressurization information for leftmost cell
 	Pnow = P[pj(0)]; 							              
