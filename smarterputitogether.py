@@ -324,13 +324,12 @@ print "Nedges 9s %d" %Nedges
 ###write temporary povray plotting file with data from each time step
 count = nwrites
 #count =100
-#for i in range(0,count+1):
-for i in range(211,213):
+for i in range(0,count+1):
 	istring = "%03d"%i
 	lines = [];
 	for j in range(Nedges):
 	    lines.append( "#declare fig%d = \"output_data/out%d_"%(j,j) +istring+ "\";\n")
-	    lines.append("#declare R%d = %f;\n #declare hmax%d = %f;\n"%(j, r[j], j, hs[i][j]))
+	    lines.append("#declare R%d = %f;\n #declare hmax%d = %.16f;\n"%(j, r[j], j, hs[i][j]))
 	fout = open("plottmp.pov", 'w')
 	for j in range(0,len(lines)):
 		fout.write(lines[j])
@@ -389,4 +388,4 @@ for i in range(211,213):
 
 print hs
 print "hmax = %d, colormax == %d"%(hmax,colormax)
-
+print hs[212:214]

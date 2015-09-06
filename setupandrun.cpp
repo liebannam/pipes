@@ -481,9 +481,9 @@ void writeOutputTarga(Network *Ntwk, int M, int Mi, double T, int writelogs)
 						bool p = false;
 						double a = Ntwk->channels[kk]->q_hist[Ntwk->channels[kk]->idx_t(0,i+1, ii)];
 						val = Ntwk->channels[kk]->pbar(a,p);
+					//	printf("pipe %d, i = %d a = %f pbar = %f ",kk,i,a,val);	
 					}	
 					myfld[i+mm*j] = val;
-				       //cout<<val<<"   ";	
 					zmin = fmin(zmin, val);
 					zmax = fmax(zmax, val);
 				}
