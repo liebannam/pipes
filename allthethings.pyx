@@ -445,6 +445,11 @@ cdef class PyNetwork:
 		for k in range(len(x)):
 			xx.push_back(x[k])
 		self.thisptr.junction1s[i].setbVal(xx)
+	def idx_t(self, i, j, n,k):
+		'''index of ith variable (i=0 or 1) at x location j at time step n in pipe k'''
+		N = self.thisptr.channels[k].N
+		return (2*(N+2)*n+(N+2)*i+j) 
+
 
 cdef extern from "levmar.h":
 	cdef cppclass levmar:

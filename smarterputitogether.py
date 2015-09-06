@@ -323,14 +323,15 @@ print "len(hs) is %d"%len(hs)
 print "Nedges 9s %d" %Nedges
 ###write temporary povray plotting file with data from each time step
 count = nwrites
+tol = 1e-6
 #count =100
 #for i in range(0,count+1):
-for i in range(205,206):
+for i in range(202,206):
 	istring = "%03d"%i
 	lines = [];
 	for j in range(Nedges):
 	    lines.append( "#declare fig%d = \"output_data/out%d_"%(j,j) +istring+ "\";\n")
-	    lines.append("#declare R%d = %f;\n #declare hmax%d = %.16f;\n"%(j, r[j], j, hs[i][j]))
+	    lines.append("#declare R%d = %f;\n #declare hmax%d = %.16f;\n"%(j, r[j], j, max(hs[i][j],tol)))
 	fout = open("plottmp.pov", 'w')
 	for j in range(0,len(lines)):
 		fout.write(lines[j])
