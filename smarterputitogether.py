@@ -324,7 +324,8 @@ print "Nedges 9s %d" %Nedges
 ###write temporary povray plotting file with data from each time step
 count = nwrites
 #count =100
-for i in range(0,count+1):
+#for i in range(0,count+1):
+for i in range(211,213):
 	istring = "%03d"%i
 	lines = [];
 	for j in range(Nedges):
