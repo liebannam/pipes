@@ -247,7 +247,7 @@ Channel::Channel(int Nin, double win, double Lin, int Min, double a): kn(1.0),w(
 	P.push_back(false);
 	n = 0;
 	//Array q_hist is allocated if there's less than 10 million stored variables, else complain and quit
-	if(N*M<1e7){
+	if(N*M<2e7){
 		q_hist = new double[2*(N+2)*(M+2)]; 
 		p_hist = new bool[2*(N+2)*(M+2)];
 	}

@@ -8,7 +8,7 @@ Use in python with command:
 Runs on my macbook air and also on orinoco (same dropbox folder...no bloody clue if that's legit...) I'm doing something kind of sketch with the lapack wrapper to get around segfaults that happen if I call the libcla.a library like in the pure C++ code in Build/. by kind of sketch I mean...I copied lapack.c and added it as a dependency, and wrapped the header.
 BASICALLY ALL OF THIS IS BLACK MAGIC... 
 ...so if it doesn't compile for you, I'm terribly sorry for the hassle and I will try to help...but no guarantees :/
-!!!!!PS if it's yelling about w convert 64 to 32 not recognized by gcc4.9, try
+!!!!!PS if it's yelling about w convert 64 to 32 not recognized by gcc4.9, try running these two commands in the shell before compiling
 export ARCHFLAGS=""           
 export CFLAGS="-arch i386 -arch x86_64" 
 '''
