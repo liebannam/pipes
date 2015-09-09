@@ -14,11 +14,6 @@
 
 // note: indices in most comments are 1-based (as in matlab/fortran)
 
-void dgemv_hi(char trans, int m, int n, double alpha, double *A, int lda,
-	   double *x, int incx, double beta, double *y, int incy) {
-	dgemv(&trans,&m,&n,&alpha,A,&lda,x,&incx,&beta,y,&incy);
-}
-
 /**Class for performing a Levenberg-Marquardt optimization
  * to minimize f = 1/2 r^2
  * where r = r(x)
@@ -307,7 +302,7 @@ void levmar::compute_g()
 //  printf("m = %d, and n = %d\n", m,n);
 //  printf("length of r is %d, length of g is %d , size of J is %d \n", sizeof(r)/sizeof(r[0]), sizeof(g)/sizeof(g[0]),sizeof(J.p)/sizeof(J.p[0]));
 // dgemv('T', m, n, Real(1.0), J.p, m, &r[0], 1, Real(0.0), &g[0], 1);
-  dgemv_hi('T', m, n, Real(1.0), J.p, m, &r[0], 1, Real(0.0), &g[0], 1);
+  dgemv('T', m, n, Real(1.0), J.p, m, &r[0], 1, Real(0.0), &g[0], 1);
 #else
 //    throw gen_err("compute_g not implemented for scalapack yet");
 #endif
@@ -336,12 +331,12 @@ void levmar::solve(int skipJ)
 	}
 	skipJ = 0;
 	
-    //cout<<"Damn 1."<<endl;
+    cout<<"Damn 1."<<endl;
 	flag = take_step(); // update x, compute new r
 	norm_r = compute_norm(r);
     }
     
-    //cout<<"Damn 2."<<endl;
+    cout<<"Damn 2."<<endl;
     if (report_r_stride>0)
 	report_r();
     cout<<"Damn 3."<<endl;
@@ -416,7 +411,7 @@ int levmar::take_step()
 
     compute_diag(n);
     
-   // cout<<"Damn 1.8"<<endl;
+    cout<<"Damn 1.8"<<endl;
     if (verbose>1) {
 	printf("\n%12s %12s\n", "Sig", "D");
 	for (int j=0; j<n; j++)
@@ -437,7 +432,7 @@ int levmar::take_step()
 	scaN1->consolidate(&g2[0]);
 #else
 	// g2 = r*UU;
-	dgemv_hi('T', m, n, Real(1.0), UU.p, m, &r[0], 1, Real(0.0), &g2[0], 1);	
+	dgemv('T', m, n, Real(1.0), UU.p, m, &r[0], 1, Real(0.0), &g2[0], 1);	
 #endif
 	scale_vec(g2, Sig);
 	norm_g = compute_norm(g2); // |g| computed before g2 rescaled by D
@@ -455,7 +450,7 @@ int levmar::take_step()
 #else
 	// p = p*VT;
 	tmp = p;
-	dgemv_hi('T', n, n, Real(1.0), VT.p, n, &tmp[0], 1, Real(0.0), &p[0], 1);
+	dgemv('T', n, n, Real(1.0), VT.p, n, &tmp[0], 1, Real(0.0), &p[0], 1);
 #endif
 
     	cout<<"Damn 2."<<endl;
@@ -477,7 +472,7 @@ int levmar::take_step()
 #if !SCA
 	if (DEBUG) {
 	    // check if norm_g was computed correctly from g2
-	    dgemv_hi('T', m, n, Real(1.0), J.p, m, &r[0], 1, Real(0.0), &g[0], 1);
+	    dgemv('T', m, n, Real(1.0), J.p, m, &r[0], 1, Real(0.0), &g[0], 1);
 	    printf("        debugging:  norm_g:  %s  %s\n",
 		   str(norm_g), str(norm_g - compute_norm(g)));
 	}
@@ -553,7 +548,7 @@ int levmar::check_reduction()    // updates x, delta
 #else
     // note: the formula for g is r(x+p)*J(x0), where x0 is the
     //       value of x when stepsJ was zero.  (Jacobian is lagged)
-    dgemv_hi('T', m, n, Real(1.0), J.p, m, &r[0], 1, Real(0.0), &g[0], 1);
+    dgemv('T', m, n, Real(1.0), J.p, m, &r[0], 1, Real(0.0), &g[0], 1);
 #endif
 
     norm_g = compute_norm(g);

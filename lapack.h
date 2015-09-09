@@ -30,8 +30,8 @@ int idamax(int n, double *x, int incx);
 void dtpsv(char uplo, char transA, char diag, int n, double *A,
 	   double *y, int incy);
 /* matrix vector multiply */
-void dgemv(char *trans, int *m, int *n, double *alpha, double *A, int *lda,
-	   double *x, int *incx, double *beta, double *y, int *incy);
+void dgemv(char trans, int m, int n, double alpha, double *A, int lda,
+	   double *x, int incx, double beta, double *y, int incy);
 /* C = alpha op(A)*op(B) + beta C, op(A) MxK, op(B) KxN, op(X) = X or X' */
 void dgemm(char transA, char transB, int m, int n, int k, double alpha,
 	   double *A, int lda, double *B, int ldb, double beta, double *C,
@@ -43,9 +43,7 @@ void zgemm(char transA, char transB, int m, int n, int k, Complex alpha,
 /* C = alpha AA' + beta C, alpha A'A + beta C, C is n x n */
 void dsyrk(char uplo, char trans, int n, int k, double alpha,
 	   double *A, int lda, double beta, double *C, int ldc);
-/* B = X, the solution of op(A)*X = alpha*B  or  X*op(A) = alpha*B */
-void dtrsm(char side, char uplo, char transA, char diag, int m, int n,
-           double alpha, double *A, int ldA, double *B, int ldB);
+
 
 /* LAPACK ROUTINES */
 /* dgetrf replaces A by its LU decomposition */
@@ -81,9 +79,6 @@ void dgelsx(int m, int n, int nrhs, double *A, int lda, double *B,
 	    int ldb, int *jpvt, double rcond, int *rank, int *info);
 void dgeqp3(int m, int n, double *A, int lda, int *jpvt,
 	    double *tau, int *info);
-void dgeqrf(int m, int n, double *A, int lda, double *tau, int *info);
-void dormqr(char side, char trans, int M, int N, int K, double *Q, int ldq,
-	    double *tau, double *C, int ldc, int *info);
 
 /* dgelss compute a minimum-norm solution to a linear least squares
    problem minimize || B-AX ||2 using the SVD of a general matrix A. */
@@ -99,11 +94,7 @@ void dposvx(char fact, char uplo, int n, int nrhs, double *A,
 	    double *X, int ldx, double *rcond, double *ferr,
 	    double *berr, int *info);
 
-void dpotrf(char uplo, int n, double *A, int lda, int *info);
-void dpotrs(char uplo, int n, int nrhs,
-	    double *A, int lda, double *B, int ldb, int *info);
-
-void dgees(char jobv, char sort, int (*select)(double *),
+void dgees(char jobv, char sort, int (*select)(double *, double *),
 	   int n, double *A, int lda, int *sdim, double *WR,
 	   double *WI, double *VS, int ldvs, int *info);
 void dgeev(char jobvl, char jobvr, int n, double *A, int lda,
@@ -113,12 +104,12 @@ void zgeev(char jobvl, char jobvr, int n, Complex *A, int lda,
 	   Complex *W, Complex *VL, int ldvl,
 	   Complex *VR, int ldvr, int *info);
 
-void dgesvd(char* jobu, char *jobvt, int *m, int *n, double *A, int *lda,
-	    double *S, double *U, int *ldu, double *VT, int *ldvt, 
-	    double *work, int *lwork, int *info);
-void zgesvd(char* jobu, char *jobvt, int *m, int *n, Complex *A, int *lda,
-	    double *S, Complex *U, int *ldu, Complex *VT, int *ldvt,
-	    double *work, int *lwork, int *info);
+void dgesvd(char jobu, char jobvt, int m, int n, double *A, int lda,
+	    double *S, double *U, int ldu, double *VT, int ldvt,
+	    int *info);
+void zgesvd(char jobu, char jobvt, int m, int n, Complex *A, int lda,
+	    double *S, Complex *U, int ldu, Complex *VT, int ldvt,
+	    int *info);
 
 void dsyev(char jobz, char uplo, int n, double *A, int lda,
 	   double *W, int *info);
