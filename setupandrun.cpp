@@ -348,7 +348,7 @@ Network* setupNetwork(char *finp, char *fconfig, int &M, int &Mi, double &T, int
 	for(int k = 0; k<Ntwk->channels.size(); k++)
 	{
 		double a0 = Ntwk->channels[k]->AofH(h0s[k],false);
-		printf("h0 = %f, a0 = %.10f, h(a0) = %f\n", h0s[k],a0, Ntwk->channels[k]->HofA(a0,false) );
+		//printf("h0 = %f, a0 = %.10f, h(a0) = %f\n", h0s[k],a0, Ntwk->channels[k]->HofA(a0,false) );
 		Ntwk->channels[k]->setq(a0, q0s[k]);
 		Ntwk->channels[k]->setq0(a0, q0s[k]);
 	}

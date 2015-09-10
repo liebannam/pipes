@@ -98,9 +98,9 @@ Section (1): Calling from command line
 	--To run a simulation, you want to use the driver routine "justrunit.cpp". so
 		you would compile as follows:
 		make justrunit
-	--you can also compile with 
+	--you can also compile the optimization stuff using 
 		make optimizeit
-		(to do optimizaiton stuff...but that cpp fill may be outdated after some
+		(to do optimizaiton stuff...but that cpp file may be outdated after some
 		cython-related source code changes. no guarantees.)
 	--calling snytax is
 		./justrunit nameofinpfile.inp  nameofconfigfile.config
@@ -140,9 +140,14 @@ Section (2): Calling from Python
 		can't be found. I force the compiler to be gcc-4.9 so this doesn't happen. 
 		(ii) The Cython bit gets confused and tries to pass Clang-specific flags
 		anyway. (Are you seeing a trend here? GO AWAY, CLANG, NO ONE LIKES YOU.)
-		so if you get an error "unrecognized flag ‘Wconvert 64 to 32' ", then try running
-		export ARCHFLAGS="" 
-		export CFLAGS = "-arch i386 -arch x86_64" 
+		so if you get the following error
+
+			gcc-4.9: error: unrecognized command line option '-Wshorten-64-to-32'
+
+		then try running the following commands in your terminal:
+		
+			export ARCHFLAGS="" 
+			export CFLAGS = "-arch i386 -arch x86_64" 
 
 		...Lots of other things can go wrong, dig in to the file setup.py to look
 	at compilation paths and flags. I have commented out (and labeled) the lines
@@ -207,7 +212,6 @@ plots--Orinoco is doing the work.
 /\/\/\\/\/\/\\/\/\/\\/\/\/\\/\/\/\\/\/\/\/\\
 Section (4): Dealing with all the data!
 /\/\/\\/\/\/\\/\/\/\\/\/\/\\/\/\/\\/\/\/\/\\
-	This is kind of a rough-and-tumble intro, to be made better, I hope!
 After you run a command line simulation
 ./justrunit blah.inp blah.config
 

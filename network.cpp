@@ -81,15 +81,15 @@ Network::Network(int Nnodes_, std::vector<int> conns_, int Nedges_, std::vector<
 		{
 			int idx =find_nth(conns, j, 1, 2*Nedges);
 	//		printf(" index is %d, row is %d, column is %d\n", idx, idx/2, idx%2);
-			printf("\njunction1!!!\n edge is %d and whichend is %d\n ", idx/2, idx%2); 
+		//	printf("\njunction1!!!\n edge is %d and whichend is %d\n ", idx/2, idx%2); 
 		        junction1s.push_back(new Junction1(*channels[idx/2], idx%2 ,0.,1)); //row in conns corresponds to edge; column corresponds to left or right end.
 		}
 		else if(nodeTypes[j] ==2)
 		{
 			int idx1 =find_nth(conns, j, 1, 2*Nedges);
 			int idx2 =find_nth(conns, j, 2, 2*Nedges);
-			printf("\njunction2!!! index1 is %d, edge0 is %d, which0 is %d\n", idx1, idx1/2, idx1%2);
-			printf(" index2 is %d, edge1 is %d, which1 is %d\n", idx2, idx2/2, idx2%2);
+		//	printf("\njunction2!!! index1 is %d, edge0 is %d, which0 is %d\n", idx1, idx1/2, idx1%2);
+		//	printf(" index2 is %d, edge1 is %d, which1 is %d\n", idx2, idx2/2, idx2%2);
 			junction2s.push_back(new Junction2(*channels[idx1/2], *channels[idx2/2], idx1%2, idx2%2, 1.0));
 		}
 
@@ -98,28 +98,33 @@ Network::Network(int Nnodes_, std::vector<int> conns_, int Nedges_, std::vector<
 			int idx1 =find_nth(conns, j, 1, 2*Nedges);
 			int idx2 =find_nth(conns, j, 2, 2*Nedges);
 			int idx3 =find_nth(conns, j, 3, 2*Nedges);
-			printf("\njunction3!!!\n index1 is %d, row is %d, column is %d\n", idx1, idx1/2, idx1%2);
-			printf(" index2 is %d, row is %d, column is %d\n", idx2, idx2/2, idx2%2);	
-			printf(" index3 is %d, row is %d, column is %d\n", idx3, idx3/2, idx3%2);
+			//printf("\njunction3!!!\n index1 is %d, row is %d, column is %d\n", idx1, idx1/2, idx1%2);
+			//printf(" index2 is %d, row is %d, column is %d\n", idx2, idx2/2, idx2%2);	
+			//printf(" index3 is %d, row is %d, column is %d\n", idx3, idx3/2, idx3%2);
 			//set it up so that either you have [end0, end1, end2] = [1,0,0] or = [0,1,1];
 			//[0,1,1] case
 			if(idx1%2+idx2%2+idx3%2 ==2){
 				if (idx1%2 == 0){junction3s.push_back(new Junction3(*channels[idx1/2], *channels[idx2/2], *channels[idx3/2], idx1%2, idx2%2, idx3%2));
-				printf("ch0 is %d ch1 is %d ch2 is %d", idx1/2, idx2/2, idx3/2 );}
+			//	printf("ch0 is %d ch1 is %d ch2 is %d", idx1/2, idx2/2, idx3/2 );
+				}
 				else if(idx2%2 == 0){junction3s.push_back(new Junction3(*channels[idx2/2], *channels[idx1/2], *channels[idx3/2], idx2%2, idx1%2, idx3%2));
-				printf("ch0 is %d ch1 is %d ch2 is %d", idx2/2, idx1/2, idx3/2 );}
+			//	printf("ch0 is %d ch1 is %d ch2 is %d", idx2/2, idx1/2, idx3/2 );
+			}
 				else {junction3s.push_back(new Junction3(*channels[idx3/2], *channels[idx2/2], *channels[idx1/2], idx3%2, idx2%2, idx1%2));
-				printf("ch0 is %d ch1 is %d ch2 is %d", idx3/2, idx2/2, idx1/2 );}
+			//	printf("ch0 is %d ch1 is %d ch2 is %d", idx3/2, idx2/2, idx1/2 );
+			}
 
 			}
 			//[1,0,0] case
 			else if(idx1%2+idx2%2+idx3%2 ==1){
 				if(idx1%2 ==1){junction3s.push_back(new Junction3(*channels[idx1/2], *channels[idx2/2], *channels[idx3/2], idx1%2, idx2%2, idx3%2));
-				printf("ch0 is %d ch1 is %d ch2 is %d", idx1/2, idx2/2, idx3/2 );}
+				//printf("ch0 is %d ch1 is %d ch2 is %d", idx1/2, idx2/2, idx3/2 );
+				}
 				else if(idx2%2 ==1){junction3s.push_back(new Junction3(*channels[idx2/2], *channels[idx1/2], *channels[idx3/2], idx2%2, idx1%2, idx3%2));
-				printf("ch0 is %d ch1 is %d ch2 is %d", idx2/2, idx1/2, idx3/2 );}
+				//printf("ch0 is %d ch1 is %d ch2 is %d", idx2/2, idx1/2, idx3/2 );
+				}
 				else {junction3s.push_back(new Junction3(*channels[idx3/2], *channels[idx2/2], *channels[idx1/2], idx3%2, idx2%2, idx1%2));
-				printf("ch0 is %d ch1 is %d ch2 is %d", idx3/2, idx2/2, idx1/2 );
+				//printf("ch0 is %d ch1 is %d ch2 is %d", idx3/2, idx2/2, idx1/2 );
 				}
 			}
 			else {
@@ -128,7 +133,7 @@ Network::Network(int Nnodes_, std::vector<int> conns_, int Nedges_, std::vector<
 			
 			
 		}			
-		else {printf("Well, then I have no idea. --Keanu Reeves  (nodetypes[j] = %d)\n", nodeTypes[j]);
+		else {printf("Well, then I have no idea. Too many nodes!  (nodetypes[j] = %d)\n", nodeTypes[j]);
 			for (int k = 0; k<Nedges; k++)cout<<conns[2*k]<<" "<<conns[2*k+1]<<endl;
 		}
 
@@ -304,7 +309,7 @@ Network::Network(Network *N_old):Nnodes(N_old->Nnodes), Nedges(N_old->Nedges), M
 			
 			
 		}			
-		else {printf("Well, then I have no idea. --Keanu Reeves  (nodetypes[j] = %d)\n", nodeTypes[j]);
+		else {printf("Well, then I have no idea. Too many nodes!  (nodetypes[j] = %d)\n", nodeTypes[j]);
 			for (int k = 0; k<Nedges; k++)cout<<conns[2*k]<<" "<<conns[2*k+1]<<endl;
 		}
 
@@ -314,7 +319,6 @@ Network::Network(Network *N_old):Nnodes(N_old->Nnodes), Nedges(N_old->Nedges), M
 	{
 		junction1s[k]->bvaltype = N_old->junction1s[k]->bvaltype;
 		junction1s[k]->setbVal(N_old->junction1s[k]->bval);
-		//cout<<junction1s[k]->bval[0]<<"yupgoddamnitfuckyou\n";
 		junction1s[k]->reflect = N_old->junction1s[k]->reflect;
 	}
 	for(int k = 0; k<junction2s.size(); k++)
@@ -408,14 +412,18 @@ void Network::runForwardProblem(double dt)
 	int Mi = M<500?1:M/100;
 	for(int i=0; i<M; i++)
 	{
-//uncomment this block if you want it to print time and average gradient info as sim progresses.
-	/*	if(i%Mi==0)
+//currenlty this block only called from command line version. Reconfigure if you want python calls to print time and average gradient info as sim progresses.
+	
+	#ifdef commandline 
+		if(i%Mi==0)
 		{
-			printf("current time is = %f s ", (double)nn*dt);
-			printf("Average Gradient is %f \n", getAveGradH(i));	
-		}*/
+			printf("current time is %3.3f s ", ((double)nn*dt));
+			printf("<dH/dx> is %f \n", getAveGradH(i));	
+		}
+	#endif
 		nn ++;
 		stepRK3_SSP(dt);
+	
 	}
 }
 double Network::getTotalVolume()

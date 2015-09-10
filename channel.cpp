@@ -435,7 +435,7 @@ void Channel::setq(double A0, double Q0)
 {
 	int i;
 	bool p0 = (A0>=At);
-	cout<<"p0 = "<<p0<<" At = "<<At<<"A0 = "<<A0<<endl;
+	//cout<<"p0 = "<<p0<<" At = "<<At<<"A0 = "<<A0<<endl;
 	for(i=0; i<N; i++)
 	{
 		q[idx(0,i)] = A0;
