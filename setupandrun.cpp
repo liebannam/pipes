@@ -268,7 +268,7 @@ Network* setupNetwork(char *finp, char *fconfig, int &M, int &Mi, double &T, int
 				stringstream ss(morestuff);	
 				ss>>T>>M>>Mi>>a;
 				if (a ==0) a = default_a;
-				cout<<morestuff<<endl;
+				//cout<<morestuff<<endl;
 				cout<<"T = "<<T<<" tflag ="<<tflag<<endl;
 				if(first==0){tflag =0;}
 				first = 0;
@@ -283,7 +283,7 @@ Network* setupNetwork(char *finp, char *fconfig, int &M, int &Mi, double &T, int
 			cout<<"BC Filename is:"<<BC_filename<<endl;
 			//cout<<strncmp(BC_filename,"../indata/bcs2.txt",18)<<"FUCK YOU"<<endl;
 			//cout<<strncmp(BC_filename,"~/Dropbox/Research/Network7.0/indata/bcs2.txt",18)<<"FUCK YOU"<<endl;
-			cout<<sizeof(BC_filename)/sizeof(BC_filename[0])<<endl;
+			//cout<<sizeof(BC_filename)/sizeof(BC_filename[0])<<endl;
 			string evenmorestuff;
 			string trash;
 			vector <Real> tmp_x;
@@ -294,7 +294,7 @@ Network* setupNetwork(char *finp, char *fconfig, int &M, int &Mi, double &T, int
 			else{
 			while (getline(fbc, evenmorestuff, '\n'))
 				{
-					cout<<evenmorestuff<<endl;
+					//cout<<evenmorestuff<<endl;
 					stringstream ss(evenmorestuff);
 					if(strncmp(evenmorestuff.c_str(),"modetype",8)==0)
 					{
@@ -315,8 +315,8 @@ Network* setupNetwork(char *finp, char *fconfig, int &M, int &Mi, double &T, int
 			for (int jj = 0; jj<tmp_x.size();jj++){
 				xbval[whichnode[count2-1]].push_back(tmp_x[jj]);
 			}
-			cout<<"hmmm"<<count2-1<<endl;
-			cout<<"tmp_x.size = "<<tmp_x.size()<<"  xbval.size() ="<<xbval.size()<<endl;
+			//cout<<"hmmm"<<count2-1<<endl;
+			//cout<<"tmp_x.size = "<<tmp_x.size()<<"  xbval.size() ="<<xbval.size()<<endl;
 			}
 		}
 

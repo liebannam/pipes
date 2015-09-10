@@ -34,8 +34,8 @@ os.environ["CC"] = "/usr/local/bin/gcc-4.9"
 os.environ["CXX"] = "/usr/local/bin/gcc-4.9"
 setup(ext_modules = cythonize(Extension(
            "allthethings",                                   # the extesion name 
-        #sources=["allthethings.pyx", "setupandrun.cpp", "file_output.cc","network.cpp", "levmar.cpp","mp_mat.cpp","str_double.cpp", "mp_mat_double.cpp", "libcla.c"], # the Cython source and additional C++ source files
-        sources=["allthethings.pyx", "setupandrun.cpp", "file_output.cc","network.cpp", "levmar.cpp","mp_mat.cpp","str_double.cpp", "mp_mat_double.cpp"], # the Cython source and additional C++ source files
+        sources=["allthethings.pyx", "setupandrun.cpp", "file_output.cc","network.cpp", "levmar.cpp","mp_mat.cpp","str_double.cpp", "mp_mat_double.cpp", "libcla.c"], # the Cython source and additional C++ source files
+        #sources=["allthethings.pyx", "setupandrun.cpp", "file_output.cc","network.cpp", "levmar.cpp","mp_mat.cpp","str_double.cpp", "mp_mat_double.cpp"], # the Cython source and additional C++ source files
         #libraries=["lapack","cblas", "qd", "fftw3","m"],      #libraries to link against (I'm not sure if all are needed...but some are...)      
         libraries=["lapack","cblas", "fftw3","m"],      #libraries to link against (I'm not sure if all are needed...but some are...)      
         language="c++",                         # generate and compile C++ code

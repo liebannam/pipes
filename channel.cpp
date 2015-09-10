@@ -302,8 +302,8 @@ void Cpreiss::showGeom()
 {
 	printf("About this channel:\n\n"
 		"Cross section is Preissman Slot\n"
-		"     Ts\n     <->\n     | |\n     | |      \n   /~~~~~~~\\    ^"
-		"\n  /         \\   |\n(<----D---->)  |  yt\n \\/   |\n  \\________/    v\n"	
+		"      Ts\n     <->\n     | |\n     | |      \n  /~~~~~~~\\    ^\n"
+		" /         \\   |\n(<----D---->)  |  yt\n \\          /  |\n  \\________/   v\n"
 		"D = %.1f %20s width (m) \nN = %d %20s number of grid points \nL = %.1f %20s length (m)\n", w,"",N,"",L,""
 		"Slot width Ts= %1.5f\nTransition height yt= %1.5f%s\n",Ts,yt,""
 		"Mr = %1.3f %20s Manning Roughness coeff\nS0 = %1.2f %20s bed slope\n", Mr, "", S0, "");
@@ -1259,7 +1259,6 @@ void Junction1::boundaryFluxes()
 					double err = fabs(uext +sign*ch0.PhiofA(Aext,Pext)-lhs);
 				}
 				else Aext = Ain;
-			//	cout<<"hmmm...Well this is dodgy as fuck\n";
 			}
 			break;
 		case 312://subcritical, specify A
@@ -1268,9 +1267,9 @@ void Junction1::boundaryFluxes()
 			if (fabs((Qext/Aext))>ch0.Cgrav(Aext, Pext)) Qext = Qin;
 			break;	
 		case 32://this is the ohshitcase
-			cout<<"this is the ohshit case, no clue what to do here\n";
 			Aext = Ain;
 			Qext = Qin;
+			printf("warning. boundary case 3.2 (ohshit case). Extrapolating Ain=%f and Qin =%f\n",Ain, Qin);
 			bval[ch0.n] = Qext;
 			break;
 		case 4://Orifice outflow

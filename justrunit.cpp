@@ -167,8 +167,6 @@ int main(int argc, char *argv[] )
 		printf("Channel %d info:\n",k);
 		Ntwk->channels[k]->showGeom();
 	}
-	printf("h = .014, A = %.10f\n",Ntwk->channels[0]->HofA(0.4,false));
-	printf("h = .008, A = %.10f\n",Ntwk->channels[0]->HofA(0.45,false));
 	double t1=0, t2 =0;
 	#ifdef _OPENMP
 		 t1 = omp_get_wtime();
@@ -205,7 +203,8 @@ int main(int argc, char *argv[] )
 //	{
 //		Ntwk->channels[i]->quickWrite(times, which, 1,T,1);
 //	}
-	testallthiscrap();
+//	uncomment this line to do some tests on the geometry evaluations
+//	testallthiscrap();
 }
 
 /*bunch of random test detritus I probably will never need, but who knows...*/

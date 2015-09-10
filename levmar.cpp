@@ -318,7 +318,7 @@ void levmar::solve(int skipJ)
     num_steps = 0;
     // 2 means set delta0 to delta on 2nd call of check_reduction()
     update_delta0_counter = 2;
-    cout<<"Damn."<<endl;
+    //cout<<"Damn."<<endl;
     compute_f(); nfev++;
     old_x = x;
 
@@ -331,15 +331,15 @@ void levmar::solve(int skipJ)
 	}
 	skipJ = 0;
 	
-    cout<<"Damn 1."<<endl;
+    //cout<<"Damn 1."<<endl;
 	flag = take_step(); // update x, compute new r
 	norm_r = compute_norm(r);
     }
     
-    cout<<"Damn 2."<<endl;
+    //cout<<"Damn 2."<<endl;
     if (report_r_stride>0)
 	report_r();
-    cout<<"Damn 3."<<endl;
+    //cout<<"Damn 3."<<endl;
     
 
 }
@@ -400,9 +400,9 @@ int levmar::take_step()
     p2.resize(n);
     copy(J.p, J.p + m*n, UU.p); // Jq remains valid in this version
     if (m<n) throw gen_err("need m>=n in levmar::take_step");
-    cout<<"Need m>=n, we have m = "<<m<<"n = "<<n<<endl;
+    //cout<<"Need m>=n, we have m = "<<m<<"n = "<<n<<endl;
     Sig = dgesvd('O', 'S', UU, NULL, &VT);  //THIS IS THE PROBLEM LINE --throws segfault here...
-    cout<<"damn?"<<endl;
+    //cout<<"damn?"<<endl;
 #endif
 
     for (int i=0; i<n; i++)
@@ -411,7 +411,7 @@ int levmar::take_step()
 
     compute_diag(n);
     
-    cout<<"Damn 1.8"<<endl;
+    //cout<<"Damn 1.8"<<endl;
     if (verbose>1) {
 	printf("\n%12s %12s\n", "Sig", "D");
 	for (int j=0; j<n; j++)

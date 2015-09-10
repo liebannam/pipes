@@ -52,7 +52,6 @@ public:
 		//r = [r_0,...r_M] = residuals at times t=0, dt.. , M*dt
 		T = T_;
 		modetype = modetype_;
-		printf("did we make it in yet?");
 		Ndof = x0.size();
 		M = Ntwk.M;
 		dt = T/(double)M;
@@ -72,7 +71,7 @@ public:
 		{
 			x0[i] = x0_[i];
 			x[i] = x0[i];
-			printf("i = %d, x0 = %f\n ", i,x0[i]);
+		if (WTF){printf("i = %d, x0 = %f\n ", i,x0[i]);}
 		}
 
 		vector <Real> bvals(M+1);
@@ -198,7 +197,6 @@ class mystery_bc: public levmar{
 			x0[i] = x0_[i];
 			x[i] = x0_[i];
 		}
-		printf("n = %d\n", n);
 		qfixed.resize(M+1);
 		for (int i = 0; i<M+1; i++)
 		{
