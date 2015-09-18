@@ -59,6 +59,7 @@ camera{ orthographic angle 45
 light_source{<-8,20,40> color rgb <0.77,0.75,0.75>}
 light_source{<25,-12,12> color rgb <0.38,0.40,0.40>}
 /////////////////////
+//draw arrows to show axis directions
 /*union {
 cylinder {
     0*z,  1*z,  .05
