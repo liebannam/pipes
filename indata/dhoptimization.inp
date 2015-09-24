@@ -1,90 +1,67 @@
 [TITLE]
-[TITLE]
 
 
-[JUNCTIONS]
 [JUNCTIONS]
 ;ID              	Elev        	Demand      	Pattern         
- 0               	0         	0           	                	;
- 1               	0         	0           	                	;
- 2               	0         	0           	                	;
- 3               	0         	0           	                	;
+0                 0.000                0                                ;
+1                 0.000                0                                ;
+2                 0.000                0                                ;
+3                 0.000                0                                ;
 
-[RESERVOIRS]
 [RESERVOIRS]
 ;ID              	Head        	Pattern         
 
 [TANKS]
-[TANKS]
 ;ID              	Elevation   	InitLevel   	MinLevel    	MaxLevel    	Diameter    	MinVol      	VolCurve
 
 [PIPES]
-[PIPES]
 ;ID              	Node1           	Node2           	Length      	Diameter    	Roughness   	MinorLoss   	Status
+0                 0                 1                  100                 1.00                 0.0150
+1                 1                 2                  100                 1.00                 0.0150
+2                 1                 3                   25                 1.00                 0.0150
 
-0               0                       1                   100             1.00           0.015
-
-1               1                       2                   100             1.00           0.015
-
-2               1                       3                    25             1.00           0.015
-
-[PUMPS]
 [PUMPS]
 ;ID              	Node1           	Node2           	Parameters
 
 [VALVES]
-[VALVES]
 ;ID              	Node1           	Node2           	Diameter    	Type	Setting     	MinorLoss   
 
 [TAGS]
-[TAGS]
 
-[DEMANDS]
 [DEMANDS]
 ;Junction        	Demand      	Pattern         	Category
 
 [STATUS]
-[STATUS]
 ;ID              	Status/Setting
 
-[PATTERNS]
 [PATTERNS]
 ;ID              	Multipliers
 
 [CURVES]
-[CURVES]
 ;ID              	X-Value     	Y-Value
 
 [CONTROLS]
-[CONTROLS]
 
 [RULES]
-[RULES]
 
-[ENERGY]
 [ENERGY]
  Global Efficiency  	75
  Global Price       	0
  Demand Charge      	0
 
 [EMITTERS]
-[EMITTERS]
 ;Junction        	Coefficient
 
-[QUALITY]
 [QUALITY]
 ;Node            	InitQual
 
 [SOURCES]
-[SOURCES]
 ;Node            	Type        	Quality     	Pattern
 
-[REACTIONS]
 [REACTIONS]
 ;Type     	Pipe/Tank       	Coefficient
 
 
-[REACTIONS]
 [REACTIONS]
  Order Bulk            	1
  Order Tank            	1
@@ -95,10 +72,8 @@
  Roughness Correlation 	0
 
 [MIXING]
-[MIXING]
 ;Tank            	Model
 
-[TIMES]
 [TIMES]
  Duration           	0
  Hydraulic Timestep 	1:00
@@ -111,12 +86,10 @@
  Statistic          	None
 
 [REPORT]
-[REPORT]
  Status             	No
  Summary            	No
  Page               	0
 
-[OPTIONS]
 [OPTIONS]
  Units              	LPM
  Headloss           	H-W
@@ -136,7 +109,6 @@
  Tolerance          	0.01
 
 [COORDINATES]
-[COORDINATES]
 ;Node            	X-Coord         	Y-Coord
  0               	0       		0         
  1               	10	         	0         
@@ -144,16 +116,13 @@
  3               	26	               -8         
 
 [LABELS]
-[LABELS]
 ;X-Coord           Y-Coord          Label & Anchor Node
 
-[BACKDROP]
 [BACKDROP]
  DIMENSIONS     	0.00            	0.00            	10000.00        	10000.00        
  UNITS          	None
  FILE           	
  OFFSET         	0.00            	0.00            
 
-[END]
 [END]
 

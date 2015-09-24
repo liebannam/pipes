@@ -1,6 +1,6 @@
 
 
-def rewritePipes(fn, oldinp, Ns, Ls, Mrs, Ds, jt, bt, bv, r, h0s, q0s, T, M, a):
+def rewritePipes(fn, oldinp, Ns, Ls, Mrs, Ds, jt, bt, bv, r, h0s, q0s, T, M, a,elevs):
     newconfig = fn + (".config")
     newinp = fn + ".inp"
     Mi = 10
@@ -37,8 +37,8 @@ def rewritePipes(fn, oldinp, Ns, Ls, Mrs, Ds, jt, bt, bv, r, h0s, q0s, T, M, a):
 # now open old inp file and change pipe properties, leaving everthing else
 # the same
     count = 0
+    count1 = 0
     count2 = 0
-
     with open(oldinp, 'r') as fold:
         with open(newinp, 'wb') as fnew:
             for line in fold:
@@ -46,9 +46,14 @@ def rewritePipes(fn, oldinp, Ns, Ls, Mrs, Ds, jt, bt, bv, r, h0s, q0s, T, M, a):
                 if '[' in line:
                     fnew.write(line)
                     count += 1
-                if (count == 5) and (';' not in s[0]) and len(s) > 1:
-                    fnew.write("\n%s               %s                       %s                  %4.1d             %2.2f           %1.3f\n" % (
-                        s[0], s[1], s[2], Ls[count2], Ds[count2], Mrs[count2]))
+                elif (count ==2) and len(s) >1 and (';' not in s[0]): 
+                    fnew.write("%d %15s %2.3f %15s0 %30s ;\n"%(count1," ",elevs[count1]," "," "))
+                    count1 +=1
+                    if count1>=len(jt):
+                        count+=1
+                elif (count == 6) and len(s) > 1 and (';' not in s[0]):
+                    fnew.write("%s %15s %s %15s %s %15s %4.1d %15s %2.2f %15s %1.4f\n" % \
+                                (s[0]," ",s[1]," ", s[2]," ", Ls[count2]," ", Ds[count2]," ", Mrs[count2]))
                     count2 += 1
                     if count2 >= len(Ns):
                         count += 1
@@ -60,8 +65,8 @@ def rewritePipes(fn, oldinp, Ns, Ls, Mrs, Ds, jt, bt, bv, r, h0s, q0s, T, M, a):
 
 def main():
 
-    fn = "test1"
-    oldinp = "basecase.inp"
+    fn = "indata/test1"
+    oldinp = "indata/3pipes3.inp"
     Ns = [100, 100, 100]
     Ls = [100, 100, 100]
     Mrs = [0.015] * 3
@@ -72,13 +77,13 @@ def main():
     r = [0, 0, -1, -1]
     h0s = [.8, .8, .8]
     q0s = [2., 1., 1.]
-
+    elevs = [10,5,3,1]
     T = 18
     M = 4200
     Mi = 50
     a = 100
     (fi, fc) = rewritePipes(fn, oldinp, Ns, Ls,
-                            Mrs, Ds, jt, bt, bv, r, h0s, q0s, T, M, a)
+                            Mrs, Ds, jt, bt, bv, r, h0s, q0s, T, M, a,elevs)
     print "fi = %s, fc = %s" % (fi, fc)
 
 if __name__ == "__main__":
