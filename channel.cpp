@@ -671,7 +671,7 @@ void Channel::stepTransportTerms(double dt){
     ui = ai>0? q[idx(1,0)]/ai:0.;
     if (ui<0){dCl = Cl0[1]-Cl0[0];}
     else{ dCl = Cl0[0]-bCll;}
-    Cl[0] = Cl0[0]-nu*ui*dCl-KCl*Cl0[i];
+    Cl[0] = Cl0[0]-nu*ui*dCl-dt*KCl*Cl0[i];
     for(i=1; i<N-1; i++)
     KCl=0.;//Chlorine decay constant...=??!??
     {
@@ -679,13 +679,13 @@ void Channel::stepTransportTerms(double dt){
         ui = ai>0? q[idx(1,i)]/ai :0;//is this the right choice for u?
         if (ui<0){dCl = (Cl0[i+1]-Cl0[i]);}
         else {dCl = Cl0[i]-Cl0[i-1];}
-        Cl[i] = Cl0[i]-nu*ui*dCl-KCl*Cl0[i];
+        Cl[i] = Cl0[i]-nu*ui*dCl-dt*KCl*Cl0[i];
     }
     ai = q[idx(0,N-1)];
     ui = ai>0? q[idx(1,N-1)]/ai:0.;
     if (ui<0){dCl = bClr-Cl0[N-1];}
     else{dCl = Cl0[N-1]-Cl0[N-2];}
-    Cl[N-1] = Cl0[N-1]-nu*ui*dCl-KCl*Cl0[N-1];
+    Cl[N-1] = Cl0[N-1]-nu*ui*dCl-dt*KCl*Cl0[N-1];
     //update Cl0
     for (i=0;i<N;i++){Cl0[i]= Cl[i];}
 }
