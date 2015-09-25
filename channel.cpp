@@ -239,7 +239,9 @@ Channel::Channel(int Nin, double win, double Lin, int Min, double a): kn(1.0),w(
 	q0 = new double[2*N];
 	q = new double[2*N];
 	qhat = new double[2*N];
-	bfluxleft = new double[2];
+	Cl = new double[N];
+	Cl0 = new double[N];
+        bfluxleft = new double[2];
 	bfluxright = new double[2];
 	//assume junctions aren't ventilated unless they're junction1s without reflection
 	P.push_back(false);
@@ -267,6 +269,14 @@ Channel::Channel(int Nin, double win, double Lin, int Min, double a): kn(1.0),w(
 		q[i] =0.;
 		qhat[i] = 0.;
 	}
+        for(i=0; i<N; i++)
+        {
+            Cl[i] = 0.;
+            Cl0[i]=0.;
+        }
+        bCll =0.;
+        bClr=0.;
+        KCl=0.;
 	for(j= 0; j<2;j++)
 	{
 		bfluxleft[j] = 0;
@@ -283,7 +293,9 @@ Channel::~Channel()
 	delete [] q_hist;
 	delete [] p_hist;
 	delete [] qhat;
-	delete [] bfluxleft;
+	delete [] Cl;
+        delete [] Cl0;
+        delete [] bfluxleft;
 	delete [] bfluxright;
 }
 
@@ -493,7 +505,9 @@ void Channel::stepEuler(double dt)
 	q[idx(1,N-1)] = q0[idx(1,N-1)] - nu*(bfluxright[1] - fplus[1]);	
 	//fold in source terms
 	stepSourceTerms(dt);
-	// set q0 to updated value
+        //step chlorine transport terms if tracking water quality
+        if (Clplease) stepTransportTerms(dt);
+        // set q0 to updated value
 	for(i =0;i<N;i ++)
 	{
 		for(k = 0; k<2; k++)
@@ -645,6 +659,35 @@ double Channel::getSourceTerms(double A, double Q){
 	
 	}
 	return (S0-Sf)*G*A;
+}
+
+
+void Channel::stepTransportTerms(double dt){
+    //first order upwinding for Cl transport terms
+    int i;
+    double ui =0.,ai = 0.,dCl=0.;
+    double nu = dt/dx;
+    ai = q[idx(0,0)];
+    ui = ai>0? q[idx(1,0)]/ai:0.;
+    if (ui<0){dCl = Cl0[1]-Cl0[0];}
+    else{ dCl = Cl0[0]-bCll;}
+    Cl[0] = Cl0[0]-nu*ui*dCl-KCl*Cl0[i];
+    for(i=1; i<N-1; i++)
+    KCl=0.;//Chlorine decay constant...=??!??
+    {
+        ai = q[idx(0,i)];
+        ui = ai>0? q[idx(1,i)]/ai :0;//is this the right choice for u?
+        if (ui<0){dCl = (Cl0[i+1]-Cl0[i]);}
+        else {dCl = Cl0[i]-Cl0[i-1];}
+        Cl[i] = Cl0[i]-nu*ui*dCl-KCl*Cl0[i];
+    }
+    ai = q[idx(0,N-1)];
+    ui = ai>0? q[idx(1,N-1)]/ai:0.;
+    if (ui<0){dCl = bClr-Cl0[N-1];}
+    else{dCl = Cl0[N-1]-Cl0[N-2];}
+    Cl[N-1] = Cl0[N-1]-nu*ui*dCl-KCl*Cl0[N-1];
+    //update Cl0
+    for (i=0;i<N;i++){Cl0[i]= Cl[i];}
 }
 
 /**
@@ -989,8 +1032,7 @@ void Cpreiss::speedsHLL(double q1m, double q1p, double q2m, double q2p, double *
 		Vs = 0.5*(um+up+phim-phip);
 		double phis = 0.5*(phim+phip+um-up);
 		double Astars = AofPhi(0.5*(phim+phip+um-up),Pmp);
-		if (phis>AofPhi(Af,true))
-				{cs = a;}
+		if (phis>AofPhi(Af,true)){cs = a;}
 		else{cs = Cgrav(Astars,Pmp);}
 		sl1 = um - cm;
 		sl2 = Vs - cs;
@@ -1075,12 +1117,17 @@ Junction1::Junction1(Channel &a_ch0, int a_which, double a_bval, int a_bvaltype)
 {
 	N = ch0.N;
 	bval = new double[ch0.M+1];
-	for(int i=0;i<ch0.M+1; i++){bval[i] = a_bval;}
+	bClval = new double[ch0.M+1];
+	for(int i=0;i<ch0.M+1; i++){
+            bval[i] = a_bval;
+            bClval[i] = 0.;
+        }
 	bvaltype = a_bvaltype;
 	whichend = a_which;
 	w = ch0.w;
 	//default is to use RI
-	reflect = 0; 
+	reflect = 0;
+        //initialize boundary chlorine value
 }
 
 /**apply boundary conditions at the end of a single pipe. Several options.
@@ -1112,16 +1159,19 @@ void Junction1::boundaryFluxes()
 {
 	int bccase, Nq, Npi, Npe;	
 	double Ain, Qin, Aext, Qext;
-	double Cc=0, Cd = 0, dp0 = 0, eext=0;//random crap for dysfunctional orifice routine
+	double Cc=0, Cd = 0, dp0 = 0, eext=0;  //random crap for dysfunctional orifice routine
 	double Qtol = 1e-12;
 	bool Pin, Pext;
-	double ctol = 0;					  //tolerance for trying to solve for characteristic solns
-	double sign = pow(-1.,whichend+1);    //gives the sign in u (plus or minus) phi (left side: -1, right side: +1)
-	if (whichend)                         //if we're on the right side of pipe
+	double ctol = 0;		      //tolerance for trying to solve for characteristic solns
+        double sign = pow(-1.,whichend+1);    //gives the sign in u (plus or minus) phi (left side: -1, right side: +1)
+	//update bCl to current value if we care
+        double bCl = bClval[ch0.n];
+        if (whichend)                         //if we're on the right side of pipe
 	{
 		Nq = N-1;
 		Npe = N+1;
 		Npi = N;
+                ch0.bClr=bCl;
 	}
 	//if we're on the left side of the pipe
 	else								  
@@ -1129,6 +1179,7 @@ void Junction1::boundaryFluxes()
 		Nq = 0;
 		Npe = 0;
 		Npi = 1;
+                ch0.bCll=bCl;
 	}
 	
 	Ain = ch0.q[ch0.idx(0,Nq)];
@@ -1354,6 +1405,15 @@ void Junction1::setbVal(double bvalnew)
 	}
 }
 
+void Junction1::setBClval(double bClvalnew)
+{
+        for(int i =0; i<ch0.M+1; i++)
+	{
+		bClval[i] = bClvalnew;
+	}
+    
+}
+
 /** set boundary value to a time series stored in various arrays*/
 void Junction1::setbVal(valarray<Real> x)
 {
@@ -1382,6 +1442,7 @@ void Junction1::setbVal(double*x)
 
 Junction1::~Junction1()
 {
+	delete [] bval;
 	delete [] bval;
 }
 

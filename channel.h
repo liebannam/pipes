@@ -36,7 +36,8 @@ using std::min;
 
 /*\def flag for printing miscellaneous debug info. Set to false to supress printout.*/
 #define WTF false
-
+/*\def flag for tracking chlorine (for water quality sim). Set to false to not bother*/
+#define Clplease true
 
 /*
  * \def horrifying macros for numerical flux routines
@@ -129,18 +130,22 @@ class Channel
 		const double kn;                           
 		/** Maximum wave speed (m/s)*/
 		double cmax;				   
-
+                /**Chlorine decay constant*/
+                double KCl;
 	//dynamic variables and boundary info
 		/** Current state q*/
 		double *q0;
 		/** Initial state q0*/
 		double *q;
 		/** Temporary state (for RK time steppingi)*/	
-	    double *qhat;          
+	        double *qhat;          
 		/** History of states q_hist laid out as [q(t=0), q(t=dt), ....q(t=dt*(M/Mi-1))] 
 		 * where each q(t) is a row vector arranged as above.*/
 		double *q_hist;           	 		  			
-		/** Indexing function to access q. obtain q(i,j)  where i =0,1 and j= 0,1...N-1*/
+                /*concentration of chlorine we're tracking (not to be confused with c, a wavespeed)*/
+		double *Cl, *Cl0;  
+                
+                /** Indexing function to access q. obtain q(i,j)  where i =0,1 and j= 0,1...N-1*/
 		int idx(int i_in, int j_in){return (N*i_in+j_in);}    //access q(i,j)  where i =0,1 and j= 0,1...N-1
 		/** Indexing function to access qhist. obtain q^n(i,j) with i,j as above and n = 0,...M-1 (n*dt = t at which this slice is taken)*/
 		int idx_t(int i_in, int j_in, int n_in){return (2*(N+2)*n_in+(N+2)*i_in+j_in);} 
@@ -157,7 +162,8 @@ class Channel
 		bool Pnow; 				        
 		/** Left and right boundary fluxes*/
 		double *bfluxleft, *bfluxright;         
-		
+	        /**Left and right boundary values for Cl*/
+                double bCll, bClr;        
 	//Various methods
 		/** Constructor */
 		Channel (int Nin, double win, double Lin, int Min, double a); 
@@ -212,7 +218,9 @@ class Channel
 		void stepSourceTerms(double dt);
 		/** Evaluate source terms for given A and Q */
 		double getSourceTerms(double A, double Q); 
-		/** Get the volume of water in the pipe*/		
+		/**update chlorine terms*/
+                void stepTransportTerms(double dt);
+                /** Get the volume of water in the pipe*/		
 		double getTheGoddamnVolume();
 		/** Get average gradient of pressure head h. Returns int_0^L(dh/dx) dx at time t_i**/
 		double getAveGradH(int i);  
@@ -321,6 +329,8 @@ class Junction1
 		double *bval;			
 		/** Which end of pipe connects to this junction; 0 corresponds to left, 1 corresponds to right */
 		int whichend;
+                /** Boundary Chlorine value (initialized to zeros; only used if Clplease flag set to true*/
+                double *bClval;
 		/** Constructor*/		
 		Junction1(Channel &a_ch0, int a_which, double a_bval, int a_bvaltype);
 		/**Set boundary value to constant*/
@@ -331,7 +341,9 @@ class Junction1
 		void setbVal(double *x);
 		/**Set boundary value to nonconstant in vector of Reals*/
 		void setbVal(vector<Real> x);
-		/** Destructor */
+		/**Set boundary chlorine value time series to constant */
+                void setBClval(double bClvalnew);
+                /** Destructor */
 		~Junction1();
 		/**\brief Apply numerical flux function to get boundary fluxes for ch0*/
 		void boundaryFluxes();//	
