@@ -371,6 +371,10 @@ void Network::stepRK3_SSP(double dt)
 		{ 
 			channels[j]->qhat[i] = channels[j]->q0[i];
 		}
+        for (int i=0; i<channels[j]->N; i++)
+        { 
+			channels[j]->Clhat[i] = channels[j]->Cl0[i];
+        }
 	}
 	EulerStep(dt);
 	EulerStep(dt);
@@ -385,6 +389,8 @@ void Network::stepRK3_SSP(double dt)
 					+.25*channels[j]->q[channels[j]->idx(k,i)];
 				channels[j]->q0[channels[j]->idx(k,i)] = channels[j]->q[channels[j]->idx(k,i)];
 			}
+            channels[j]->Cl[i] = 0.75*channels[j]->Clhat[i] +.25*channels[j]->Cl[i];
+			channels[j]->Cl0[i] = channels[j]->Cl[i];
 		}
 	}
 	EulerStep(dt);
@@ -399,6 +405,9 @@ void Network::stepRK3_SSP(double dt)
 				channels[j]->q0[channels[j]->idx(k,i)] = channels[j]->q[channels[j]->idx(k,i)];
 				channels[j]->q_hist[channels[j]->idx_t(k,i+1,nn)] = channels[j]->q[channels[j]->idx(k,i)];
 			}
+            channels[j]->Cl[i] = 1./3.*channels[j]->Clhat[i]+2./3.*channels[j]->Cl[i];
+			channels[j]->Cl0[i] = channels[j]->Cl[i];
+			channels[j]->Cl_hist[nn*(channels[j]->N+2)+i] = channels[j]->Cl[i+1];
 			channels[j]->p_hist[channels[j]->pj_t(i+1,nn)] = channels[j]->P[i+1];
 		}
 	}

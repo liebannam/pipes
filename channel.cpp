@@ -234,14 +234,15 @@ double Eta(double A, double D, double At, double Ts, bool P)
  * \param[in] Min is the number of time steps 
  * \param[in] a is the pressure wave speed (m/s) only relevant to Preissman slot
  **/
-Channel::Channel(int Nin, double win, double Lin, int Min, double a): kn(1.0),w(win),L(Lin),N(Nin),M(Min) 
+Channel::Channel(int Nin, double win, double Lin, int Min, double a, double KClin): kn(1.0),w(win),L(Lin),N(Nin),M(Min),KCl(KClin) 
 {
 	q0 = new double[2*N];
 	q = new double[2*N];
 	qhat = new double[2*N];
 	Cl = new double[N];
 	Cl0 = new double[N];
-        bfluxleft = new double[2];
+    Clhat = new double[N];
+    bfluxleft = new double[2];
 	bfluxright = new double[2];
 	//assume junctions aren't ventilated unless they're junction1s without reflection
 	P.push_back(false);
@@ -252,6 +253,7 @@ Channel::Channel(int Nin, double win, double Lin, int Min, double a): kn(1.0),w(
 	if(N*M<2e7){
 		q_hist = new double[2*(N+2)*(M+2)]; 
 		p_hist = new bool[2*(N+2)*(M+2)];
+        Cl_hist = new double[(N+2)*(M+2)];
 	}
 	else 
 	{
@@ -273,10 +275,10 @@ Channel::Channel(int Nin, double win, double Lin, int Min, double a): kn(1.0),w(
         {
             Cl[i] = 0.;
             Cl0[i]=0.;
+            Clhat[i]=0.;
         }
         bCll =0.;
         bClr=0.;
-        KCl=0.;
 	for(j= 0; j<2;j++)
 	{
 		bfluxleft[j] = 0;
@@ -294,8 +296,10 @@ Channel::~Channel()
 	delete [] p_hist;
 	delete [] qhat;
 	delete [] Cl;
-        delete [] Cl0;
-        delete [] bfluxleft;
+    delete [] Cl0;
+    delete [] Clhat;
+    delete [] Cl_hist;
+    delete [] bfluxleft;
 	delete [] bfluxright;
 }
 
@@ -673,7 +677,6 @@ void Channel::stepTransportTerms(double dt){
     else{ dCl = Cl0[0]-bCll;}
     Cl[0] = Cl0[0]-nu*ui*dCl-dt*KCl*Cl0[i];
     for(i=1; i<N-1; i++)
-    KCl=0.;//Chlorine decay constant...=??!??
     {
         ai = q[idx(0,i)];
         ui = ai>0? q[idx(1,i)]/ai :0;//is this the right choice for u?
@@ -687,7 +690,9 @@ void Channel::stepTransportTerms(double dt){
     else{dCl = Cl0[N-1]-Cl0[N-2];}
     Cl[N-1] = Cl0[N-1]-nu*ui*dCl-dt*KCl*Cl0[N-1];
     //update Cl0
-    for (i=0;i<N;i++){Cl0[i]= Cl[i];}
+    for (i=0;i<N;i++){
+        Cl0[i]= Cl[i];
+    }
 }
 
 /**
@@ -1117,10 +1122,10 @@ Junction1::Junction1(Channel &a_ch0, int a_which, double a_bval, int a_bvaltype)
 {
 	N = ch0.N;
 	bval = new double[ch0.M+1];
-	bClval = new double[ch0.M+1];
+	Clbval = new double[ch0.M+1];
 	for(int i=0;i<ch0.M+1; i++){
             bval[i] = a_bval;
-            bClval[i] = 0.;
+            Clbval[i] = 0.;
         }
 	bvaltype = a_bvaltype;
 	whichend = a_which;
@@ -1163,15 +1168,16 @@ void Junction1::boundaryFluxes()
 	double Qtol = 1e-12;
 	bool Pin, Pext;
 	double ctol = 0;		      //tolerance for trying to solve for characteristic solns
-        double sign = pow(-1.,whichend+1);    //gives the sign in u (plus or minus) phi (left side: -1, right side: +1)
+    double sign = pow(-1.,whichend+1);    //gives the sign in u (plus or minus) phi (left side: -1, right side: +1)
 	//update bCl to current value if we care
-        double bCl = bClval[ch0.n];
-        if (whichend)                         //if we're on the right side of pipe
+    double bCl = Clbval[ch0.n];
+    if (whichend)                         //if we're on the right side of pipe
 	{
 		Nq = N-1;
 		Npe = N+1;
 		Npi = N;
-                ch0.bClr=bCl;
+        ch0.bClr=bCl;
+        ch0.Cl_hist[(N+2)*ch0.n+N+1]=bCl;
 	}
 	//if we're on the left side of the pipe
 	else								  
@@ -1179,7 +1185,8 @@ void Junction1::boundaryFluxes()
 		Nq = 0;
 		Npe = 0;
 		Npi = 1;
-                ch0.bCll=bCl;
+        ch0.bCll=bCl;
+        ch0.Cl_hist[(N+2)*ch0.n]=bCl;
 	}
 	
 	Ain = ch0.q[ch0.idx(0,Nq)];
@@ -1369,7 +1376,7 @@ void Junction1::boundaryFluxes()
 	else if(Aext>ch0.At){ch0.P[Npe]= true;}
 	else{ch0.P[Npe] =ch0.P[Npi];}
 	ch0.p_hist[ch0.pj_t(Npe,ch0.n)] = ch0.P[Npe];
-//	printf("Ain is %f and Qin is %f and Aext is %f and Qext is %f for end %d\n Pin is %d and Pext is %d\n", Ain, Qin, Aext, Qext, whichend, Pin, Pext);
+    //	printf("Ain is %f and Qin is %f and Aext is %f and Qext is %f for end %d\n Pin is %d and Pext is %d\n", Ain, Qin, Aext, Qext, whichend, Pin, Pext);
 
 }
 
@@ -1405,16 +1412,24 @@ void Junction1::setbVal(double bvalnew)
 	}
 }
 
-void Junction1::setBClval(double bClvalnew)
+void Junction1::setClbval(double Clbvalnew)
 {
-        for(int i =0; i<ch0.M+1; i++)
+    for(int i =0; i<ch0.M+1; i++)
 	{
-		bClval[i] = bClvalnew;
+		Clbval[i] = Clbvalnew;
 	}
     
 }
 
-/** set boundary value to a time series stored in various arrays*/
+void Junction1::setClbval(double *Clbvalnew)
+{
+     for(int i =0; i<ch0.M+1; i++)
+	{
+		Clbval[i] = Clbvalnew[i];
+	}
+    
+}
+    /** set boundary value to a time series stored in various arrays*/
 void Junction1::setbVal(valarray<Real> x)
 {
 	for(int i =0; i<ch0.M+1; i++)

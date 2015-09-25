@@ -142,10 +142,11 @@ class Channel
 		/** History of states q_hist laid out as [q(t=0), q(t=dt), ....q(t=dt*(M/Mi-1))] 
 		 * where each q(t) is a row vector arranged as above.*/
 		double *q_hist;           	 		  			
-                /*concentration of chlorine we're tracking (not to be confused with c, a wavespeed)*/
-		double *Cl, *Cl0;  
-                
-                /** Indexing function to access q. obtain q(i,j)  where i =0,1 and j= 0,1...N-1*/
+        /**concentration of chlorine we're tracking (not to be confused with c, a wavespeed)*/
+		double *Cl, *Cl0, *Clhat;  
+        /** history of chlorine concentration*/
+        double *Cl_hist;        
+        /** Indexing function to access q. obtain q(i,j)  where i =0,1 and j= 0,1...N-1*/
 		int idx(int i_in, int j_in){return (N*i_in+j_in);}    //access q(i,j)  where i =0,1 and j= 0,1...N-1
 		/** Indexing function to access qhist. obtain q^n(i,j) with i,j as above and n = 0,...M-1 (n*dt = t at which this slice is taken)*/
 		int idx_t(int i_in, int j_in, int n_in){return (2*(N+2)*n_in+(N+2)*i_in+j_in);} 
@@ -166,7 +167,7 @@ class Channel
                 double bCll, bClr;        
 	//Various methods
 		/** Constructor */
-		Channel (int Nin, double win, double Lin, int Min, double a); 
+		Channel (int Nin, double win, double Lin, int Min, double a, double KClin=0.); 
 		/** Destructor*/
 		~Channel();
 	   	/** Show values of q (1) or q0 (0)*/		
@@ -236,7 +237,8 @@ class Channel
 	   	/** Output results at either locations x_i or time t_i to terminal. 
 		 * x_i (or t_i) = where[i] for i = 1...length(where). which[i] =0/1 means it's a time/place*/
 		void quickWrite(double *where, int *which, int K, double T, int skip);       
-
+        /** Set chlorine decay constant*/
+        void setKCl(double KCl_){KCl=KCl_;}
 		/** min of three numbers*/
 		double min3(double a, double b, double c);
 		/** max of three numbers*/
@@ -329,8 +331,8 @@ class Junction1
 		double *bval;			
 		/** Which end of pipe connects to this junction; 0 corresponds to left, 1 corresponds to right */
 		int whichend;
-                /** Boundary Chlorine value (initialized to zeros; only used if Clplease flag set to true*/
-                double *bClval;
+        /** Boundary Chlorine value (initialized to zeros; only used if Clplease flag set to true*/
+        double *Clbval;
 		/** Constructor*/		
 		Junction1(Channel &a_ch0, int a_which, double a_bval, int a_bvaltype);
 		/**Set boundary value to constant*/
@@ -342,8 +344,10 @@ class Junction1
 		/**Set boundary value to nonconstant in vector of Reals*/
 		void setbVal(vector<Real> x);
 		/**Set boundary chlorine value time series to constant */
-                void setBClval(double bClvalnew);
-                /** Destructor */
+        void setClbval(double bClvalnew);
+        /**Set boundary chlorine value time series to nonconstant*/
+        void setClbval(double *Clbvalnew); 
+        /** Destructor */
 		~Junction1();
 		/**\brief Apply numerical flux function to get boundary fluxes for ch0*/
 		void boundaryFluxes();//	
