@@ -145,7 +145,7 @@ class Channel
         /**concentration of chlorine we're tracking (not to be confused with c, a wavespeed)*/
 		double *Cl, *Cl0, *Clhat;  
         /** history of chlorine concentration*/
-        double *Cl_hist;        
+                double *Cl_hist;        
         /** Indexing function to access q. obtain q(i,j)  where i =0,1 and j= 0,1...N-1*/
 		int idx(int i_in, int j_in){return (N*i_in+j_in);}    //access q(i,j)  where i =0,1 and j= 0,1...N-1
 		/** Indexing function to access qhist. obtain q^n(i,j) with i,j as above and n = 0,...M-1 (n*dt = t at which this slice is taken)*/
@@ -238,7 +238,7 @@ class Channel
 		 * x_i (or t_i) = where[i] for i = 1...length(where). which[i] =0/1 means it's a time/place*/
 		void quickWrite(double *where, int *which, int K, double T, int skip);       
         /** Set chlorine decay constant*/
-        void setKCl(double KCl_){KCl=KCl_;}
+                void setKCl(double KCl_){KCl=KCl_;}
 		/** min of three numbers*/
 		double min3(double a, double b, double c);
 		/** max of three numbers*/
@@ -365,7 +365,9 @@ class Junction2
 		/** Indices to find and store boundary values correctly depending on which end we're at*/
 		int N0, N1, Ns0, Ns1; 
 		/** Set to 1 for open, 0 for closed (default is open)*/
-		double valveopen; 
+                double valveopen; 
+                /** spatial grid sizes*/
+                double dx0, dx1;
 		/** Time series of valve timings*/
 		vector<double>valvetimes;
 		/** Change in elevation as you go from pipe 1 to pipe 0. positive value means pipe 0 is above pipe 1. initialized to zero.*/
@@ -379,7 +381,7 @@ class Junction2
 		/** Set valve times to vector of Reals*/
 		void setValveTimes(vector<Real>x);
 		/**assign boundary fluxes to last cell of ch0 and first cell of ch1*/
-		void boundaryFluxes(); 
+		void boundaryFluxes(double dt); 
 };
 
 /**\brief Class for applying boundary conditions at a junction where 3 channels come together and !&^# gets real*/
@@ -396,7 +398,7 @@ class Junction3
 		Junction3(Channel &ch0_, Channel &ch1_, Channel &ch2_, int which1, int which2, int which3);	  
 		//offsets = [off01, off12, off20] is offsets between each pair. there should be some compatibility here or it will be whack.
 		/**assign all the bloody boundary fluxes according to some voodoo magic	*/
-		void boundaryFluxes(); 
+		void boundaryFluxes(double dt); 
 
 };
 

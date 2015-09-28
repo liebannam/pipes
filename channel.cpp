@@ -1176,8 +1176,8 @@ void Junction1::boundaryFluxes()
 		Nq = N-1;
 		Npe = N+1;
 		Npi = N;
-        ch0.bClr=bCl;
-        ch0.Cl_hist[(N+2)*ch0.n+N+1]=bCl;
+                ch0.bClr=bCl;
+                ch0.Cl_hist[(N+2)*ch0.n+N+1]=bCl;
 	}
 	//if we're on the left side of the pipe
 	else								  
@@ -1185,8 +1185,8 @@ void Junction1::boundaryFluxes()
 		Nq = 0;
 		Npe = 0;
 		Npi = 1;
-        ch0.bCll=bCl;
-        ch0.Cl_hist[(N+2)*ch0.n]=bCl;
+                ch0.bCll=bCl;
+                ch0.Cl_hist[(N+2)*ch0.n]=bCl;
 	}
 	
 	Ain = ch0.q[ch0.idx(0,Nq)];
@@ -1486,7 +1486,9 @@ Junction2::Junction2(Channel &a_ch0, Channel &a_ch1, int a_which0, int a_which1,
 	valveopen = a_valveopen;
 	valvetimes.resize(ch0.M+1);
 	for(int i=0; i<ch0.M+1; i++)valvetimes[i]=valveopen;
-	offset =0;	
+	offset =0;
+        dx0 = ch0.L/(double)ch0.N;
+        dx1 = ch1.L/(double)ch1.N;        
 }
 
 
@@ -1524,7 +1526,7 @@ void Junction2::setValveTimes(valarray<Real>x)
 	}
 }
 
-void Junction2::boundaryFluxes()
+void Junction2::boundaryFluxes(double dt)
 {	
 	double q1m, q1p, q2m, q2p, q1mfake, q1pfake;
 	valveopen = valvetimes[ch0.n];
@@ -1534,7 +1536,8 @@ void Junction2::boundaryFluxes()
 	q2p = ch1.q[ch1.idx(1,N1)];
 	bool pm = ch0.P[ch0.pj(N0)];
 	bool pp = ch1.P[ch1.pj(N1)];
-
+        double nu0 = dt/dx0;
+        double nu1 = dt/dx1;
 	//attempt at incorporating valve opening coefficient
 	if(valveopen>0)
 	{
@@ -1543,19 +1546,36 @@ void Junction2::boundaryFluxes()
 	   	//what channel 0 sees
 		q1pfake = ch0.AofH(h0f,pp);     
 		//what channel 1 sees
-		q1mfake = ch1.AofH(h1f,pm);      
+		q1mfake = ch1.AofH(h1f,pm); 
+                //Chlorine upwinding 
+                double dCll, dClr, ul, ur;            
+                ul = q1m>0? q2m/q1m:0.;
+                ur = q1p>0? q2p/q1p:0.;
 		if(whichend0)
 		{
 			ch0.numFlux(q1m,q1pfake, q2m, q2p*valveopen, ch0.bfluxright, pm, pp);
 			ch1.bfluxleft[0] = ch0.bfluxright[0];	
 			ch1.bfluxleft[1] = ch0.bfluxright[1];
-		}
+                        if (ul<0){dCll = ch1.bCll-ch0.bClr;}
+                        else{dCll = ch0.bClr-ch0.Cl[N0];}
+                        if(ur<0){dClr = ch1.Cl[0]-ch1.bCll;}
+                        else{dClr = ch1.bCll-ch0.bClr;}
+                        ch0.bClr += -nu0*ul*dCll -dt*ch0.KCl*ch0.bClr;
+                        ch1.bCll += -nu1*ur*dClr -dt*ch1.KCl*ch1.bCll;
+                }
 		else
 		{
 			ch0.numFlux(q1pfake, q1m, q2p*valveopen, q2m, ch0.bfluxleft, pp, pm);
 			ch1.bfluxright[0] = ch0.bfluxleft[0];
 			ch1.bfluxright[1] = ch0.bfluxleft[1];
+                        if (ul<0){dCll = ch0.bCll-ch1.bClr;}
+                        else{dCll = ch1.bClr-ch1.Cl[N1];}
+                        if (ur<0){dClr = ch0.Cl[0]-ch0.bCll;}
+                        else{dClr = ch0.bCll-ch1.bClr;}
+                        ch1.bClr += -nu1*ul*dCll-dt*ch1.KCl*ch1.bClr;
+                        ch0.bCll += -nu0*ur*dClr-dt*ch0.KCl*ch0.bCll;
 		}
+
 		ch0.q_hist[ch0.idx_t(0,Ns0,ch0.n)] =  q1pfake;
 		ch0.q_hist[ch0.idx_t(1,Ns0,ch0.n)] =  q2p*valveopen;
 		ch1.q_hist[ch1.idx_t(0,Ns1,ch1.n)] =  q1mfake;
@@ -1572,7 +1592,7 @@ void Junction2::boundaryFluxes()
 	{
 		ch0.numFlux(q1m, q1m, q2m, -q2m, ch0.bfluxright, ch0.P[Ns0], ch1.P[Ns1]);
 		ch1.numFlux(q1p, q1p, -q2p, q2p,  ch1.bfluxleft, ch0.P[Ns0], ch1.P[Ns1]);
-	    ch0.q_hist[ch0.idx_t(0,Ns0,ch0.n)] =  q1m;
+	        ch0.q_hist[ch0.idx_t(0,Ns0,ch0.n)] =  q1m;
 		ch0.q_hist[ch0.idx_t(1,Ns0,ch0.n)] =  0.;
 		ch1.q_hist[ch1.idx_t(0,Ns1,ch1.n)] =  q1p;
 		ch1.q_hist[ch1.idx_t(1,Ns1,ch1.n)] =  0.;		
@@ -1595,7 +1615,7 @@ Junction3::Junction3(Channel &ch0, Channel &ch1, Channel &ch2, int which0, int w
  * this routine assumes you have one incoming (whichend =1) and two outgoing pipes (whichend =0)
  * To do: set up machinery to have two incoming and one outgong but there's no reason to have anything else
 **/
-void Junction3::boundaryFluxes(){
+void Junction3::boundaryFluxes(double dt){
 	double flux0[2], flux1[2], flux2[2];
 	double Abar[3], Qbar[3];
 	//pik is the percentage of flux from pipe k going into pipe i; should have sum_k pik = 1 for each i...
@@ -1606,7 +1626,7 @@ void Junction3::boundaryFluxes(){
 	p12 = 0.5;
 	p20 = 1-p02;
 	p21 = 1-p12;
-		if((whichend[0]==1 &&whichend[1] ==0 &&whichend[2] ==0) || (whichend[0] ==0&& whichend[1] ==1 &&whichend[2] ==1))
+	if((whichend[0]==1 &&whichend[1] ==0 &&whichend[2] ==0) || (whichend[0] ==0&& whichend[1] ==1 &&whichend[2] ==1))
 	{
 
 		Abar[0] = .5*(ch1.q[ch1.idx(0,0)]+ch2.q[ch2.idx(0,0)]);
@@ -1617,14 +1637,14 @@ void Junction3::boundaryFluxes(){
 		Qbar[2] = .5*(ch0.q[ch0.idx(1,ch0.N-1)]-ch1.q[ch1.idx(1,0)]);
 	//solve fake Reimann problems between each pair
 	//0-1 is easy
-		j2_01.boundaryFluxes();
+		j2_01.boundaryFluxes(dt);
 		flux0[0] =  p01*ch0.bfluxright[0];
 		flux0[1] =  p01*ch0.bfluxright[1];
 		flux1[0] =  p10*ch1.bfluxleft[0];
 		flux1[1] =  p10*ch1.bfluxleft[1];
 	//1-2 is a pain in the neck	
 		ch2.q[ch2.idx(1,0)]= -ch2.q[ch2.idx(1,0)];
-		j2_12.boundaryFluxes();	
+		j2_12.boundaryFluxes(dt);	
 		ch2.q[ch2.idx(1,0)]= -ch2.q[ch2.idx(1,0)];
 		flux1[0] += p12*ch1.bfluxleft[0];
 		flux1[1] += p12*ch1.bfluxleft[1];
@@ -1632,13 +1652,13 @@ void Junction3::boundaryFluxes(){
 		flux2[1] =  p21*ch2.bfluxright[1];
 
 		ch1.q[ch1.idx(1,0)]= -ch1.q[ch1.idx(1,0)];
-		j2_21.boundaryFluxes();
+		j2_21.boundaryFluxes(dt);
 		ch1.q[ch1.idx(1,0)]= -ch1.q[ch1.idx(1,0)];
 		flux2[0] = p21*ch2.bfluxleft[0];
 		flux2[1] = p21*ch2.bfluxleft[1];
 	
 
-		j2_20.boundaryFluxes();
+		j2_20.boundaryFluxes(dt);
 		flux0[0] += p02*ch0.bfluxright[0];
 		flux0[1] += p02*ch0.bfluxright[1];
 		flux2[0] += p20*ch2.bfluxleft[0];

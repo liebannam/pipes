@@ -353,9 +353,9 @@ Network:: ~Network()
 void Network::EulerStep(double dt)
 {
 	//old way that was first order
-	for (unsigned int j = 0; j<junction3s.size(); j++){junction3s[j]->boundaryFluxes();}
+	for (unsigned int j = 0; j<junction3s.size(); j++){junction3s[j]->boundaryFluxes(dt);}
 	for (unsigned int j = 0; j<junction1s.size(); j++){junction1s[j]->boundaryFluxes();}
-	for (unsigned int j = 0; j<junction2s.size(); j++){junction2s[j]->boundaryFluxes();}
+	for (unsigned int j = 0; j<junction2s.size(); j++){junction2s[j]->boundaryFluxes(dt);}
 //#pragma omp parallel for  (not worth initializing threads for networks with 1-17 pipes...haven't tested larger networks.
 	for (int k = 0;k<Nedges; k++)
 	{
