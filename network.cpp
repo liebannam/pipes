@@ -407,7 +407,7 @@ void Network::stepRK3_SSP(double dt)
 			}
             channels[j]->Cl[i] = 1./3.*channels[j]->Clhat[i]+2./3.*channels[j]->Cl[i];
 			channels[j]->Cl0[i] = channels[j]->Cl[i];
-			channels[j]->Cl_hist[nn*(channels[j]->N+2)+i] = channels[j]->Cl[i+1];
+			channels[j]->Cl_hist[nn*(channels[j]->N+2)+i] = channels[j]->Cl[i];
 			channels[j]->p_hist[channels[j]->pj_t(i+1,nn)] = channels[j]->P[i+1];
 		}
 	}

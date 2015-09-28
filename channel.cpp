@@ -1536,8 +1536,8 @@ void Junction2::boundaryFluxes(double dt)
 	q2p = ch1.q[ch1.idx(1,N1)];
 	bool pm = ch0.P[ch0.pj(N0)];
 	bool pp = ch1.P[ch1.pj(N1)];
-        double nu0 = dt/dx0;
-        double nu1 = dt/dx1;
+    double nu0 = dt/dx0;
+    double nu1 = dt/dx1;
 	//attempt at incorporating valve opening coefficient
 	if(valveopen>0)
 	{
@@ -1547,40 +1547,45 @@ void Junction2::boundaryFluxes(double dt)
 		q1pfake = ch0.AofH(h0f,pp);     
 		//what channel 1 sees
 		q1mfake = ch1.AofH(h1f,pm); 
-                //Chlorine upwinding 
-                double dCll, dClr, ul, ur;            
-                ul = q1m>0? q2m/q1m:0.;
-                ur = q1p>0? q2p/q1p:0.;
+        //Chlorine upwinding 
+        double dCll, dClr, ul, ur;            
+        ul = q1m>0? q2m/q1m:0.;
+        ur = q1p>0? q2p/q1p:0.;
 		if(whichend0)
 		{
 			ch0.numFlux(q1m,q1pfake, q2m, q2p*valveopen, ch0.bfluxright, pm, pp);
 			ch1.bfluxleft[0] = ch0.bfluxright[0];	
 			ch1.bfluxleft[1] = ch0.bfluxright[1];
-                        if (ul<0){dCll = ch1.bCll-ch0.bClr;}
-                        else{dCll = ch0.bClr-ch0.Cl[N0];}
-                        if(ur<0){dClr = ch1.Cl[0]-ch1.bCll;}
-                        else{dClr = ch1.bCll-ch0.bClr;}
-                        ch0.bClr += -nu0*ul*dCll -dt*ch0.KCl*ch0.bClr;
-                        ch1.bCll += -nu1*ur*dClr -dt*ch1.KCl*ch1.bCll;
-                }
+            if (ul<0){dCll = ch1.bCll-ch0.bClr;}
+            else{dCll = ch0.bClr-ch0.Cl[N0];}
+            if(ur<0){dClr = ch1.Cl[0]-ch1.bCll;}
+            else{dClr = ch1.bCll-ch0.bClr;}
+            ch0.bClr += -nu0*ul*dCll -dt*ch0.KCl*ch0.bClr;
+            ch1.bCll += -nu1*ur*dClr -dt*ch1.KCl*ch1.bCll;
+        	ch0.Cl_hist[ch0.n*(ch0.N+2)+N0+1] = ch0.bClr;
+		    ch1.Cl_hist[ch1.n*(ch1.N+2)] = ch1.bCll;
+        }
 		else
 		{
 			ch0.numFlux(q1pfake, q1m, q2p*valveopen, q2m, ch0.bfluxleft, pp, pm);
 			ch1.bfluxright[0] = ch0.bfluxleft[0];
 			ch1.bfluxright[1] = ch0.bfluxleft[1];
-                        if (ul<0){dCll = ch0.bCll-ch1.bClr;}
-                        else{dCll = ch1.bClr-ch1.Cl[N1];}
-                        if (ur<0){dClr = ch0.Cl[0]-ch0.bCll;}
-                        else{dClr = ch0.bCll-ch1.bClr;}
-                        ch1.bClr += -nu1*ul*dCll-dt*ch1.KCl*ch1.bClr;
-                        ch0.bCll += -nu0*ur*dClr-dt*ch0.KCl*ch0.bCll;
+            if (ul<0){dCll = ch0.bCll-ch1.bClr;}
+            else{dCll = ch1.bClr-ch1.Cl[N1];}
+            if (ur<0){dClr = ch0.Cl[0]-ch0.bCll;}
+            else{dClr = ch0.bCll-ch1.bClr;}
+            ch1.bClr += -nu1*ul*dCll-dt*ch1.KCl*ch1.bClr;
+            ch0.bCll += -nu0*ur*dClr-dt*ch0.KCl*ch0.bCll;
+        	ch0.Cl_hist[ch0.n*(ch0.N+2)] = ch0.bCll;
+		    ch1.Cl_hist[ch1.n*(ch1.N+2)+N1+1] = ch1.bClr;
+
 		}
 
 		ch0.q_hist[ch0.idx_t(0,Ns0,ch0.n)] =  q1pfake;
 		ch0.q_hist[ch0.idx_t(1,Ns0,ch0.n)] =  q2p*valveopen;
 		ch1.q_hist[ch1.idx_t(0,Ns1,ch1.n)] =  q1mfake;
 		ch1.q_hist[ch1.idx_t(1,Ns1,ch1.n)] =  q2m*valveopen;
-		if(ch0.P[ch0.pj(N0)]==false||ch1.P[ch1.pj(N1)]==false)ch1.P[Ns1] = false;
+	    if(ch0.P[ch0.pj(N0)]==false||ch1.P[ch1.pj(N1)]==false)ch1.P[Ns1] = false;
 		else ch1.P[Ns1] = true;
 		if(ch1.P[ch0.pj(N1)]==false||ch1.P[ch0.pj(N0)]==false) ch0.P[Ns0] =false;
 		else ch0.P[Ns0] = true;
@@ -1592,7 +1597,7 @@ void Junction2::boundaryFluxes(double dt)
 	{
 		ch0.numFlux(q1m, q1m, q2m, -q2m, ch0.bfluxright, ch0.P[Ns0], ch1.P[Ns1]);
 		ch1.numFlux(q1p, q1p, -q2p, q2p,  ch1.bfluxleft, ch0.P[Ns0], ch1.P[Ns1]);
-	        ch0.q_hist[ch0.idx_t(0,Ns0,ch0.n)] =  q1m;
+	    ch0.q_hist[ch0.idx_t(0,Ns0,ch0.n)] =  q1m;
 		ch0.q_hist[ch0.idx_t(1,Ns0,ch0.n)] =  0.;
 		ch1.q_hist[ch1.idx_t(0,Ns1,ch1.n)] =  q1p;
 		ch1.q_hist[ch1.idx_t(1,Ns1,ch1.n)] =  0.;		
