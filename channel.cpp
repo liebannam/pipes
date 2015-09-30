@@ -234,7 +234,7 @@ double Eta(double A, double D, double At, double Ts, bool P)
  * \param[in] Min is the number of time steps 
  * \param[in] a is the pressure wave speed (m/s) only relevant to Preissman slot
  **/
-Channel::Channel(int Nin, double win, double Lin, int Min, double a, double KClin): kn(1.0),w(win),L(Lin),N(Nin),M(Min),KCl(KClin) 
+Channel::Channel(int Nin, double win, double Lin, int Min, double a, double kwin): kn(1.0),w(win),L(Lin),N(Nin),M(Min),kw(kwin) 
 {
 	q0 = new double[2*N];
 	q = new double[2*N];
@@ -284,7 +284,7 @@ Channel::Channel(int Nin, double win, double Lin, int Min, double a, double KCli
 		bfluxleft[j] = 0;
 		bfluxright[j] = 0;
 	}
-
+    kb = 0.55/86400.;// (s^-1)=.55 days^{-1} (Rossman 1994)
 }
 
 /** Destructor */
@@ -465,6 +465,19 @@ void Channel::setq(double A0, double Q0)
 	p_hist[pj_t(0,0)] = p0;
 	p_hist[pj_t(N+1,0)] = p0;
 }		
+
+
+void Channel::setCl0(vector<double> Cl0_)
+{
+    double c0;
+    for (int i = 0; i<N; i++)
+    {
+        c0 = Cl0_[i];
+        Cl[i] = c0;
+        Cl0[i] = c0;
+        Cl_hist[i+1] = c0;
+    }
+}
 
 /** 
  * Take M Euler steps of length dt to update conservation law
@@ -665,14 +678,38 @@ double Channel::getSourceTerms(double A, double Q){
 	return (S0-Sf)*G*A;
 }
 
+double Channel::getMassTransCoeff(double ui)//from Rossman 1994 J. Env. Eng pg 805
+{
+    double kf=0;
+    double nu=1e-6*1.004;
+    double DDiff=1.47e-7;//GSI environmental, m^2/s (????)
+    double ReSc = ui*w/DDiff;
+    double Sh = 3.65+(0.0668*(w/L)*ReSc)/(1+0.04*(w/L)*ReSc);
+    kf = Sh*DDiff/w;
+    return kf;
+}
+
+double Channel::getKCl(double ai, double qi)//get Chlorine decay coefficient from Rossman 1994 J Env. Eng
+{
+    if (ai<1e-5){return kb;}
+    else{
+        double rh = getHydRad(ai);
+        double  ui = ai>0? qi/ai:0.;
+        double kf = getMassTransCoeff(ui);
+        return kb+kw*kf/(rh*(kw+kf));
+    }
+}
 
 void Channel::stepTransportTerms(double dt){
     //first order upwinding for Cl transport terms
     int i;
-    double ui =0.,ai = 0.,dCl=0.;
+    double ui =0.,ai = 0.,qi = .0,dCl=0.;
     double nu = dt/dx;
     ai = q[idx(0,0)];
-    ui = ai>0? q[idx(1,0)]/ai:0.;
+    qi = q[idx(1,0)];
+    ui = ai>0? qi/ai:0.;
+    double KCl = getKCl(ai,qi);
+   // printf("KCl = %f\n",KCl);
     if (ui<0){dCl = Cl0[1]-Cl0[0];}
     else{ dCl = Cl0[0]-bCll;}
     Cl[0] = Cl0[0]-nu*ui*dCl-dt*KCl*Cl0[i];
@@ -1176,8 +1213,8 @@ void Junction1::boundaryFluxes()
 		Nq = N-1;
 		Npe = N+1;
 		Npi = N;
-                ch0.bClr=bCl;
-                ch0.Cl_hist[(N+2)*ch0.n+N+1]=bCl;
+        ch0.bClr=bCl;
+        ch0.Cl_hist[(N+2)*ch0.n+N+1]=bCl;
 	}
 	//if we're on the left side of the pipe
 	else								  
@@ -1185,8 +1222,8 @@ void Junction1::boundaryFluxes()
 		Nq = 0;
 		Npe = 0;
 		Npi = 1;
-                ch0.bCll=bCl;
-                ch0.Cl_hist[(N+2)*ch0.n]=bCl;
+        ch0.bCll=bCl;
+        ch0.Cl_hist[(N+2)*ch0.n]=bCl;
 	}
 	
 	Ain = ch0.q[ch0.idx(0,Nq)];
@@ -1412,7 +1449,7 @@ void Junction1::setbVal(double bvalnew)
 	}
 }
 
-void Junction1::setClbval(double Clbvalnew)
+void Junction1::setClbVal(double Clbvalnew)
 {
     for(int i =0; i<ch0.M+1; i++)
 	{
@@ -1421,7 +1458,7 @@ void Junction1::setClbval(double Clbvalnew)
     
 }
 
-void Junction1::setClbval(double *Clbvalnew)
+void Junction1::setClbVal(double *Clbvalnew)
 {
      for(int i =0; i<ch0.M+1; i++)
 	{
@@ -1429,6 +1466,14 @@ void Junction1::setClbval(double *Clbvalnew)
 	}
     
 }
+
+void Junction1::setClbVal(vector<Real> x){
+    for (int i=0; i<ch0.M+1;i++)
+    {
+        Clbval[i] = x[i];
+    }
+}
+
     /** set boundary value to a time series stored in various arrays*/
 void Junction1::setbVal(valarray<Real> x)
 {
@@ -1458,7 +1503,7 @@ void Junction1::setbVal(double*x)
 Junction1::~Junction1()
 {
 	delete [] bval;
-	delete [] bval;
+	delete [] Clbval;
 }
 
 
@@ -1538,7 +1583,7 @@ void Junction2::boundaryFluxes(double dt)
 	bool pp = ch1.P[ch1.pj(N1)];
     double nu0 = dt/dx0;
     double nu1 = dt/dx1;
-	//attempt at incorporating valve opening coefficient
+    //attempt at incorporating valve opening coefficient
 	if(valveopen>0)
 	{
 		double h0f = ch1.HofA(q1p,pp)-offset;
@@ -1560,8 +1605,8 @@ void Junction2::boundaryFluxes(double dt)
             else{dCll = ch0.bClr-ch0.Cl[N0];}
             if(ur<0){dClr = ch1.Cl[0]-ch1.bCll;}
             else{dClr = ch1.bCll-ch0.bClr;}
-            ch0.bClr += -nu0*ul*dCll -dt*ch0.KCl*ch0.bClr;
-            ch1.bCll += -nu1*ur*dClr -dt*ch1.KCl*ch1.bCll;
+            ch0.bClr += -nu0*ul*dCll -dt*ch0.getKCl(q1m,q2m)*ch0.bClr;
+            ch1.bCll += -nu1*ur*dClr -dt*ch1.getKCl(q1p,q2p)*ch1.bCll;
         	ch0.Cl_hist[ch0.n*(ch0.N+2)+N0+1] = ch0.bClr;
 		    ch1.Cl_hist[ch1.n*(ch1.N+2)] = ch1.bCll;
         }
@@ -1574,8 +1619,8 @@ void Junction2::boundaryFluxes(double dt)
             else{dCll = ch1.bClr-ch1.Cl[N1];}
             if (ur<0){dClr = ch0.Cl[0]-ch0.bCll;}
             else{dClr = ch0.bCll-ch1.bClr;}
-            ch1.bClr += -nu1*ul*dCll-dt*ch1.KCl*ch1.bClr;
-            ch0.bCll += -nu0*ur*dClr-dt*ch0.KCl*ch0.bCll;
+            ch1.bClr += -nu1*ul*dCll-dt*ch1.getKCl(q1m,q2m)*ch1.bClr;
+            ch0.bCll += -nu0*ur*dClr-dt*ch0.getKCl(q1p,q2p)*ch0.bCll;
         	ch0.Cl_hist[ch0.n*(ch0.N+2)] = ch0.bCll;
 		    ch1.Cl_hist[ch1.n*(ch1.N+2)+N1+1] = ch1.bClr;
 

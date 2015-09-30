@@ -130,22 +130,22 @@ class Channel
 		const double kn;                           
 		/** Maximum wave speed (m/s)*/
 		double cmax;				   
-                /**Chlorine decay constant*/
-                double KCl;
+        /**Chlorine decay constants (Rossman, 1994 J. Evn Eng). Kb = bulk decay coefficient, kw = wall decay coefficient*/
+        double kb, kw;
 	//dynamic variables and boundary info
 		/** Current state q*/
 		double *q0;
 		/** Initial state q0*/
 		double *q;
 		/** Temporary state (for RK time steppingi)*/	
-	        double *qhat;          
+	    double *qhat;          
 		/** History of states q_hist laid out as [q(t=0), q(t=dt), ....q(t=dt*(M/Mi-1))] 
 		 * where each q(t) is a row vector arranged as above.*/
 		double *q_hist;           	 		  			
         /**concentration of chlorine we're tracking (not to be confused with c, a wavespeed)*/
 		double *Cl, *Cl0, *Clhat;  
         /** history of chlorine concentration*/
-                double *Cl_hist;        
+        double *Cl_hist;        
         /** Indexing function to access q. obtain q(i,j)  where i =0,1 and j= 0,1...N-1*/
 		int idx(int i_in, int j_in){return (N*i_in+j_in);}    //access q(i,j)  where i =0,1 and j= 0,1...N-1
 		/** Indexing function to access qhist. obtain q^n(i,j) with i,j as above and n = 0,...M-1 (n*dt = t at which this slice is taken)*/
@@ -163,11 +163,11 @@ class Channel
 		bool Pnow; 				        
 		/** Left and right boundary fluxes*/
 		double *bfluxleft, *bfluxright;         
-	        /**Left and right boundary values for Cl*/
-                double bCll, bClr;        
+	    /**Left and right boundary values for Cl*/
+        double bCll, bClr;        
 	//Various methods
 		/** Constructor */
-		Channel (int Nin, double win, double Lin, int Min, double a, double KClin=0.); 
+		Channel (int Nin, double win, double Lin, int Min, double a, double kwin=0.); 
 		/** Destructor*/
 		~Channel();
 	   	/** Show values of q (1) or q0 (0)*/		
@@ -182,7 +182,9 @@ class Channel
 		void setq0(double *A0, double *Q0);	      
 		/** Set q and q0 to nonconst value*/	
 		void setq(vector<double>A0, vector<double>Q0);	   
-		/** Take an Euler step */
+        /**Set Cl and Cl0 to nonconstant value)*/
+        void setCl0(vector<double> Cl0_);
+        /** Take an Euler step */
 		void stepEuler(double dt);
 		/** Compute numerical HLL flux (requires the function speeds to be defined)*/
 		void numFluxHLL(double q1m, double q1p, double q2m, double q2p, double *flux, bool Pm, bool Pp);      
@@ -220,8 +222,8 @@ class Channel
 		/** Evaluate source terms for given A and Q */
 		double getSourceTerms(double A, double Q); 
 		/**update chlorine terms*/
-                void stepTransportTerms(double dt);
-                /** Get the volume of water in the pipe*/		
+        void stepTransportTerms(double dt);
+        /** Get the volume of water in the pipe*/		
 		double getTheGoddamnVolume();
 		/** Get average gradient of pressure head h. Returns int_0^L(dh/dx) dx at time t_i**/
 		double getAveGradH(int i);  
@@ -237,9 +239,13 @@ class Channel
 	   	/** Output results at either locations x_i or time t_i to terminal. 
 		 * x_i (or t_i) = where[i] for i = 1...length(where). which[i] =0/1 means it's a time/place*/
 		void quickWrite(double *where, int *which, int K, double T, int skip);       
-        /** Set chlorine decay constant*/
-                void setKCl(double KCl_){KCl=KCl_;}
-		/** min of three numbers*/
+        /** Set chlorine wall decay constant*/
+        void setClkw(double kw_){kw=kw_;}
+		/**get KCl for this time step*/
+        double getKCl(double ai, double qi);
+        /**get mass tranfer term in Kcl*/
+        double getMassTransCoeff(double ui);
+        /** min of three numbers*/
 		double min3(double a, double b, double c);
 		/** max of three numbers*/
 		double max3(double a, double b, double c);
@@ -344,9 +350,11 @@ class Junction1
 		/**Set boundary value to nonconstant in vector of Reals*/
 		void setbVal(vector<Real> x);
 		/**Set boundary chlorine value time series to constant */
-        void setClbval(double bClvalnew);
+        void setClbVal(double bClvalnew);
         /**Set boundary chlorine value time series to nonconstant*/
-        void setClbval(double *Clbvalnew); 
+        void setClbVal(double *Clbvalnew); 
+        /**Set boundary chlorine value time series to nonconstant*/
+		void setClbVal(vector<Real> x);
         /** Destructor */
 		~Junction1();
 		/**\brief Apply numerical flux function to get boundary fluxes for ch0*/

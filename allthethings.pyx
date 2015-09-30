@@ -27,8 +27,8 @@ cdef extern from "time.h":
     cdef clock_t clock()
 
 # if on macbook air
-#sys.path.append('/Users/anna/anaconda/lib/python2.7/site-packages')
-sys.path.append('/usr/local/Cellar/gcc49/4.9.2_1/lib/gcc/4.9/gcc/x86_64-apple-darwin12.6.0/4.9.2/include-fixed')
+sys.path.append('/Users/anna/anaconda/lib/python2.7/site-packages')
+#sys.path.append('/usr/local/Cellar/gcc49/4.9.2_1/lib/gcc/4.9/gcc/x86_64-apple-darwin12.6.0/4.9.2/include-fixed')
 # print sys.path
 np.import_array()
 
@@ -110,7 +110,7 @@ cdef extern from "channel.h":
         int channeltype, N, M
         double kn, w, L, dx, At, Af, a, Ts, S0, Mr, cmax
         double bcqleft, bcqright, bcaleft, bcaright
-        double * q, *q0, *q_hist
+        double * q, *q0, *q_hist, *Cl_hist
         bool * p_hist
         vector[bool] P
         void geom_init(double, double, double)
@@ -123,9 +123,13 @@ cdef extern from "channel.h":
         double Cgrav(double, bool)
         double Eta(double, bool)
         double pbar(double, bool)
+        void setClkw(double)
+        void setCl0(vector[Real])
+        double getKCl(double, double)
     cdef cppclass Junction1:
         Junction1(Cpreiss, int, double, int)
-        void setbVal(vector[Real] x)
+        void setbVal(vector[Real])
+        void setClbVal(vector[Real])
 
 cdef class PyPipe_ps:
     '''	
@@ -259,7 +263,6 @@ cdef extern from "network.h":
         double getKE(int i)
         double getPE(int i)
         double getTotalVolume()
-        void setbVal(vector[Real] x)
     cdef void quickWrite(double, int, int, double, int)
 
 cdef extern from "setupandrun.h":
@@ -390,18 +393,29 @@ cdef class PyNetwork:
         return q
 
     def qhist(self, i):
+        '''array of history of states q = (A,Q). Laid out as [q_0, q_1,..q_M]
+           where q_n = [Aleft, A0, A1,,,A_N-1, Aright, Qleft, Q0,...Q_N-1,Qright] at time step n'''
         cdef np.ndarray qh
         cdef int Nn = (self.Ns[i] + 2) * 2 * (self.thisptr.M + 2)
         qh = okArray(Nn, self.thisptr.channels[i].q_hist)
         return qh
 
     def phist(self, i):
+        '''array of pressurization history'''
         cdef np.ndarray ph
         cdef int Nn = (self.Ns[i] + 2) * (self.thisptr.M + 2)
         ph = okArray(Nn, self.thisptr.channels[i].p_hist, np.NPY_BOOL)
         return ph
+    
+    def Clhist(self,i):
+        '''array of Chlorine concentration history.'''
+        cdef np.ndarray Clh
+        cdef int Nn = (self.Ns[i]+2)*(self.thisptr.M+2)
+        Clh = okArray(Nn, self.thisptr.channels[i].Cl_hist) 
+        return Clh
 
     def setIC(self, i, a0, q0):
+        '''set IC for pipe i. a0 and q0 should be vectors of length N'''
         for j in range(self.Ns[i]):
             self.thisptr.channels[i].q[j] = a0[j]
             self.thisptr.channels[i].q0[j] = a0[j]
@@ -432,12 +446,15 @@ cdef class PyNetwork:
         return self.thisptr.getAveGradH(i)
 
     def getKE(self, i):
+        '''get kinetic energy'''
         return self.thisptr.getKE(i)
 
     def getPE(self, i):
+        ''' potential energy'''
         return self.thisptr.getPE(i)
 
     def getTotalVolume(self):
+        '''get total volume = \sigma_k=0^Np \sigma_i=0^N_k (A^k_i)*dx'''
         return self.thisptr.getTotalVolume()
 
     def getHofA(self, i):
@@ -465,7 +482,6 @@ cdef class PyNetwork:
         def __get__(self): return self.thisptr.M
     property T:
         def __get__(self): return self.T
-
         def __set__(self, T): self.T = T
     property nn:
         def __get__(self): return self.thisptr.nn
@@ -477,13 +493,30 @@ cdef class PyNetwork:
             i].cmax for i in range(self.Nedges)]
     property solve_time:
         def __get__(self): return self.solve_t
-
     def setbVal(self, i, x):
+        '''set boundary value time series in ith junction1 x (length M vector)'''
         cdef vector[Real] xx
         for k in range(len(x)):
             xx.push_back(x[k])
         self.thisptr.junction1s[i].setbVal(xx)
-
+    def setClbVal(self, i, x):
+        '''set boundary value time series for Chlorine concentratin in ith junction1 to x (length M vector)'''
+        cdef vector[Real] xx
+        for k in range(len(x)):
+            xx.push_back(x[k])
+        self.thisptr.junction1s[i].setClbVal(xx)
+    def setClkw(self,i,K):
+        '''set Chlorine wall decay coeffcient in pipe i'''
+        self.thisptr.channels[i].setClkw(K)
+    def setCl0(self,i, x):
+        '''set initial chlorine levels in pipe i'''
+        cdef vector[Real] xx
+        for k in range(len(x)):
+            xx.push_back(x[k])
+        self.thisptr.channels[i].setCl0(x)
+    def getKCl(self,i,a,q):
+        '''get Chlorine decay coefficient for given value of a and q'''
+        return self.thisptr.channels[i].getKCl(a,q)
     def idx_t(self, i, j, n, k):
         '''index of ith variable (i=0 or 1) at x location j at time step n in pipe k'''
         N = self.thisptr.channels[k].N

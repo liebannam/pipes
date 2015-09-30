@@ -8,7 +8,8 @@ int main(int argc, char* argv[])
     
     double A = 0.5;
     double B = 0.5;
-    double KCl = 0.2;
+    double KCl = 0.55;
+    double kw = 0.0;
     char *finp = argv[1];
 	char *fconfig = argv[2];
 	int M, Mi;
@@ -59,12 +60,12 @@ int main(int argc, char* argv[])
             Ntwk->channels[2]->Cl[i] =  c0[i+N];
             Ntwk->channels[2]->Cl0[i] = c0[i+N];
         }
-        Ntwk->junction1s[0]->setClbval(Clvals0);
-        Ntwk->junction1s[1]->setClbval(Clvals1);
-        Ntwk->junction1s[2]->setClbval(Clvals1);
-        Ntwk->channels[0]->setKCl(KCl);
-        Ntwk->channels[1]->setKCl(KCl);
-        Ntwk->channels[2]->setKCl(KCl);
+        Ntwk->junction1s[0]->setClbVal(Clvals0);
+        Ntwk->junction1s[1]->setClbVal(Clvals1);
+        Ntwk->junction1s[2]->setClbVal(Clvals1);
+        Ntwk->channels[0]->setClkw(kw);
+        Ntwk->channels[1]->setClkw(kw);
+        Ntwk->channels[2]->setClkw(kw);
         Ntwk->runForwardProblem(dt); 
         double times[1] = {0};
         int which[1] = {0};
@@ -110,10 +111,10 @@ int main(int argc, char* argv[])
                 Ntwk->channels[1]->Cl[i] =  c0[i+N];
                 Ntwk->channels[1]->Cl0[i] = c0[i+N];
             }
-            Ntwk->junction1s[0]->setClbval(Clvals0);
-            Ntwk->junction1s[1]->setClbval(Clvals1);
-            Ntwk->channels[0]->setKCl(KCl);
-            Ntwk->channels[1]->setKCl(KCl);
+            Ntwk->junction1s[0]->setClbVal(Clvals0);
+            Ntwk->junction1s[1]->setClbVal(Clvals1);
+            Ntwk->channels[0]->setClkw(kw);
+            Ntwk->channels[1]->setClkw(kw);
 
         }
         else
@@ -124,9 +125,9 @@ int main(int argc, char* argv[])
                 Ntwk->channels[0]->Cl[i] = c0[i];
                 Ntwk->channels[0]->Cl0[i] = c0[i];
             }
-            Ntwk->junction1s[0]->setClbval(Clvals0);
-            Ntwk->junction1s[1]->setClbval(Clvals1);
-            Ntwk->channels[0]->setKCl(KCl);
+            Ntwk->junction1s[0]->setClbVal(Clvals0);
+            Ntwk->junction1s[1]->setClbVal(Clvals1);
+            Ntwk->channels[0]->setClkw(kw);
         }
             double V0=Ntwk->getTotalVolume();
             start_t = clock();
