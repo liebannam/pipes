@@ -684,14 +684,14 @@ double Channel::getMassTransCoeff(double ui)//from Rossman 1994 J. Env. Eng pg 8
     double nu=1e-6*1.004;
     double DDiff=1.47e-7;//GSI environmental, m^2/s (????)
     double ReSc = ui*w/DDiff;
-    double Sh = 3.65+(0.0668*(w/L)*ReSc)/(1+0.04*(w/L)*ReSc);
+    double Sh = 3.65+(ui>0? (0.0668*(w/L)*ReSc)/(1+0.04*pow((w/L)*ReSc,2./3.)):0.);
     kf = Sh*DDiff/w;
     return kf;
 }
 
 double Channel::getKCl(double ai, double qi)//get Chlorine decay coefficient from Rossman 1994 J Env. Eng
 {
-    if (ai<1e-5){return kb;}
+    if (ai<1e-4){return kb;}
     else{
         double rh = getHydRad(ai);
         double  ui = ai>0? qi/ai:0.;
