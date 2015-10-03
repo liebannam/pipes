@@ -682,7 +682,7 @@ double Channel::getMassTransCoeff(double ui)//from Rossman 1994 J. Env. Eng pg 8
 {
     double kf=0;
     double nu=1e-6*1.004;
-    double DDiff=1.47e-7;//GSI environmental, m^2/s (????)
+    double DDiff=1.47e-7;//m^2/s (????) http://www.gsi-net.com/en/publications/gsi-chemical-database/single/107-chlorine.html
     double ReSc = ui*w/DDiff;
     double Sh = 3.65+(ui>0? (0.0668*(w/L)*ReSc)/(1+0.04*pow((w/L)*ReSc,2./3.)):0.);
     kf = Sh*DDiff/w;
