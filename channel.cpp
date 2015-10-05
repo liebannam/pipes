@@ -480,13 +480,13 @@ void Channel::setq(double A0, double Q0)
 
 void Channel::setCl0(vector<double> Cl0_)
 {
-    double c0;
     for (int i = 0; i<N; i++)
     {
-        c0 = Cl0_[i];
+        double c0 = Cl0_[i];
         Cl[i] = c0;
         Cl0[i] = c0;
         Cl_hist[i+1] = c0;
+        printf(" i = %d  Cl=%f  Cl0 = %f\n",i,Cl[i], Cl0[i]);
     }
 }
 
@@ -706,41 +706,45 @@ double Channel::getKCl(double ai, double qi)//get Chlorine decay coefficient fro
     double rh = getHydRad(ai);
     double ui = ai>dry? qi/ai:0.;
     double kf = getMassTransCoeff(ui);
-    if ((ai/Af)<1e-4){Keff=kb;}
+    if (ai<dry){Keff=kb;}
     else{
         Keff =kb+(kw*kf)/(rh*(kw+kf));
     }
-    if (Keff>0){
+    if (Keff>1){
         printf("kb = %f, kf = %f, ui= %f, ai = %f, rh = %f, Keff=%f\n",kb,kf,ui,ai,rh,Keff);}
     return Keff; 
 }
 
 void Channel::stepTransportTerms(double dt){
     //first order upwinding for Cl transport terms
-    int i;
     double ui =0.,ai = 0.,qi = .0,dCl=0.;
     double nu = dt/dx;
     ai = q[idx(0,0)];
     qi = q[idx(1,0)];
     ui = ai>dry? qi/ai:0.;
     for (int k =0; k<N; k++)
-    { if(Cl0[k]<0)
-        printf("fuck you! Cl[%d] = %f", k,Cl0[k]);
+    if(Cl0[k]<0)
+    {
+        printf("Whoops! Cl[%d] = %f is negative. Rounding up to zero!\n", k,Cl0[k]);
         Cl0[k] = 0;
     }
+  //  printf("n = %d, bCll =%f, bClr = %f\n",n,bCll, bClr);
     double KCl = getKCl(ai,qi);
     if (ui<0){dCl = Cl0[1]-Cl0[0];}
     else{ dCl = Cl0[0]-bCll;}
-    Cl[0] = Cl0[0]-nu*ui*dCl-dt*KCl*Cl0[i];
-    for(i=1; i<N-1; i++)
+    Cl[0] = Cl0[0]-nu*ui*dCl-dt*KCl*Cl0[0];
+    for(int i=1; i<N-1; i++)
     {
         ai = q[idx(0,i)];
         ui = ai>dry? q[idx(1,i)]/ai :0;//is this the right choice for u?
         KCl = getKCl(ai,qi);
         if (ui<0){dCl = (Cl0[i+1]-Cl0[i]);}
         else {dCl = Cl0[i]-Cl0[i-1];}
+       // printf("t = %f, i= %d, ai = %f, ui = %f, Cl = %f, Cl0=%f, KCl =%f\n",dt*(float)n,i,ai, ui, Cl[i], Cl0[i], KCl);
         Cl[i] = Cl0[i]-nu*ui*dCl-dt*KCl*Cl0[i];
-        if (Cl[i]>10){printf("t = %f, i= %d, ai = %f, ui = %f, Cl = %f, KCl =%f, kb = %f\n",dt*(float)n,i,ai, ui, Cl[i], KCl,kb);}
+       // printf("Cl now = %f\n", Cl[i]);
+        //if (Cl[i]>0){
+        //}
     }
     ai = q[idx(0,N-1)];
     ui = ai>dry? q[idx(1,N-1)]/ai:0.;
@@ -749,7 +753,7 @@ void Channel::stepTransportTerms(double dt){
     else{dCl = Cl0[N-1]-Cl0[N-2];}
     Cl[N-1] = Cl0[N-1]-nu*ui*dCl-dt*KCl*Cl0[N-1];
     //update Cl0
-    for (i=0;i<N;i++){
+    for (int i=0;i<N;i++){
         Cl0[i]= Cl[i];
     }
 }
@@ -1242,7 +1246,7 @@ void Junction1::boundaryFluxes()
 		Nq = N-1;
 		Npe = N+1;
 		Npi = N;
-        if(reflect==1||reflect ==-1) bCl = ch0.Cl[N-1];
+        if(reflect==1) bCl = ch0.Cl[N-1];
         ch0.bClr=bCl;
         ch0.Cl_hist[(N+2)*ch0.n+N+1]=bCl;
 	}
@@ -1252,7 +1256,7 @@ void Junction1::boundaryFluxes()
 		Nq = 0;
 		Npe = 0;
 		Npi = 1;
-        if (reflect ==1||reflect ==-1) bCl = ch0.Cl[0];
+        if (reflect ==1) bCl = ch0.Cl[0];
         ch0.bCll=bCl;
         ch0.Cl_hist[(N+2)*ch0.n]=bCl;
 	}
@@ -1502,6 +1506,7 @@ void Junction1::setClbVal(vector<Real> x){
     for (int i=0; i<ch0.M+1;i++)
     {
         Clbval[i] = x[i];
+//        printf("Clbval[%d]=%f\n",i, Clbval[i]);
     }
 }
 

@@ -359,6 +359,7 @@ void Network::EulerStep(double dt)
 //#pragma omp parallel for  (not worth initializing threads for networks with 1-17 pipes...haven't tested larger networks.
 	for (int k = 0;k<Nedges; k++)
 	{
+      //  printf("Channel %d!!!!!!!!!!!!\n",k);
 		channels[k]->stepEuler(dt);
 	}
 }
@@ -407,7 +408,7 @@ void Network::stepRK3_SSP(double dt)
 			}
             channels[j]->Cl[i] = 1./3.*channels[j]->Clhat[i]+2./3.*channels[j]->Cl[i];
 			channels[j]->Cl0[i] = channels[j]->Cl[i];
-			channels[j]->Cl_hist[nn*(channels[j]->N+2)+i] = channels[j]->Cl[i];
+			channels[j]->Cl_hist[nn*(channels[j]->N+2)+i+1] = channels[j]->Cl[i];
 			channels[j]->p_hist[channels[j]->pj_t(i+1,nn)] = channels[j]->P[i+1];
 		}
 	}
