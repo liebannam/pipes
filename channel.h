@@ -118,7 +118,9 @@ class Channel
 		/** What time step we are currently at*/		
 		int n;					      
 		/** Grid spacing*/
-		double dx;                                 
+		double dx;          
+        /** Tolerance for "dry pipe"*/
+        double dry;        
 		/** Preissman parameters (won't get initialized or used for uniform cross section)*/
 		double At, Af, a, Ts;		           
 	//Slope and friction terms

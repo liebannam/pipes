@@ -19,19 +19,19 @@ import os
 # on orinoco
 sys.path.append('/Users/lieba/anaconda/lib/python2.7/site-packages')
 # on my macbook air
-sys.path.append('/Users/anna/anaconda/lib/python2.7/site-packages')
-sys.path.append('/usr/local/Cellar/gcc49/4.9.2_1/lib/gcc/4.9/gcc/x86_64-apple-darwin12.6.0/4.9.2/include-fixed')
+#sys.path.append('/Users/anna/anaconda/lib/python2.7/site-packages')
+#sys.path.append('/usr/local/Cellar/gcc49/4.9.2_1/lib/gcc/4.9/gcc/x86_64-apple-darwin12.6.0/4.9.2/include-fixed')
 
 from distutils.core import setup, Extension
 from Cython.Build import cythonize
 from Cython.Distutils import build_ext
 import numpy
 # on orinoco
-#os.environ["CC"] = "gcc-4.9"
-#os.environ["CXX"] = "g++-4.9"
+os.environ["CC"] = "gcc-4.9"
+os.environ["CXX"] = "g++-4.9"
 # on my macbook air
-os.environ["CC"] = "/usr/local/bin/gcc-4.9"
-os.environ["CXX"] = "/usr/local/bin/gcc-4.9"
+#os.environ["CC"] = "/usr/local/bin/gcc-4.9"
+#os.environ["CXX"] = "/usr/local/bin/gcc-4.9"
 setup(ext_modules=cythonize(Extension(
     "allthethings",                                   # the extesion name
     sources=["allthethings.pyx", "setupandrun.cpp", "file_output.cc", "network.cpp", "levmar.cpp", "mp_mat.cpp",

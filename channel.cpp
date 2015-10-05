@@ -244,7 +244,8 @@ Channel::Channel(int Nin, double win, double Lin, int Min, double a, double kwin
     Clhat = new double[N];
     bfluxleft = new double[2];
 	bfluxright = new double[2];
-	//assume junctions aren't ventilated unless they're junction1s without reflection
+	dry = 1e-6*win;//tolerance for "dry'' pipe
+    //assume junctions aren't ventilated unless they're junction1s without reflection
 	P.push_back(false);
 	for(int i = 0; i<N+1; i++){P.push_back(false);}
 	P.push_back(false);
@@ -254,6 +255,16 @@ Channel::Channel(int Nin, double win, double Lin, int Min, double a, double kwin
 		q_hist = new double[2*(N+2)*(M+2)]; 
 		p_hist = new bool[2*(N+2)*(M+2)];
         Cl_hist = new double[(N+2)*(M+2)];
+        for (int k =0; k<(N+2)*(M+2); k++)
+        {
+            Cl_hist[k] = 0.;
+        } 
+        for (int k =0; k<2*(N+2)*(M+2); k++)
+        {
+            p_hist[k] = 0.;
+            q_hist[k] = 0.;
+        }
+
 	}
 	else 
 	{
@@ -615,8 +626,8 @@ void Cuniform::speedsHLL(double q1m, double q1p, double q2m, double q2p, double 
     double um, up, hm, hp, uhat, hhat, smin, smax;
     int j;
     bool p = Pm && Pp;
-    um = (q1m>0.? q2m/q1m : 0.);
-    up = (q1p>0.? q2p/q1p : 0.);
+    um = (q1m>dry? q2m/q1m : 0.);
+    up = (q1p>dry? q2p/q1p : 0.);
     hm = HofA(q1m,Pm);
     hp = HofA(q1p,Pp);
     uhat = (hm+hp >0.)? (sqrt(hm)*um+sqrt(hp)*up)/(sqrt(hm)+sqrt(hp)) : 0. ;
@@ -691,13 +702,17 @@ double Channel::getMassTransCoeff(double ui)//from Rossman 1994 J. Env. Eng pg 8
 
 double Channel::getKCl(double ai, double qi)//get Chlorine decay coefficient from Rossman 1994 J Env. Eng
 {
-    if (ai<1e-4){return kb;}
+    double Keff=0.;
+    double rh = getHydRad(ai);
+    double ui = ai>dry? qi/ai:0.;
+    double kf = getMassTransCoeff(ui);
+    if ((ai/Af)<1e-4){Keff=kb;}
     else{
-        double rh = getHydRad(ai);
-        double  ui = ai>0? qi/ai:0.;
-        double kf = getMassTransCoeff(ui);
-        return kb+kw*kf/(rh*(kw+kf));
+        Keff =kb+(kw*kf)/(rh*(kw+kf));
     }
+    if (Keff>0){
+        printf("kb = %f, kf = %f, ui= %f, ai = %f, rh = %f, Keff=%f\n",kb,kf,ui,ai,rh,Keff);}
+    return Keff; 
 }
 
 void Channel::stepTransportTerms(double dt){
@@ -707,22 +722,29 @@ void Channel::stepTransportTerms(double dt){
     double nu = dt/dx;
     ai = q[idx(0,0)];
     qi = q[idx(1,0)];
-    ui = ai>0? qi/ai:0.;
+    ui = ai>dry? qi/ai:0.;
+    for (int k =0; k<N; k++)
+    { if(Cl0[k]<0)
+        printf("fuck you! Cl[%d] = %f", k,Cl0[k]);
+        Cl0[k] = 0;
+    }
     double KCl = getKCl(ai,qi);
-   // printf("KCl = %f\n",KCl);
     if (ui<0){dCl = Cl0[1]-Cl0[0];}
     else{ dCl = Cl0[0]-bCll;}
     Cl[0] = Cl0[0]-nu*ui*dCl-dt*KCl*Cl0[i];
     for(i=1; i<N-1; i++)
     {
         ai = q[idx(0,i)];
-        ui = ai>0? q[idx(1,i)]/ai :0;//is this the right choice for u?
+        ui = ai>dry? q[idx(1,i)]/ai :0;//is this the right choice for u?
+        KCl = getKCl(ai,qi);
         if (ui<0){dCl = (Cl0[i+1]-Cl0[i]);}
         else {dCl = Cl0[i]-Cl0[i-1];}
         Cl[i] = Cl0[i]-nu*ui*dCl-dt*KCl*Cl0[i];
+        if (Cl[i]>10){printf("t = %f, i= %d, ai = %f, ui = %f, Cl = %f, KCl =%f, kb = %f\n",dt*(float)n,i,ai, ui, Cl[i], KCl,kb);}
     }
     ai = q[idx(0,N-1)];
-    ui = ai>0? q[idx(1,N-1)]/ai:0.;
+    ui = ai>dry? q[idx(1,N-1)]/ai:0.;
+    KCl = getKCl(ai,qi);
     if (ui<0){dCl = bClr-Cl0[N-1];}
     else{dCl = Cl0[N-1]-Cl0[N-2];}
     Cl[N-1] = Cl0[N-1]-nu*ui*dCl-dt*KCl*Cl0[N-1];
@@ -756,7 +778,7 @@ double Channel::getKE(int i)
 	for (int j = 0; j<N; j++)
 	{
 		double ai = q_hist[idx_t(0,j+1,i)];
-		ui = ai>0? (q_hist[idx_t(1,j+1,i)]/ai): 0;
+		ui = ai>dry? (q_hist[idx_t(1,j+1,i)]/ai): 0;
 		KE+= ui*ui/(2*G)*ai;
 	}
 	return KE;
@@ -772,7 +794,7 @@ double Channel::getPE(int i)
 	for (int j = 0; j<N; j++)
 	{
 		double ai = q_hist[idx_t(0,j+1,i)];
-		PE+= (ai*HofA(ai,p)-(ai>0?  Eta(ai,p)/(G*ai):0)); 
+		PE+= (ai*HofA(ai,p)-(ai>dry?  Eta(ai,p)/(G*ai):0)); 
 	}
 	return PE;
 }
@@ -996,16 +1018,23 @@ double Cpreiss::Eta(double A, bool p)
 
 double Cpreiss::getHydRad(double A)
 	{	
-		double perim;
-		if(A<At)
+		double perim,R;
+		if(A<(At))
 		{
 			double y = HofA(A,false);
 			double theta = 2*acos(1.-2*y/D);
-			perim = D*(2*PI- theta);
+            if (theta<1e-4)
+            {
+                R = D/(24.)*theta*theta; ///taylor expand for small theta
+            }
+            else{
+			    perim = D*theta/2.;
+                R = A/perim;
+            }
 		}
-		else {perim = D*PI;}
-		return A/perim;
-	}  
+		else {R = D/4.;}
+        return R;
+    }  
 
 /**
  *  Roe estimates for wavespeeds
@@ -1016,8 +1045,8 @@ void Cpreiss::speedsRoe(double q1m, double q1p, double q2m, double q2p, double *
     double um, up, hm, hp, uhat, hhat,chat, smin, smax;
     int j;
     bool p = Pm && Pp;
-    um = (q1m>0.? q2m/q1m : 0.);
-    up = (q1p>0.? q2p/q1p : 0.);
+    um = (q1m>dry? q2m/q1m : 0.);
+    up = (q1p>dry? q2p/q1p : 0.);
     hm = HofA(q1m,Pm);
     hp = HofA(q1p,Pp);
     uhat = (hm+hp >0.)? (sqrt(hm)*um+sqrt(hp)*up)/(sqrt(hm)+sqrt(hp)) : 0. ;
@@ -1045,7 +1074,7 @@ void Cpreiss::speedsRoe(double q1m, double q1p, double q2m, double q2p, double *
  * HLL speed estimates from Leon 2009 
  * */
 void Cpreiss::speedsHLL(double q1m, double q1p, double q2m, double q2p, double *s, bool Pm, bool Pp){
-	double dry = 1e-6*At;;                                                  //pay attention to this!?
+//	double dry = 1e-6*At;                                                  //pay attention to this!?
     double cbar,Astar, ym,yp,cm, cp, um =0 , up= 0;	
 	double Astarp;
 	//other wave speed estimates from Sanders 2011 (keep around for comparison purposes?)
@@ -1213,6 +1242,7 @@ void Junction1::boundaryFluxes()
 		Nq = N-1;
 		Npe = N+1;
 		Npi = N;
+        if(reflect==1||reflect ==-1) bCl = ch0.Cl[N-1];
         ch0.bClr=bCl;
         ch0.Cl_hist[(N+2)*ch0.n+N+1]=bCl;
 	}
@@ -1222,6 +1252,7 @@ void Junction1::boundaryFluxes()
 		Nq = 0;
 		Npe = 0;
 		Npi = 1;
+        if (reflect ==1||reflect ==-1) bCl = ch0.Cl[0];
         ch0.bCll=bCl;
         ch0.Cl_hist[(N+2)*ch0.n]=bCl;
 	}
@@ -1254,7 +1285,7 @@ void Junction1::boundaryFluxes()
 					//first use Qext to find values c1min and c1max -- range of c+/_(A, Qext) over A in [0, \infty] 
 					//if c1 = c+/_(Ain, Qin) lies in  [c1min, c1max], then it is feasible to follow a characteristic out of the doman
 					double c1min=0., c1max=0., c1, xs=0.;
-					double uin = (Ain>1e-10 ?Qin/Ain :0. );
+					double uin = (Ain>ch0.dry ?Qin/Ain :0. );
 					if(ch0.channeltype ==0) //uniform cross section case is easy
 					{
 						c1 = uin +sign*2.*sqrt(G*Ain/w);
@@ -1334,7 +1365,7 @@ void Junction1::boundaryFluxes()
 			if(ch0.channeltype ==0)				//if uniform cross section
 			{	
 				double c2 = 2.*sign*sqrt(G/w);
-				double uin = Ain>0? Qin/Ain :0.;
+				double uin = Ain>ch0.dry? Qin/Ain :0.;
 				double c1 = uin +sign*2.*sqrt(G*Ain/w);
 				fRI f(c1,c2, bval[ch0.n]);
 				dfRI df(c2,bval[ch0.n]);
@@ -1342,7 +1373,7 @@ void Junction1::boundaryFluxes()
 			}
 			else								//Preissman slot
 			{
-				double uin = (Ain>0. ?Qin/Ain :0. );
+				double uin = (Ain>ch0.dry ?Qin/Ain :0. );
 				double lhs = uin +sign*ch0.PhiofA(Ain,Pin);//solve lhs = Qext/x +sign*phi(x) for x
 				if(WTF)	cout<<"UHHHHHMM reflect = "<<reflect<<" Qext = "<<Qext<<"  lhs = "<<lhs<<"sign ="<<sign<<" Ain="<<Ain<<endl;
 				fallpurpose fp(ch0.w, ch0.At,ch0.Ts, lhs, Qext, sign,1.,0.,false);
@@ -1350,7 +1381,7 @@ void Junction1::boundaryFluxes()
 				{
 					int count;
 					Aext = ::ridders(fp,0.,ch0.Af*2.0,&count, 1e-10, 1e-10);//this line crashes things quite frequently...
-					double uext = (Aext>0 ?Qext/Aext :0.);
+					double uext = (Aext>ch0.dry ?Qext/Aext :0.);
 					double err = fabs(uext +sign*ch0.PhiofA(Aext,Pext)-lhs);
 				}
 				else Aext = Ain;
@@ -1594,8 +1625,8 @@ void Junction2::boundaryFluxes(double dt)
 		q1mfake = ch1.AofH(h1f,pm); 
         //Chlorine upwinding 
         double dCll, dClr, ul, ur;            
-        ul = q1m>0? q2m/q1m:0.;
-        ur = q1p>0? q2p/q1p:0.;
+        ul = q1m>ch0.dry? q2m/q1m:0.;
+        ur = q1p>ch1.dry? q2p/q1p:0.;
 		if(whichend0)
 		{
 			ch0.numFlux(q1m,q1pfake, q2m, q2p*valveopen, ch0.bfluxright, pm, pp);
@@ -1603,10 +1634,11 @@ void Junction2::boundaryFluxes(double dt)
 			ch1.bfluxleft[1] = ch0.bfluxright[1];
             if (ul<0){dCll = ch1.bCll-ch0.bClr;}
             else{dCll = ch0.bClr-ch0.Cl[N0];}
+          //  dClr = dCll;
             if(ur<0){dClr = ch1.Cl[0]-ch1.bCll;}
             else{dClr = ch1.bCll-ch0.bClr;}
-            ch0.bClr += -nu0*ul*dCll -dt*ch0.getKCl(q1m,q2m)*ch0.bClr;
-            ch1.bCll += -nu1*ur*dClr -dt*ch1.getKCl(q1p,q2p)*ch1.bCll;
+            ch0.bClr += -nu0*ul*dCll -dt*ch0.getKCl(q1m,ul)*ch0.bClr;
+            ch1.bCll += -nu1*ur*dClr -dt*ch1.getKCl(q1p,ur)*ch1.bCll;
         	ch0.Cl_hist[ch0.n*(ch0.N+2)+N0+1] = ch0.bClr;
 		    ch1.Cl_hist[ch1.n*(ch1.N+2)] = ch1.bCll;
         }
@@ -1617,10 +1649,11 @@ void Junction2::boundaryFluxes(double dt)
 			ch1.bfluxright[1] = ch0.bfluxleft[1];
             if (ul<0){dCll = ch0.bCll-ch1.bClr;}
             else{dCll = ch1.bClr-ch1.Cl[N1];}
+          //  dClr = dCll;
             if (ur<0){dClr = ch0.Cl[0]-ch0.bCll;}
             else{dClr = ch0.bCll-ch1.bClr;}
-            ch1.bClr += -nu1*ul*dCll-dt*ch1.getKCl(q1m,q2m)*ch1.bClr;
-            ch0.bCll += -nu0*ur*dClr-dt*ch0.getKCl(q1p,q2p)*ch0.bCll;
+            ch1.bClr += -nu1*ul*dCll-dt*ch1.getKCl(q1m,ul)*ch1.bClr;
+            ch0.bCll += -nu0*ur*dClr-dt*ch0.getKCl(q1p,ur)*ch0.bCll;
         	ch0.Cl_hist[ch0.n*(ch0.N+2)] = ch0.bCll;
 		    ch1.Cl_hist[ch1.n*(ch1.N+2)+N1+1] = ch1.bClr;
 
