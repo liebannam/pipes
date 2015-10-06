@@ -486,7 +486,7 @@ void Channel::setCl0(vector<double> Cl0_)
         Cl[i] = c0;
         Cl0[i] = c0;
         Cl_hist[i+1] = c0;
-        printf(" i = %d  Cl=%f  Cl0 = %f\n",i,Cl[i], Cl0[i]);
+       // printf(" i = %d  Cl=%f  Cl0 = %f\n",i,Cl[i], Cl0[i]);
     }
 }
 
