@@ -48,6 +48,7 @@ using std::min;
 */
 #define numFlux(q1m, q1p, q2m, q2p, flux, Pm, Pp)  numFluxHLL(q1m, q1p, q2m, q2p, flux, Pm, Pp) 
 #define speeds(q1m, q1p, q2m, q2p, flux, Pm, Pp)   speedsHLL(q1m, q1p, q2m, q2p, flux, Pm, Pp) 
+//#define speeds(q1m, q1p, q2m, q2p, flux, Pm, Pp)   speedsRoe(q1m, q1p, q2m, q2p, flux, Pm, Pp) 
 
 
 /**\brief Templating magic for streaming into vectors 

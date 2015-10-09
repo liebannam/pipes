@@ -244,7 +244,7 @@ Channel::Channel(int Nin, double win, double Lin, int Min, double a, double kwin
     Clhat = new double[N];
     bfluxleft = new double[2];
 	bfluxright = new double[2];
-	dry = 1e-6*win;//tolerance for "dry'' pipe
+	dry = 1e-4*win;//tolerance for "dry'' pipe
     //assume junctions aren't ventilated unless they're junction1s without reflection
 	P.push_back(false);
 	for(int i = 0; i<N+1; i++){P.push_back(false);}
@@ -502,7 +502,7 @@ void Channel::stepEuler(double dt)
 	double fminus[2] ={0};
 	double nu = dt/dx;				
 	//decide when negative A forces the code throws an error over negative area (vs. just printing a warning) 
-	double negtol = -dx/50.;		
+	double negtol = -dx/100.;		
 	int i,k;
 	//get pressurization information for leftmost cell
 	Pnow = P[pj(0)]; 							              
@@ -523,7 +523,12 @@ void Channel::stepEuler(double dt)
 		for(k=0; k<2; k++)
 		{
 			q[idx(k,i)] = q0[idx(k,i)]-nu*(fplus[k]-fminus[k]);
-		}                    
+		}
+        if(q[idx(0,i)]<0)
+        {
+            printf("Negative area! i=%d, A= %f, Q= %f, fplus= [%f,%f] and fminus = [%f %f]",i,q[i], q[idx(1,i)], fplus[0],fplus[1], fminus[0],fminus[1]);
+            q[i]=0;
+        }        
 		//update pressurization info: if A>At-> pressurized pipe; if A<At AND a neighbor is free surface, pipe is free surface
 		P[pj(i)] = (q[idx(0,i)]>At )||( P[pj(i-1)]==true && P[pj(i+1)]==true);
 	}
@@ -531,7 +536,7 @@ void Channel::stepEuler(double dt)
 	P[pj(N-1)] = (q[idx(0,N-1)]>At )||( P[pj(N-2)]==true && P[pj(N)]==true); 
 	q[idx(0, N-1)] = q0[idx(0,N-1)] - nu*(bfluxright[0]-fplus[0]);                      
 	q[idx(1,N-1)] = q0[idx(1,N-1)] - nu*(bfluxright[1] - fplus[1]);	
-	//fold in source terms
+    //fold in source terms
 	stepSourceTerms(dt);
         //step chlorine transport terms if tracking water quality
         if (Clplease) stepTransportTerms(dt);
@@ -669,6 +674,7 @@ void Channel::stepSourceTerms(double dt){
 	{
 		q[idx(1,i)]= q[idx(1,i)] +dt*getSourceTerms(q[idx(0,i)], q[idx(1,i)] +dt/2.*getSourceTerms(q[idx(0,i)],q[idx(1,i)]));
 		q0[idx(1,i)] = q[idx(1,i)];
+        if (q[idx(1,i)]>10) printf("whoops Q[%d] = %f\n",i,q[idx(1,i)]);
 	}
 	
 }
@@ -683,9 +689,9 @@ double Channel::getSourceTerms(double A, double Q){
 	double tol = 1e-1;
 	if (A>tol)
 	{
-		Sf = pow(Mr/kn,2)*Q*fabs(Q)/(A*A*pow(getHydRad(A),4./3.));
-	
+		Sf = pow(Mr/kn,2)*Q*fabs(Q)/(A*A*pow(getHydRad(A),4./3.));	
 	}
+//    printf("Sf = %f S0 = %f A = %f, Q = %f\n", Sf, S0, A,Q);
 	return (S0-Sf)*G*A;
 }
 
@@ -1053,7 +1059,7 @@ void Cpreiss::speedsRoe(double q1m, double q1p, double q2m, double q2p, double *
     up = (q1p>dry? q2p/q1p : 0.);
     hm = HofA(q1m,Pm);
     hp = HofA(q1p,Pp);
-    uhat = (hm+hp >0.)? (sqrt(hm)*um+sqrt(hp)*up)/(sqrt(hm)+sqrt(hp)) : 0. ;
+    uhat = (hm+hp >dry)? (sqrt(hm)*um+sqrt(hp)*up)/(sqrt(hm)+sqrt(hp)) : 0. ;
     hhat = (hm+hp)/2.;
     chat = Cgrav(AofH(hhat,p),p); 
     smin = chat +uhat;
@@ -1068,7 +1074,7 @@ void Cpreiss::speedsRoe(double q1m, double q1p, double q2m, double q2p, double *
    // printf("well shit. s is [%f,%f]\n", s[0],s[1]);
     if(isnan(s[0]) || isnan(s[1]))
     {
-	    printf("well shit. s is [%f,%f]\n", s[0],s[1]);
+	    printf("well shit. s is [%f,%f], hm=%f hp = %f\n", s[0],s[1], hm, hp);
 	    printf("qm = %f, qp = %f, um = %f, up = %f,\n", q1m, q1p, up, um); 
     }
 }
@@ -1095,29 +1101,34 @@ void Cpreiss::speedsHLL(double q1m, double q1p, double q2m, double q2p, double *
 		//this verstion uses depth positivity condition
 		//Astar = (q1m+q1p)/2.*(1+(um-up)/(PhiofA(q1p,Pp)+PhiofA(q1m,Pm))); 
 		//this is linearized version
-		Astar = (q1m+q1p)/2.*(1+( (cbar>1e-6)? (um-up)/(2.*cbar): 0));  
+		Astar = (q1m+q1p)/2.*(1+( (cbar>1e-6)? (um-up)/(2.*cbar): 0));
+        if (Astar<0)
+        {
+           // printf("using depth positivity condition\n");
+            Astar = (q1m+q1p)/2.*(1+(um-up)/(PhiofA(q1p,Pp)+PhiofA(q1m,Pm))); 
+        }  
 		bool Ps = (Pm && Pp);
 		s[0] = um - findOmega(Astar, q1m, Ps, Pm);
 		s[1] = up + findOmega(Astar, q1p, Ps, Pp);
 		// Sanders estimates (not very good--use them if the other estimate messes up(??!))
-		double Vs, cs, phip, phim;
-		phim = PhiofA(q1m, Pm);
-		phip = PhiofA(q1p, Pp);
-		bool Pmp = !(!Pp||!Pm);
-		Vs = 0.5*(um+up+phim-phip);
-		double phis = 0.5*(phim+phip+um-up);
-		double Astars = AofPhi(0.5*(phim+phip+um-up),Pmp);
-		if (phis>AofPhi(Af,true)){cs = a;}
-		else{cs = Cgrav(Astars,Pmp);}
-		sl1 = um - cm;
-		sl2 = Vs - cs;
-		sr1 = up + cp;
-		sr2 = Vs + cs;
-		if (WTF){
-			printf("phis = %f, cs = %f\n",phis, cs);
-			printf("Atsar = %f, Astard = %f, AstarS = %f\nwith q1m = %f and q1p = %f, um =%f, up = %f\n",Astar, Astarp, Astars, q1m, q1p, um, up);
-			printf("sL = %f, sR = %f, Sanders speeds (vl-cl, vs-cs) = (%f, %f) and (vr+cR, vr+cr) = (%f,%f)",s[0], s[1], sl1, sl2, sr1, sr2);
-		}
+//		double Vs, cs, phip, phim;
+//		phim = PhiofA(q1m, Pm);
+//		phip = PhiofA(q1p, Pp);
+//		bool Pmp = !(!Pp||!Pm);
+//		Vs = 0.5*(um+up+phim-phip);
+//		double phis = 0.5*(phim+phip+um-up);
+//		double Astars = AofPhi(0.5*(phim+phip+um-up),Pmp);
+//		if (phis>AofPhi(Af,true)){cs = a;}
+//		else{cs = Cgrav(Astars,Pmp);}
+//		sl1 = um - cm;
+//		sl2 = Vs - cs;
+//		sr1 = up + cp;
+//		sr2 = Vs + cs;
+//		if (WTF){
+//			printf("phis = %f, cs = %f\n",phis, cs);
+////			printf("Atsar = %f, Astard = %f, AstarS = %f\nwith q1m = %f and q1p = %f, um =%f, up = %f\n",Astar, Astarp, Astars, q1m, q1p, um, up);
+	//		printf("sL = %f, sR = %f, Sanders speeds (vl-cl, vs-cs) = (%f, %f) and (vr+cR, vr+cr) = (%f,%f)",s[0], s[1], sl1, sl2, sr1, sr2);
+	//	}
 	//	s[0] = min(sl1,sl2);
    // 	s[1] = max(sr1,sr2);
 
