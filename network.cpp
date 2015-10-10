@@ -81,14 +81,14 @@ Network::Network(int Nnodes_, std::vector<int> conns_, int Nedges_, std::vector<
 		{
 			int idx =find_nth(conns, j, 1, 2*Nedges);
 	//		printf(" index is %d, row is %d, column is %d\n", idx, idx/2, idx%2);
-		//	printf("\njunction1!!!\n edge is %d and whichend is %d\n ", idx/2, idx%2); 
+			printf("\njunction1!!!\n edge is %d and whichend is %d\n ", idx/2, idx%2); 
 		        junction1s.push_back(new Junction1(*channels[idx/2], idx%2 ,0.,1)); //row in conns corresponds to edge; column corresponds to left or right end.
 		}
 		else if(nodeTypes[j] ==2)
 		{
 			int idx1 =find_nth(conns, j, 1, 2*Nedges);
 			int idx2 =find_nth(conns, j, 2, 2*Nedges);
-		//	printf("\njunction2!!! index1 is %d, edge0 is %d, which0 is %d\n", idx1, idx1/2, idx1%2);
+			printf("\njunction2!!! edge0 is %d, which0 is edge 1 is %d, which1 is %d %d\n", idx1/2, idx1/2, idx1%2, idx2/2, idx2%2);
 		//	printf(" index2 is %d, edge1 is %d, which1 is %d\n", idx2, idx2/2, idx2%2);
 			junction2s.push_back(new Junction2(*channels[idx1/2], *channels[idx2/2], idx1%2, idx2%2, 1.0));
 		}
@@ -105,26 +105,32 @@ Network::Network(int Nnodes_, std::vector<int> conns_, int Nedges_, std::vector<
 			//[0,1,1] case
 			if(idx1%2+idx2%2+idx3%2 ==2){
 				if (idx1%2 == 0){junction3s.push_back(new Junction3(*channels[idx1/2], *channels[idx2/2], *channels[idx3/2], idx1%2, idx2%2, idx3%2));
-			//	printf("ch0 is %d ch1 is %d ch2 is %d", idx1/2, idx2/2, idx3/2 );
+				printf("(A) ch0 is %d ch1 is %d ch2 is %d", idx1/2, idx2/2, idx3/2 );
+				printf("whichends are [%d %d %d]\n", idx1%2, idx2%2, idx3%2 );
 				}
 				else if(idx2%2 == 0){junction3s.push_back(new Junction3(*channels[idx2/2], *channels[idx1/2], *channels[idx3/2], idx2%2, idx1%2, idx3%2));
-			//	printf("ch0 is %d ch1 is %d ch2 is %d", idx2/2, idx1/2, idx3/2 );
+				printf("(B) ch0 is %d ch1 is %d ch2 is %d", idx2/2, idx1/2, idx3/2 );
+				printf("whichends are [%d %d %d]\n", idx2%2, idx1%2, idx3%2 );
 			}
 				else {junction3s.push_back(new Junction3(*channels[idx3/2], *channels[idx2/2], *channels[idx1/2], idx3%2, idx2%2, idx1%2));
-			//	printf("ch0 is %d ch1 is %d ch2 is %d", idx3/2, idx2/2, idx1/2 );
+				printf("(C) ch0 is %d ch1 is %d ch2 is %d", idx3/2, idx2/2, idx1/2 );
+				printf("whichends are [%d %d %d]\n", idx3%2, idx2%2, idx1%2 );
 			}
 
 			}
 			//[1,0,0] case
 			else if(idx1%2+idx2%2+idx3%2 ==1){
 				if(idx1%2 ==1){junction3s.push_back(new Junction3(*channels[idx1/2], *channels[idx2/2], *channels[idx3/2], idx1%2, idx2%2, idx3%2));
-				//printf("ch0 is %d ch1 is %d ch2 is %d", idx1/2, idx2/2, idx3/2 );
+				printf("(D) ch0 is %d ch1 is %d ch2 is %d", idx1/2, idx2/2, idx3/2 );
+				printf("whichends are [%d %d %d]\n", idx1%2, idx2%2, idx3%2 );
 				}
 				else if(idx2%2 ==1){junction3s.push_back(new Junction3(*channels[idx2/2], *channels[idx1/2], *channels[idx3/2], idx2%2, idx1%2, idx3%2));
-				//printf("ch0 is %d ch1 is %d ch2 is %d", idx2/2, idx1/2, idx3/2 );
+				printf("(E) ch0 is %d ch1 is %d ch2 is %d", idx2/2, idx1/2, idx3/2 );
+				printf("whichends are [%d %d %d]\n", idx2%2, idx1%2, idx3%2 );
 				}
 				else {junction3s.push_back(new Junction3(*channels[idx3/2], *channels[idx2/2], *channels[idx1/2], idx3%2, idx2%2, idx1%2));
-				//printf("ch0 is %d ch1 is %d ch2 is %d", idx3/2, idx2/2, idx1/2 );
+				printf("(F)ch0 is %d ch1 is %d ch2 is %d", idx3/2, idx2/2, idx1/2 );
+				printf("whichends are [%d %d %d]\n", idx3%2, idx2%2, idx1%2 );
 				}
 			}
 			else {
@@ -189,20 +195,28 @@ Network::Network(const Network &N_old):Nnodes(N_old.Nnodes), Nedges(N_old.Nedges
 			//[0,1,1] case
 			if(idx1%2+idx2%2+idx3%2 ==2){
 				if (idx1%2 == 0){junction3s.push_back(new Junction3(*channels[idx1/2], *channels[idx2/2], *channels[idx3/2], idx1%2, idx2%2, idx3%2));
-				}
+				   printf("junction3! incoming channels= [%d %d %d]\n",idx1/2, idx2/2, idx3/2);
+                }
 				else if(idx2%2 == 0){junction3s.push_back(new Junction3(*channels[idx2/2], *channels[idx1/2], *channels[idx3/2], idx2%2, idx1%2, idx3%2));
-				}
+				   printf("junction3! incoming channels= [%d %d %d]\n",idx2/2, idx1/2, idx3/2);
+                }
 				else {junction3s.push_back(new Junction3(*channels[idx3/2], *channels[idx2/2], *channels[idx1/2], idx3%2, idx2%2, idx1%2));
-				}
+				printf("junction3! incoming channels= [%d %d %d]\n",idx3/2, idx2/2, idx1/2);
+
+                }
 
 			}
 			//[1,0,0] case
 			else if(idx1%2+idx2%2+idx3%2 ==1){
 				if(idx1%2 ==1){junction3s.push_back(new Junction3(*channels[idx1/2], *channels[idx2/2], *channels[idx3/2], idx1%2, idx2%2, idx3%2));
-				}
+								   printf("junction3! incoming channels= [%d %d %d]\n",idx1/2, idx2/2, idx3/2);
+                }
 				else if(idx2%2 ==1){junction3s.push_back(new Junction3(*channels[idx2/2], *channels[idx1/2], *channels[idx3/2], idx2%2, idx1%2, idx3%2));
-				}
+						   printf("junction3! incoming channels= [%d %d %d]\n",idx2/2, idx1/2, idx3/2);
+
+                }
 				else {junction3s.push_back(new Junction3(*channels[idx3/2], *channels[idx2/2], *channels[idx1/2], idx3%2, idx2%2, idx1%2));
+                    		printf("junction3! incoming channels= [%d %d %d]\n",idx3/2, idx2/2, idx1/2);
 				}
 			}
 			else {
@@ -283,25 +297,37 @@ Network::Network(Network *N_old):Nnodes(N_old->Nnodes), Nedges(N_old->Nedges), M
 			int idx1 =find_nth(conns, j, 1, 2*Nedges);
 			int idx2 =find_nth(conns, j, 2, 2*Nedges);
 			int idx3 =find_nth(conns, j, 3, 2*Nedges);
+
 //set it up so that either you have [end0, end1, end2] = [1,0,0] or = [0,1,1];
 //[0,1,1] case
 			if(idx1%2+idx2%2+idx3%2 ==2){
 				if (idx1%2 == 0){junction3s.push_back(new Junction3(*channels[idx1/2], *channels[idx2/2], *channels[idx3/2], idx1%2, idx2%2, idx3%2));
+                    printf("junction3! incoming channels= [%d %d %d]\n",idx1/2, idx2/2, idx3/2);
 				}
 				else if(idx2%2 == 0){junction3s.push_back(new Junction3(*channels[idx2/2], *channels[idx1/2], *channels[idx3/2], idx2%2, idx1%2, idx3%2));
+                    printf("junction3! incoming channels= [%d %d %d]\n",idx2/2, idx1/2, idx3/2);
+
 				}
 				else {junction3s.push_back(new Junction3(*channels[idx3/2], *channels[idx2/2], *channels[idx1/2], idx3%2, idx2%2, idx1%2));
+                     printf("junction3! incoming channels= [%d %d %d]\n",idx3/2, idx1/2, idx1/2);
+
 				}
 
 			}
 //[1,0,0] case
 			else if(idx1%2+idx2%2+idx3%2 ==1){
 				if(idx1%2 ==1){junction3s.push_back(new Junction3(*channels[idx1/2], *channels[idx2/2], *channels[idx3/2], idx1%2, idx2%2, idx3%2));
+                     printf("junction3! incoming channels= [%d %d %d]\n",idx1/2, idx2/2, idx3/2);
+
 				}
 				else if(idx2%2 ==1){junction3s.push_back(new Junction3(*channels[idx2/2], *channels[idx1/2], *channels[idx3/2], idx2%2, idx1%2, idx3%2));
+                    printf("junction3! incoming channels= [%d %d %d]\n",idx2/2, idx1/2, idx3/2);
+
 				}
 				else {junction3s.push_back(new Junction3(*channels[idx3/2], *channels[idx2/2], *channels[idx1/2], idx3%2, idx2%2, idx1%2));
-				}
+				 printf("junction3! incoming channels= [%d %d %d]\n",idx3/2, idx2/2, idx1/2);
+
+                }
 			}
 			else {
 				cout<<"Oops! boundary conditions not implemented for this configuration yet. Your simulation is fairly certainily going to suck.\n";
@@ -359,7 +385,8 @@ void Network::EulerStep(double dt)
 //#pragma omp parallel for  (not worth initializing threads for networks with 1-17 pipes...haven't tested larger networks.
 	for (int k = 0;k<Nedges; k++)
 	{
-      //  printf("Channel %d!!!!!!!!!!!!\n",k);
+
+       // printf("Channel %d!!!!!!!!!!!!\n",k);
 		channels[k]->stepEuler(dt);
 	}
 }
@@ -424,6 +451,9 @@ void Network::runForwardProblem(double dt)
 	{
 //currenlty this block only called from command line version. Reconfigure if you want python calls to print time and average gradient info as sim progresses.
 	
+//	printf("current time is %3.3f s ", ((double)nn*dt));
+//  printf("channels[0].bfluxleft = [%f,%f]\n",channels[0]->bfluxleft[0], channels[0]->bfluxleft[1]);
+//  printf("channels[0].bfluxright = [%f,%f]\n",channels[0]->bfluxright[0], channels[0]->bfluxright[1]);
 	#ifdef commandline 
 		if(i%Mi==0)
 		{

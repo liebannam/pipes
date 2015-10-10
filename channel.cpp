@@ -244,7 +244,7 @@ Channel::Channel(int Nin, double win, double Lin, int Min, double a, double kwin
     Clhat = new double[N];
     bfluxleft = new double[2];
 	bfluxright = new double[2];
-	dry = 1e-4*win;//tolerance for "dry'' pipe
+	dry = 1e-6*win;//tolerance for "dry'' pipe
     //assume junctions aren't ventilated unless they're junction1s without reflection
 	P.push_back(false);
 	for(int i = 0; i<N+1; i++){P.push_back(false);}
@@ -507,7 +507,9 @@ void Channel::stepEuler(double dt)
 	//get pressurization information for leftmost cell
 	Pnow = P[pj(0)]; 							              
 	//update leftmost cell using externally assigned fluxes bfluxleft
-	numFlux(q0[idx(0,0)], q0[idx(0,1)], q0[idx(1,0)], q0[idx(1,1)],fplus,P[pj(0)], P[pj(1)]);
+	//printf("bfluxleft = [%f,%f]\n",bfluxleft[0], bfluxleft[1]);
+//	printf("bfluxright = [%f,%f]\n",bfluxright[0], bfluxright[1]);
+    numFlux(q0[idx(0,0)], q0[idx(0,1)], q0[idx(1,0)], q0[idx(1,1)],fplus,P[pj(0)], P[pj(1)]);
 	q[idx(0,0)] = q0[idx(0,0)]-nu*(fplus[0]-bfluxleft[0]);           
 	q[idx(1,0)] = q0[idx(1,0)]-nu*(fplus[1]-bfluxleft[1]);	
 	P[pj(0)] = (q[idx(0,0)]>At )||( P[pj(-1)]==true && P[pj(1)]==true); 
@@ -1459,6 +1461,7 @@ void Junction1::boundaryFluxes()
 	else if(Aext>ch0.At){ch0.P[Npe]= true;}
 	else{ch0.P[Npe] =ch0.P[Npi];}
 	ch0.p_hist[ch0.pj_t(Npe,ch0.n)] = ch0.P[Npe];
+   // printf("Ain=%f Qin =%f Aext = %f Qext = %f\n",Ain, Qin, Aext, Qext);
     //	printf("Ain is %f and Qin is %f and Aext is %f and Qext is %f for end %d\n Pin is %d and Pext is %d\n", Ain, Qin, Aext, Qext, whichend, Pin, Pext);
 
 }
@@ -1643,36 +1646,71 @@ void Junction2::boundaryFluxes(double dt)
         double dCll, dClr, ul, ur;            
         ul = q1m>ch0.dry? q2m/q1m:0.;
         ur = q1p>ch1.dry? q2p/q1p:0.;
-		if(whichend0)
+		if(whichend0)//right end of pipe 0
 		{
-			ch0.numFlux(q1m,q1pfake, q2m, q2p*valveopen, ch0.bfluxright, pm, pp);
-			ch1.bfluxleft[0] = ch0.bfluxright[0];	
-			ch1.bfluxleft[1] = ch0.bfluxright[1];
-            if (ul<0){dCll = ch1.bCll-ch0.bClr;}
-            else{dCll = ch0.bClr-ch0.Cl[N0];}
-          //  dClr = dCll;
-            if(ur<0){dClr = ch1.Cl[0]-ch1.bCll;}
-            else{dClr = ch1.bCll-ch0.bClr;}
-            ch0.bClr += -nu0*ul*dCll -dt*ch0.getKCl(q1m,ul)*ch0.bClr;
-            ch1.bCll += -nu1*ur*dClr -dt*ch1.getKCl(q1p,ur)*ch1.bCll;
-        	ch0.Cl_hist[ch0.n*(ch0.N+2)+N0+1] = ch0.bClr;
-		    ch1.Cl_hist[ch1.n*(ch1.N+2)] = ch1.bCll;
+            if(!whichend1)//left end of pipe 1
+            {
+                ch0.numFlux(q1m,q1pfake, q2m, q2p*valveopen, ch0.bfluxright, pm, pp);
+                ch1.bfluxleft[0] = ch0.bfluxright[0];	
+                ch1.bfluxleft[1] = ch0.bfluxright[1];
+                if (ul<0){dCll = ch1.bCll-ch0.bClr;}
+                else{dCll = ch0.bClr-ch0.Cl[N0];}
+              //  dClr = dCll;
+                if(ur<0){dClr = ch1.Cl[0]-ch1.bCll;}
+                else{dClr = ch1.bCll-ch0.bClr;}
+                ch0.bClr += -nu0*ul*dCll -dt*ch0.getKCl(q1m,ul)*ch0.bClr;
+                ch1.bCll += -nu1*ur*dClr -dt*ch1.getKCl(q1p,ur)*ch1.bCll;
+                ch0.Cl_hist[ch0.n*(ch0.N+2)+N0+1] = ch0.bClr;
+                ch1.Cl_hist[ch1.n*(ch1.N+2)] = ch1.bCll;  
+            }
+            else//also right end of pipe 1
+            {
+                ch0.numFlux(q1m,q1pfake, q2m, q2p*valveopen, ch0.bfluxright, pm, pp);
+                ch1.bfluxright[0] = ch0.bfluxright[0];	
+                ch1.bfluxright[1] = ch0.bfluxright[1];
+                if (ul<0){dCll = ch1.bCll-ch0.bClr;}
+                else{dCll = ch0.bClr-ch0.Cl[N0];}
+              //  dClr = dCll;
+                if(ur<0){dClr = ch1.Cl[N1]-ch1.bClr;}
+                else{dClr = ch1.bCll-ch0.bClr;}
+                ch0.bClr += -nu0*ul*dCll -dt*ch0.getKCl(q1m,ul)*ch0.bClr;
+                ch1.bCll += -nu1*ur*dClr -dt*ch1.getKCl(q1p,ur)*ch1.bClr;
+                ch0.Cl_hist[ch0.n*(ch0.N+2)+N0+1] = ch0.bClr;
+                ch1.Cl_hist[ch1.n*(ch1.N+2)+N1+1] = ch1.bClr;  
+            }
         }
-		else
+		else//left end of pipe0 
 		{
-			ch0.numFlux(q1pfake, q1m, q2p*valveopen, q2m, ch0.bfluxleft, pp, pm);
-			ch1.bfluxright[0] = ch0.bfluxleft[0];
-			ch1.bfluxright[1] = ch0.bfluxleft[1];
-            if (ul<0){dCll = ch0.bCll-ch1.bClr;}
-            else{dCll = ch1.bClr-ch1.Cl[N1];}
-          //  dClr = dCll;
-            if (ur<0){dClr = ch0.Cl[0]-ch0.bCll;}
-            else{dClr = ch0.bCll-ch1.bClr;}
-            ch1.bClr += -nu1*ul*dCll-dt*ch1.getKCl(q1m,ul)*ch1.bClr;
-            ch0.bCll += -nu0*ur*dClr-dt*ch0.getKCl(q1p,ur)*ch0.bCll;
-        	ch0.Cl_hist[ch0.n*(ch0.N+2)] = ch0.bCll;
-		    ch1.Cl_hist[ch1.n*(ch1.N+2)+N1+1] = ch1.bClr;
-
+            if(whichend1)//right end of pipe 1
+            { 
+                ch0.numFlux(q1pfake, q1m, q2p*valveopen, q2m, ch0.bfluxleft, pp, pm);
+                ch1.bfluxright[0] = ch0.bfluxleft[0];
+                ch1.bfluxright[1] = ch0.bfluxleft[1];
+                if (ul<0){dCll = ch0.bCll-ch1.bClr;}
+                else{dCll = ch1.bClr-ch1.Cl[N1];}
+              //  dClr = dCll;
+                if (ur<0){dClr = ch0.Cl[0]-ch0.bCll;}
+                else{dClr = ch0.bCll-ch1.bClr;}
+                ch1.bClr += -nu1*ul*dCll-dt*ch1.getKCl(q1m,ul)*ch1.bClr;
+                ch0.bCll += -nu0*ur*dClr-dt*ch0.getKCl(q1p,ur)*ch0.bCll;
+                ch0.Cl_hist[ch0.n*(ch0.N+2)] = ch0.bCll;
+                ch1.Cl_hist[ch1.n*(ch1.N+2)+N1+1] = ch1.bClr;
+            }
+            else //also left end of pipe1
+            {
+                ch0.numFlux(q1pfake, q1m, q2p*valveopen, q2m, ch0.bfluxleft, pp, pm);
+                ch1.bfluxleft[0] = ch0.bfluxleft[0];
+                ch1.bfluxleft[1] = ch0.bfluxleft[1];
+                if (ul<0){dCll = ch0.bCll-ch1.bCll;}
+                else{dCll = ch1.bCll-ch1.Cl[0];}
+              //  dClr = dCll;
+                if (ur<0){dClr = ch0.Cl[0]-ch0.bCll;}
+                else{dClr = ch0.bCll-ch1.bCll;}
+                ch1.bCll += -nu1*ul*dCll-dt*ch1.getKCl(q1m,ul)*ch1.bCll;
+                ch0.bCll += -nu0*ur*dClr-dt*ch0.getKCl(q1p,ur)*ch0.bCll;
+                ch0.Cl_hist[ch0.n*(ch0.N+2)] = ch0.bCll;
+                ch1.Cl_hist[ch1.n*(ch1.N+2)] = ch1.bCll;
+            }
 		}
 
 		ch0.q_hist[ch0.idx_t(0,Ns0,ch0.n)] =  q1pfake;
@@ -1708,10 +1746,12 @@ Junction3::Junction3(Channel &ch0, Channel &ch1, Channel &ch2, int which0, int w
 	whichend[0] = which0;
 	whichend[1] = which1;
 	whichend[2] = which2;
+    printf("*******whichends = [%d,%d,%d]\n", which0, which1, which2, which2);
 
 }
 /**
- * this routine assumes you have one incoming (whichend =1) and two outgoing pipes (whichend =0)
+ * this routine assumes you have one incoming (whichend =1) and two outgoing pipes (whichend =0) OR
+ * two incoming (whichend =1) and two outging (whichend =0)
  * To do: set up machinery to have two incoming and one outgong but there's no reason to have anything else
 **/
 void Junction3::boundaryFluxes(double dt){
@@ -1725,7 +1765,7 @@ void Junction3::boundaryFluxes(double dt){
 	p12 = 0.5;
 	p20 = 1-p02;
 	p21 = 1-p12;
-	if((whichend[0]==1 &&whichend[1] ==0 &&whichend[2] ==0) || (whichend[0] ==0&& whichend[1] ==1 &&whichend[2] ==1))
+	if(whichend[0]==1 &&whichend[1] ==0 &&whichend[2] ==0)
 	{
 
 		Abar[0] = .5*(ch1.q[ch1.idx(0,0)]+ch2.q[ch2.idx(0,0)]);
@@ -1747,8 +1787,9 @@ void Junction3::boundaryFluxes(double dt){
 		ch2.q[ch2.idx(1,0)]= -ch2.q[ch2.idx(1,0)];
 		flux1[0] += p12*ch1.bfluxleft[0];
 		flux1[1] += p12*ch1.bfluxleft[1];
-		flux2[0] =  p21*ch2.bfluxright[0];
-		flux2[1] =  p21*ch2.bfluxright[1];
+
+		flux2[0] =  p21*ch2.bfluxleft[0];///formerly these two lines were bflux right. Wrong before?
+		flux2[1] =  p21*ch2.bfluxleft[1];
 
 		ch1.q[ch1.idx(1,0)]= -ch1.q[ch1.idx(1,0)];
 		j2_21.boundaryFluxes(dt);
@@ -1770,14 +1811,76 @@ void Junction3::boundaryFluxes(double dt){
 		ch1.bfluxleft[1] = flux1[1];
 		ch2.bfluxleft[0] = flux2[0];
 		ch2.bfluxleft[1] = flux2[1];
+        printf("triple junction fluxes are\n");
+        printf("channel 0: [%f  %f]\n",flux0[0], flux0[1]);
+        printf("channel 1: [%f  %f]\n",flux1[0], flux1[1]);
+        printf("channel 2: [%f  %f]\n",ch2.bfluxleft[0], ch2.bfluxleft[1]);
 		//store away the info
-		ch0.q_hist[ch0.idx_t(0,ch0.N+1,ch0.n+1)] = Abar[0]; 
-		ch0.q_hist[ch0.idx_t(1,ch0.N+1,ch0.n+1)] = Qbar[0];
+		ch0.q_hist[ch0.idx_t(0,ch0.N+1,ch0.n)] = Abar[0]; 
+		ch0.q_hist[ch0.idx_t(1,ch0.N+1,ch0.n)] = Qbar[0];
 		ch1.q_hist[ch1.idx_t(0,0,ch1.n)] =  Abar[1];
 		ch1.q_hist[ch1.idx_t(1,0,ch1.n)] =  Qbar[1];
 		ch2.q_hist[ch2.idx_t(0,0,ch2.n)] =  Abar[2];
 		ch2.q_hist[ch2.idx_t(1,0,ch2.n)] =  Qbar[2];
 	}
+    else if( (whichend[0] ==0&& whichend[1] ==1 &&whichend[2] ==1))
+	{
+
+		Abar[0] = .5*(ch1.q[ch1.idx(0,ch1.N-1)]+ch2.q[ch2.idx(0,ch2.N-1)]);
+		Qbar[0] = .5*(ch1.q[ch1.idx(1,ch1.N-1)]+ch2.q[ch2.idx(1,ch2.N-1)]);
+		Abar[1] = .5*(ch0.q[ch0.idx(0,0)]+ch2.q[ch2.idx(0,ch2.N-1)]);
+		Qbar[1] = .5*(ch0.q[ch0.idx(1,0)]-ch2.q[ch2.idx(1,ch2.N-1)]);
+		Abar[2] = .5*(ch0.q[ch0.idx(0,0)]+ch1.q[ch1.idx(0,ch1.N-1)]);	
+		Qbar[2] = .5*(ch0.q[ch0.idx(1,0)]-ch1.q[ch1.idx(1,ch1.N-1)]);
+	//solve fake Reimann problems between each pair
+	//0-1 is easy
+		j2_01.boundaryFluxes(dt);
+		flux0[0] =  p01*ch0.bfluxleft[0];
+		flux0[1] =  p01*ch0.bfluxleft[1];
+		flux1[0] =  p10*ch1.bfluxright[0];
+		flux1[1] =  p10*ch1.bfluxright[1];
+	//1-2 is a pain in the neck	
+		ch2.q[ch2.idx(1,ch2.N-1)]= -ch2.q[ch2.idx(1,ch2.N-1)];
+		j2_12.boundaryFluxes(dt);	
+		ch2.q[ch2.idx(1,ch2.N-1)]= -ch2.q[ch2.idx(1,ch2.N-1)];
+		flux1[0] += p12*ch1.bfluxright[0];
+		flux1[1] += p12*ch1.bfluxright[1];
+		flux2[0] =  p21*ch2.bfluxright[0];
+		flux2[1] =  p21*ch2.bfluxright[1];
+
+		ch1.q[ch1.idx(1,ch1.N-1)]= -ch1.q[ch1.idx(1,ch1.N-1)];
+		j2_21.boundaryFluxes(dt);
+		ch1.q[ch1.idx(1,ch1.N-1)]= -ch1.q[ch1.idx(1,ch1.N-1)];
+		flux2[0] = p21*ch2.bfluxright[0];
+		flux2[1] = p21*ch2.bfluxright[1];
+	
+
+		j2_20.boundaryFluxes(dt);
+		flux0[0] += p02*ch0.bfluxleft[0];
+		flux0[1] += p02*ch0.bfluxleft[1];
+		flux2[0] += p20*ch2.bfluxright[0];
+		flux2[1] += p20*ch2.bfluxright[1];
+
+		//set all the fluxes properly
+		ch0.bfluxleft[0] = flux0[0];
+		ch0.bfluxleft[1] = flux0[1];
+		ch1.bfluxright[0] = flux1[0];
+		ch1.bfluxright[1] = flux1[1];
+		ch2.bfluxright[0] = flux2[0];
+		ch2.bfluxright[1] = flux2[1];
+        printf("triple junction fluxes are\n");
+        printf("channel 0: [%f  %f]\n",flux0[0], flux0[1]);
+        printf("channel 1: [%f  %f]\n",flux1[0], flux1[1]);
+        printf("channel 2: [%f  %f]\n",flux2[0], flux2[1]);
+		//store away the info
+		ch0.q_hist[ch0.idx_t(0,0,ch0.n)] = Abar[0]; 
+		ch0.q_hist[ch0.idx_t(1,0,ch0.n)] = Qbar[0];
+		ch1.q_hist[ch1.idx_t(0,ch1.N+1,ch1.n)] =  Abar[1];
+		ch1.q_hist[ch1.idx_t(1,ch1.N+1,ch1.n)] =  Qbar[1];
+		ch2.q_hist[ch2.idx_t(0,ch2.N+1,ch2.n)] =  Abar[2];
+		ch2.q_hist[ch2.idx_t(1,ch2.N+1,ch2.n)] =  Qbar[2];
+
+    }
 	else{	
 		cout<<"End 0 = "<<whichend[0]<<" End 1 = "<< whichend[1]<<" End 2 = "<<whichend[2]<<endl;
 		cout<<"Have not implemented triple junctions for this configuration!Sorry!\n";

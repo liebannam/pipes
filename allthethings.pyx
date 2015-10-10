@@ -107,7 +107,7 @@ cdef extern from "<vector>" namespace "std":
 cdef extern from "channel.h":
     cdef cppclass Cpreiss:
         Cpreiss(int, double, double, int, double)
-        int channeltype, N, M
+        int channeltype, N, M, n
         double kn, w, L, dx, At, Af, a, Ts, S0, Mr, cmax
         double bcqleft, bcqright, bcaleft, bcaright
         double * q, *q0, *q_hist, *Cl_hist
@@ -123,6 +123,7 @@ cdef extern from "channel.h":
         double Cgrav(double, bool)
         double Eta(double, bool)
         double pbar(double, bool)
+        void setq(vector[Real], vector[Real])
         void setClkw(double)
         void setCl0(vector[Real])
         double getKCl(double, double)
@@ -416,13 +417,23 @@ cdef class PyNetwork:
 
     def setIC(self, i, a0, q0):
         '''set IC for pipe i. a0 and q0 should be vectors of length N'''
+        #for j in range(self.Ns[i]):
+        #    self.thisptr.channels[i].q[j] = a0[j]
+        #    self.thisptr.channels[i].q0[j] = a0[j]
+        #    self.thisptr.channels[i].q[j + self.Ns[i]] = q0[j]
+        #    self.thisptr.channels[i].q0[j + self.Ns[i]] = q0[j]
+        #    self.thisptr.channels[i].q_hist[j+1] = a0[j]
+       #     self.thisptr.channels[i].q_hist[j +2+ self.Ns[i]] = q0[j]
+       # self.thisptr.channels[i].q_hist[0] = a0[0]
+        #self.thisptr.channels[i].q_hist[self.Ns[i]+1] = q0[0]
+        #self.thisptr.channels[i].q_hist[self.Ns[i]+2] = a0[self.Ns[i]-1]
+        #self.thisptr.channels[i].q_hist[2*self.Ns[i]+3] = a0[self.Ns[i]-1]
+        cdef vector[Real] A
+        cdef vector[Real] Q
         for j in range(self.Ns[i]):
-            self.thisptr.channels[i].q[j] = a0[j]
-            self.thisptr.channels[i].q0[j] = a0[j]
-            self.thisptr.channels[i].q[j + self.Ns[i]] = q0[j]
-            self.thisptr.channels[i].q0[j + self.Ns[i]] = q0[j]
-            self.thisptr.channels[i].q_hist[j] = a0[j]
-            self.thisptr.channels[i].q_hist[j + self.Ns[i]] = q0[j]
+            A.push_back(a0[j])
+            Q.push_back(q0[j])
+        self.thisptr.channels[i].setq(A,Q)
 
     def showLayout(self):
         print "   pipe | start node | end node\n" + "-" * 35
@@ -485,12 +496,11 @@ cdef class PyNetwork:
         def __set__(self, T): self.T = T
     property nn:
         def __get__(self): return self.thisptr.nn
+        def __set__(self,nn): self.nn= nn
     property a:
-        def __get__(self): return [self.thisptr.channels[
-            i].a for i in range(self.Nedges)]
+        def __get__(self): return [self.thisptr.channels[i].a for i in range(self.Nedges)]
     property cmax:
-        def __get__(self): return [self.thisptr.channels[
-            i].cmax for i in range(self.Nedges)]
+        def __get__(self): return [self.thisptr.channels[i].cmax for i in range(self.Nedges)]
     property solve_time:
         def __get__(self): return self.solve_t
     def setbVal(self, i, x):
@@ -521,6 +531,10 @@ cdef class PyNetwork:
         '''index of ith variable (i=0 or 1) at x location j at time step n in pipe k'''
         N = self.thisptr.channels[k].N
         return (2 * (N + 2) * n + (N + 2) * i + j)
+    def reset(self):
+        self.thisptr.nn=0
+        for k in range(self.Nedges):
+            self.thisptr.channels[k].n=0
 
 
 cdef extern from "levmar.h":
