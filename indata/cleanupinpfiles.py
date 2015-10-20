@@ -27,6 +27,7 @@ def convert(x, units):
     return [xi*c for xi in x]
 
 def main(argv):
+    f2m = 0.3048   #feet to meters
     s= sys.argv[1]
     print "Opening file %s" %s
     with open(s,'rU') as f:
@@ -76,10 +77,11 @@ def main(argv):
     print pipes
     print conns
     #assuming data is in GPM with length unit feet and roughness in H-W 
+    ds = [d/12 for d in ds] #assume D is in inches
     ls = convert(ls, 'f2m')
     ds = convert(ds, 'f2m')
     rs = convert(rs, 'fric')
-
+    es = convert(elevs,'f2m')
     print "number of junctions is %d" %len(orig)
     print "number of pipes is %d" %len(pipeinfo)
     print len(elevs)
@@ -92,7 +94,7 @@ def main(argv):
     fnew.write('[TITLE]\n\n')
     fnew.write('[JUNCTIONS]\n;ID              	Elev        	Demand      	Pattern\n')
     for i in range(len(nodes)):
-        fnew.write(' %d               	%3.2f         	0           	                	;\n'%(i, elevs[i]))
+        fnew.write(' %d               	%3.2f         	0           	                	;\n'%(i, es[i]))
     fnew.write('\n[PIPES]\n;ID              	Node1           	Node2           	Length      	Diameter    	Roughness   	MinorLoss   	Status\n')    
     for i in range(len(pipes)):
         fnew.write(' %s               	%s               	%s               	%3.2f     	%2.3f           	%3.3f         	0           	Open  	;\n'  
@@ -110,5 +112,6 @@ def main(argv):
     for i in range(len(nodes)):       
         fc.write( '%2d        %s      1	     0       1	      0        1          0	     0		0    \n'%(i, nodetypes[i]))
     fc.close()
+    print es
 if __name__=="__main__":
     main(sys.argv[1:])

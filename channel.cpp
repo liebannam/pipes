@@ -244,7 +244,8 @@ Channel::Channel(int Nin, double win, double Lin, int Min, double a, double kwin
     Clhat = new double[N];
     bfluxleft = new double[2];
 	bfluxright = new double[2];
-	dry = 1e-6*win;//tolerance for "dry'' pipe
+	dry = 1e-8*win;//tolerance for "dry'' pipe
+   // printf("dry = %.16f\n",dry);
     //assume junctions aren't ventilated unless they're junction1s without reflection
 	P.push_back(false);
 	for(int i = 0; i<N+1; i++){P.push_back(false);}
@@ -495,7 +496,7 @@ void Channel::setCl0(vector<double> Cl0_)
  *  for left state [q1(i), q2(i)] and right state [q1p(i+1), q2(i+1)]
  *  using numflux as numerical flux
  **/
-void Channel::stepEuler(double dt)
+int Channel::stepEuler(double dt)
 {
 	cmax = 0.;  //reset CFL;
 	double fplus[2] ={0};
@@ -528,8 +529,17 @@ void Channel::stepEuler(double dt)
 		}
         if(q[idx(0,i)]<0)
         {
-            printf("Negative area! i=%d, A= %f, Q= %f, fplus= [%f,%f] and fminus = [%f %f]",i,q[i], q[idx(1,i)], fplus[0],fplus[1], fminus[0],fminus[1]);
-            q[i]=0;
+            printf("Negative area! i=%d, A= %f, Q= %f, fplus= [%f,%f] and fminus = [%f %f]\n",i,q[i], q[idx(1,i)], fplus[0],fplus[1], fminus[0],fminus[1]);
+			printf("%d    %.16f   %.16f\n",-1, q_hist[idx_t(0,0,n)], q_hist[idx_t(1,0,n)]);  
+            for (int i=0; i<N; i++)
+            {
+                printf("%d    %.16f   %.16f  %.16f   %.16f\n",i, q0[idx(0,i)], q0[idx(1,i)],q[idx(0,i)], q[idx(1,i)]);  
+            }
+			printf("%d    %.16f   %.16f\n",N, q_hist[idx_t(0,N+1,n)], q_hist[idx_t(1,N+1,n)]);  
+            std::runtime_error("Oh damn. Negative area!\n");
+
+            //
+            //q[i]=0;
         }        
 		//update pressurization info: if A>At-> pressurized pipe; if A<At AND a neighbor is free surface, pipe is free surface
 		P[pj(i)] = (q[idx(0,i)]>At )||( P[pj(i-1)]==true && P[pj(i+1)]==true);
@@ -552,16 +562,23 @@ void Channel::stepEuler(double dt)
 		//check for negative areas --do I really need this?
 		if(q0[idx(0,i)]<0)
 		{
-			printf("!!Negative area!!!\n with a[%d] = %f at time %f\n ", i, q0[i], dt*(double)n);
+			
+            printf("!!Negative area!!!\n with a[%d] = %f at time %f\n ", i, q0[i], dt*(double)n);
+			printf("!!TOO MUCH Negative area!!! SHITSHITSHIT\n with a[%d] = %f at time %f\n ", i, q0[i], dt*(double)n);
+			printf("%d    %.16f   %.16f\n",-1, q_hist[idx_t(0,0,n)], q_hist[idx_t(1,0,n)]);  
+            for (int i=0; i<N; i++)
+            {
+            printf("%d    %.16f   %.16f\n",i, q0[idx(0,i)], q0[idx(1,i)]);  
+            }
+			printf("%d    %.16f   %.16f\n",-1, q_hist[idx_t(0,N+1,n)], q_hist[idx_t(1,N+1,n)]);  
+            throw std::runtime_error("Oh damn. Negative area!\n");
 		}
 		if (q0[idx(0,i)]<negtol)
 		{
 			q0[idx(0,i)] = 0.0;
-			printf("!!TOO MUCH Negative area!!! SHITSHITSHIT\n with a[%d] = %f at time %f\n ", i, q0[i], dt*(double)n);
-			throw "Oh damn. Negative area!\n";
 		}
-	}
 	if (WTF)printf("cmax =%f and CFL=%f",cmax, dt/dx*cmax);
+    }
 }
 
 /** Physical flux for Preissman slot*/
@@ -599,7 +616,7 @@ void Channel::numFluxHLL(double q1m, double q1p, double q2m, double q2p, double 
 	// Update with HLL flux
 	else 
 	{                                                                                           
-        if(s[0]>=0){physFlux(q1m,q2m,flux, Pp);}
+    if(s[0]>=0){physFlux(q1m,q2m,flux, Pp);}
     else if(s[0]<0 && s[1]>0)
 	{
 		double Fl[2];
@@ -676,6 +693,14 @@ void Channel::stepSourceTerms(double dt){
 	{
 		q[idx(1,i)]= q[idx(1,i)] +dt*getSourceTerms(q[idx(0,i)], q[idx(1,i)] +dt/2.*getSourceTerms(q[idx(0,i)],q[idx(1,i)]));
 		q0[idx(1,i)] = q[idx(1,i)];
+      //  double u= q[idx(1,i)]/q[idx(0,i)];
+      //  double S1 = getSourceTerms(q[idx(0,i)],q[idx(1,i)]);
+       // double q2bar = q[idx(1,i)] +dt/2.*S1;
+       // double ubar = q2bar/q[idx(0,i)];
+      //  double S2 =  getSourceTerms(q[idx(0,i)],q2bar);
+     //   double b1= S1>0? -2.*u/S1: 0.;
+    //    double b2= S2>0? -4.*ubar/(S2):0.;
+    //    printf("u = %f, ubar = %f, S1 = %f, S2 == %f,dt = %f, CFL = %f",u,ubar,S1,S2, dt,min(b1,b2));
         if (q[idx(1,i)]>10) printf("whoops Q[%d] = %f\n",i,q[idx(1,i)]);
 	}
 	
@@ -693,7 +718,7 @@ double Channel::getSourceTerms(double A, double Q){
 	{
 		Sf = pow(Mr/kn,2)*Q*fabs(Q)/(A*A*pow(getHydRad(A),4./3.));	
 	}
-//    printf("Sf = %f S0 = %f A = %f, Q = %f\n", Sf, S0, A,Q);
+   // printf("Sf = %f S0 = %f A = %f, Q = %f\n", Sf, S0, A,Q);
 	return (S0-Sf)*G*A;
 }
 
@@ -1104,11 +1129,11 @@ void Cpreiss::speedsHLL(double q1m, double q1p, double q2m, double q2p, double *
 		//Astar = (q1m+q1p)/2.*(1+(um-up)/(PhiofA(q1p,Pp)+PhiofA(q1m,Pm))); 
 		//this is linearized version
 		Astar = (q1m+q1p)/2.*(1+( (cbar>1e-6)? (um-up)/(2.*cbar): 0));
-        if (Astar<0)
-        {
+        //if (Astar<0)
+        //{
            // printf("using depth positivity condition\n");
-            Astar = (q1m+q1p)/2.*(1+(um-up)/(PhiofA(q1p,Pp)+PhiofA(q1m,Pm))); 
-        }  
+        // Astar = (q1m+q1p)/2.*(1+(um-up)/(PhiofA(q1p,Pp)+PhiofA(q1m,Pm))); 
+        //}  
 		bool Ps = (Pm && Pp);
 		s[0] = um - findOmega(Astar, q1m, Ps, Pm);
 		s[1] = up + findOmega(Astar, q1p, Ps, Pp);
@@ -1149,6 +1174,7 @@ void Cpreiss::speedsHLL(double q1m, double q1p, double q2m, double q2p, double *
 			up = q2p/q1p;
 			s[0] = up - PhiofA(q1p,Pp);
 			s[1] = up + cp;	
+        //    printf("left side dry. s[0] = %f, s[1] = %f, up = %f, q1p = %f q2p = %f cp = %f \n", s[0], s[1], up, q1p,q2p,cp );
 		}
 		//right side dry
 		else if(yp<dry) 
@@ -1156,6 +1182,7 @@ void Cpreiss::speedsHLL(double q1m, double q1p, double q2m, double q2p, double *
 			um = q2m/q1m;
 			s[0] = um - cm;
 			s[1] = um + PhiofA(q1m,Pm);
+          //  printf("right side dry. s[0] = %f, s[1] = %f, um = %f, q1m = %f q2m = %f cm = %f \n", s[0], s[1], um, q1m,q2m,cm );
 		}
 		
 	}
@@ -1168,10 +1195,13 @@ void Cpreiss::speedsHLL(double q1m, double q1p, double q2m, double q2p, double *
 	//check that HLL speeds have s0<s1; really, this should never bloody happen!
 	if(s[0]>s[1]) 	
 	{  
-	if(WTF)	printf("The hell? s[0]>s[1], with q1m = %f, q2m = %f, q1p =%f, q2p =%f, s[0] = %f, s[1] = %f\n",q1m,q2m,q1p,q2p,s[0],s[1]);
+	printf("The hell? s[0]>s[1], with q1m = %f, q2m = %f, q1p =%f, q2p =%f, s[0] = %f, s[1] = %f\n",q1m,q2m,q1p,q2p,s[0],s[1]);
 	//use Sanders wave speed estimates instead if this happens
-	s[0] = min(sl1,sl2);
-    s[1] = max(sr1,sr2);
+	double stemp = s[0];
+    s[0] = s[1];
+    s[1] = stemp;
+    //s[0] = min(sl1,sl2);
+//    s[1] = max(sr1,sr2);
 	}
 	cmax = max(cmax, max(fabs(s[0]),fabs(s[1]))); 		   
 }
@@ -1811,10 +1841,10 @@ void Junction3::boundaryFluxes(double dt){
 		ch1.bfluxleft[1] = flux1[1];
 		ch2.bfluxleft[0] = flux2[0];
 		ch2.bfluxleft[1] = flux2[1];
-        printf("triple junction fluxes are\n");
-        printf("channel 0: [%f  %f]\n",flux0[0], flux0[1]);
-        printf("channel 1: [%f  %f]\n",flux1[0], flux1[1]);
-        printf("channel 2: [%f  %f]\n",ch2.bfluxleft[0], ch2.bfluxleft[1]);
+    //    printf("triple junction fluxes are\n");
+     //   printf("channel 0: [%f  %f]\n",flux0[0], flux0[1]);
+      //  printf("channel 1: [%f  %f]\n",flux1[0], flux1[1]);
+       // printf("channel 2: [%f  %f]\n",ch2.bfluxleft[0], ch2.bfluxleft[1]);
 		//store away the info
 		ch0.q_hist[ch0.idx_t(0,ch0.N+1,ch0.n)] = Abar[0]; 
 		ch0.q_hist[ch0.idx_t(1,ch0.N+1,ch0.n)] = Qbar[0];
@@ -1868,10 +1898,10 @@ void Junction3::boundaryFluxes(double dt){
 		ch1.bfluxright[1] = flux1[1];
 		ch2.bfluxright[0] = flux2[0];
 		ch2.bfluxright[1] = flux2[1];
-        printf("triple junction fluxes are\n");
-        printf("channel 0: [%f  %f]\n",flux0[0], flux0[1]);
-        printf("channel 1: [%f  %f]\n",flux1[0], flux1[1]);
-        printf("channel 2: [%f  %f]\n",flux2[0], flux2[1]);
+      //  printf("triple junction fluxes are\n");
+       // printf("channel 0: [%f  %f]\n",flux0[0], flux0[1]);
+       // printf("channel 1: [%f  %f]\n",flux1[0], flux1[1]);
+       // printf("channel 2: [%f  %f]\n",flux2[0], flux2[1]);
 		//store away the info
 		ch0.q_hist[ch0.idx_t(0,0,ch0.n)] = Abar[0]; 
 		ch0.q_hist[ch0.idx_t(1,0,ch0.n)] = Qbar[0];

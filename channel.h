@@ -20,7 +20,7 @@
 #include <math.h>
 #include <time.h>
 #include "globals.h"
-
+#include <stdexcept>
 #include <valarray>
 
 #include "real_def.h"
@@ -188,7 +188,7 @@ class Channel
         /**Set Cl and Cl0 to nonconstant value)*/
         void setCl0(vector<double> Cl0_);
         /** Take an Euler step */
-		void stepEuler(double dt);
+		int stepEuler(double dt);
 		/** Compute numerical HLL flux (requires the function speeds to be defined)*/
 		void numFluxHLL(double q1m, double q1p, double q2m, double q2p, double *flux, bool Pm, bool Pp);      
 		/** Physical flux (i.e. the actual conservation law flux)*/

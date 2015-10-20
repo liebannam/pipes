@@ -385,12 +385,11 @@ void Network::EulerStep(double dt)
 //#pragma omp parallel for  (not worth initializing threads for networks with 1-17 pipes...haven't tested larger networks.
 	for (int k = 0;k<Nedges; k++)
 	{
-
-       // printf("Channel %d!!!!!!!!!!!!\n",k);
+        //printf("Channel %d!!!!!!!!!!!!\n",k);
 		channels[k]->stepEuler(dt);
-	}
-}
 
+   }
+}
 void Network::stepRK3_SSP(double dt)
 {
 	for(int j=0; j<Nedges; j++)
@@ -443,11 +442,12 @@ void Network::stepRK3_SSP(double dt)
 }
 
 
-void Network::runForwardProblem(double dt)
+int Network::runForwardProblem(double dt)
 {
 	nn = 0;
 	int Mi = M<500?1:M/100;
-	for(int i=0; i<M; i++)
+	try{
+    for(int i=0; i<M; i++)
 	{
 //currenlty this block only called from command line version. Reconfigure if you want python calls to print time and average gradient info as sim progresses.
 	
@@ -463,9 +463,16 @@ void Network::runForwardProblem(double dt)
 	#endif
 		nn ++;
 		stepRK3_SSP(dt);
-	
+    }
 	}
+    catch(const runtime_error &e)
+    {
+        printf("did i make it here??!\n");
+        cout<<e.what()<<"\n";
+    }
 }
+
+
 double Network::getTotalVolume()
 {
 	double v = 0;

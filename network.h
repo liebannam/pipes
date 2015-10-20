@@ -53,7 +53,7 @@ class Network{
 	void EulerStep(double dt);
 	void stepRK3_SSP(double dt);
 	//step everybody in the network from t =0 to t = T
-	void runForwardProblem(double dt);
+	int runForwardProblem(double dt);
 	//total volume (because this is an FV code, V= sum(A(i))*dx))
 	double getTotalVolume();
 	//average gradient of H(x) over lengths

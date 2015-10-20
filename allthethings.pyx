@@ -123,6 +123,7 @@ cdef extern from "channel.h":
         double Cgrav(double, bool)
         double Eta(double, bool)
         double pbar(double, bool)
+        double findOmega(double, double, bool, bool)
         void setq(vector[Real], vector[Real])
         void setClkw(double)
         void setCl0(vector[Real])
@@ -215,6 +216,8 @@ cdef class PyPipe_ps:
 
     def pbar(self, double A, bool P):
         return self.thisptr.pbar(A, P)
+    def Omega(self, double Astar, double Ak):
+        return self.thisptr.findOmega(Astar,Ak, False, False)
     # various properties we may want to access
     property N:
         def __get__(self): return self.thisptr.N
@@ -259,7 +262,7 @@ cdef extern from "network.h":
         int nn
         int channeltype
         double T
-        void runForwardProblem(double)
+        int runForwardProblem(double) except +RuntimeError
         double getAveGradH(int i)
         double getKE(int i)
         double getPE(int i)
