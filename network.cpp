@@ -385,8 +385,38 @@ void Network::EulerStep(double dt)
 //#pragma omp parallel for  (not worth initializing threads for networks with 1-17 pipes...haven't tested larger networks.
 	for (int k = 0;k<Nedges; k++)
 	{
-        //printf("Channel %d!!!!!!!!!!!!\n",k);
-		channels[k]->stepEuler(dt);
+         //printf("Channel %d!!!!!!!!!!!!\n",k);
+		int trouble = channels[k]->stepEuler(dt);
+        
+        double dtmin= 1e-7; //don't take time steps smaller than this
+        double dtfake = dt;
+
+        int count = 0;
+        int Mfake=1;
+        while (trouble !=0 &&dtfake>dtmin && count<10) //if negative cross sectional area problem, stepEuler returns 1 or 2
+        {
+            count +=1;
+            dtfake = dtfake/2.;
+            Mfake *= 2;
+            printf("Slow down there in channel %d, pardner! Taking dt->dt/2 for a little while here.",k);
+            printf("dt =%e, dtfake = %e, Mfake=%d, count = %d\n",dt, dtfake, Mfake, count);
+            for(int l=0; l<Mfake; l++)
+            {
+                trouble = channels[k]->stepEuler(dtfake);
+            }
+        }
+       /* if(trouble !=0)
+        {
+           for (int l = 0; l<channels[k]->N; l++)
+           {
+               if(channels[k]->q[l]<0)
+               {
+                   printf("I give up, with q[%d] = %e\n",l,channels[k]->q[l]);
+                       channels[k]->q[l]=0.;
+                       channels[k]->q0[l]=0.;
+           }}
+        }*/
+        //printf("trouble = %d\n",trouble);
 
    }
 }

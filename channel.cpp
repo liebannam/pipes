@@ -529,6 +529,7 @@ int Channel::stepEuler(double dt)
 		}
         if(q[idx(0,i)]<0)
         {
+            /*
             printf("Negative area! i=%d, A= %f, Q= %f, fplus= [%f,%f] and fminus = [%f %f]\n",i,q[i], q[idx(1,i)], fplus[0],fplus[1], fminus[0],fminus[1]);
 			printf("%d    %.16f   %.16f\n",-1, q_hist[idx_t(0,0,n)], q_hist[idx_t(1,0,n)]);  
             for (int i=0; i<N; i++)
@@ -536,7 +537,9 @@ int Channel::stepEuler(double dt)
                 printf("%d    %.16f   %.16f  %.16f   %.16f\n",i, q0[idx(0,i)], q0[idx(1,i)],q[idx(0,i)], q[idx(1,i)]);  
             }
 			printf("%d    %.16f   %.16f\n",N, q_hist[idx_t(0,N+1,n)], q_hist[idx_t(1,N+1,n)]);  
-            std::runtime_error("Oh damn. Negative area!\n");
+            */
+            return 1;
+            //std::runtime_error("Oh damn. Negative area!\n");
 
             //
             //q[i]=0;
@@ -555,14 +558,11 @@ int Channel::stepEuler(double dt)
         // set q0 to updated value
 	for(i =0;i<N;i ++)
 	{
-		for(k = 0; k<2; k++)
-		{
-			q0[idx(k,i)] = q[idx(k,i)];
-		}                                           
+		                                      
 		//check for negative areas --do I really need this?
-		if(q0[idx(0,i)]<0)
+		if(q[idx(0,i)]<0)
 		{
-			
+			/*
             printf("!!Negative area!!!\n with a[%d] = %f at time %f\n ", i, q0[i], dt*(double)n);
 			printf("!!TOO MUCH Negative area!!! SHITSHITSHIT\n with a[%d] = %f at time %f\n ", i, q0[i], dt*(double)n);
 			printf("%d    %.16f   %.16f\n",-1, q_hist[idx_t(0,0,n)], q_hist[idx_t(1,0,n)]);  
@@ -570,15 +570,21 @@ int Channel::stepEuler(double dt)
             {
             printf("%d    %.16f   %.16f\n",i, q0[idx(0,i)], q0[idx(1,i)]);  
             }
-			printf("%d    %.16f   %.16f\n",-1, q_hist[idx_t(0,N+1,n)], q_hist[idx_t(1,N+1,n)]);  
-            throw std::runtime_error("Oh damn. Negative area!\n");
+			printf("%d    %.16f   %.16f\n",-1, q_hist[idx_t(0,N+1,n)], q_hist[idx_t(1,N+1,n)]);  */
+            return 2;
+            //throw std::runtime_error("Oh damn. Negative area!\n");
 		}
-		if (q0[idx(0,i)]<negtol)
+        for(k = 0; k<2; k++)
 		{
-			q0[idx(0,i)] = 0.0;
-		}
+			q0[idx(k,i)] = q[idx(k,i)];
+		}     
+//		if (q0[idx(0,i)]<negtol)/
+//		{
+//			q0[idx(0,i)] = 0.0;
+//		}
 	if (WTF)printf("cmax =%f and CFL=%f",cmax, dt/dx*cmax);
     }
+    return 0;
 }
 
 /** Physical flux for Preissman slot*/
@@ -1195,7 +1201,7 @@ void Cpreiss::speedsHLL(double q1m, double q1p, double q2m, double q2p, double *
 	//check that HLL speeds have s0<s1; really, this should never bloody happen!
 	if(s[0]>s[1]) 	
 	{  
-	printf("The hell? s[0]>s[1], with q1m = %f, q2m = %f, q1p =%f, q2p =%f, s[0] = %f, s[1] = %f\n",q1m,q2m,q1p,q2p,s[0],s[1]);
+//	printf("The hell? s[0]>s[1], with q1m = %f, q2m = %f, q1p =%f, q2p =%f, s[0] = %f, s[1] = %f\n",q1m,q2m,q1p,q2p,s[0],s[1]);
 	//use Sanders wave speed estimates instead if this happens
 	double stemp = s[0];
     s[0] = s[1];
