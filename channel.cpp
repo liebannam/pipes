@@ -719,12 +719,12 @@ void Channel::stepSourceTerms(double dt){
  **/
 double Channel::getSourceTerms(double A, double Q){
 	double Sf=0;
-	double tol = 1e-1;
+	double tol = At*1e-2;
 	if (A>tol)
 	{
 		Sf = pow(Mr/kn,2)*Q*fabs(Q)/(A*A*pow(getHydRad(A),4./3.));	
 	}
-   // printf("Sf = %f S0 = %f A = %f, Q = %f\n", Sf, S0, A,Q);
+    //printf("Sf = %f S0 = %f A = %f, Q = %f, Rh^(4/3)=%f\n", Sf, S0, A,Q, pow(getHydRad(A),4./3.));
 	return (S0-Sf)*G*A;
 }
 
@@ -1069,6 +1069,7 @@ double Cpreiss::getHydRad(double A)
             if (theta<1e-4)
             {
                 R = D/(24.)*theta*theta; ///taylor expand for small theta
+                //printf("hyrdaulic radius= %f, theta =%f, A = %f\n",R,theta,A);
             }
             else{
 			    perim = D*theta/2.;
@@ -1847,10 +1848,10 @@ void Junction3::boundaryFluxes(double dt){
 		ch1.bfluxleft[1] = flux1[1];
 		ch2.bfluxleft[0] = flux2[0];
 		ch2.bfluxleft[1] = flux2[1];
-    //    printf("triple junction fluxes are\n");
-     //   printf("channel 0: [%f  %f]\n",flux0[0], flux0[1]);
-      //  printf("channel 1: [%f  %f]\n",flux1[0], flux1[1]);
-       // printf("channel 2: [%f  %f]\n",ch2.bfluxleft[0], ch2.bfluxleft[1]);
+       /* printf("triple junction fluxes are\n");
+        printf("channel 0: [%f  %f]\n",flux0[0], flux0[1]);
+        printf("channel 1: [%f  %f]\n",flux1[0], flux1[1]);
+        printf("channel 2: [%f  %f]\n",ch2.bfluxleft[0], ch2.bfluxleft[1]);*/
 		//store away the info
 		ch0.q_hist[ch0.idx_t(0,ch0.N+1,ch0.n)] = Abar[0]; 
 		ch0.q_hist[ch0.idx_t(1,ch0.N+1,ch0.n)] = Qbar[0];
@@ -1904,10 +1905,10 @@ void Junction3::boundaryFluxes(double dt){
 		ch1.bfluxright[1] = flux1[1];
 		ch2.bfluxright[0] = flux2[0];
 		ch2.bfluxright[1] = flux2[1];
-      //  printf("triple junction fluxes are\n");
-       // printf("channel 0: [%f  %f]\n",flux0[0], flux0[1]);
-       // printf("channel 1: [%f  %f]\n",flux1[0], flux1[1]);
-       // printf("channel 2: [%f  %f]\n",flux2[0], flux2[1]);
+/*        printf("triple junction fluxes are\n");
+        printf("channel 0: [%f  %f]\n",flux0[0], flux0[1]);
+        printf("channel 1: [%f  %f]\n",flux1[0], flux1[1]);
+        printf("channel 2: [%f  %f]\n",flux2[0], flux2[1]);*/
 		//store away the info
 		ch0.q_hist[ch0.idx_t(0,0,ch0.n)] = Abar[0]; 
 		ch0.q_hist[ch0.idx_t(1,0,ch0.n)] = Qbar[0];
