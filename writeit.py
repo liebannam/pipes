@@ -59,7 +59,7 @@ def rewritePipes(fn, oldinp, Ns, Ls, Mrs, Ds, jt, bt, bv, r, h0s, q0s, T, M, a,e
                         count += 1
                 else:
                     fnew.write(line)
-    print "new files are %s and %s" % (newinp, newconfig)
+    #print "new files are %s and %s" % (newinp, newconfig)
     return (newinp, newconfig)
 
 
@@ -84,7 +84,7 @@ def main():
     a = 100
     (fi, fc) = rewritePipes(fn, oldinp, Ns, Ls,
                             Mrs, Ds, jt, bt, bv, r, h0s, q0s, T, M, a,elevs)
-    print "fi = %s, fc = %s" % (fi, fc)
+    #print "fi = %s, fc = %s" % (fi, fc)
 
 if __name__ == "__main__":
     main()
