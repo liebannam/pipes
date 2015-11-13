@@ -128,6 +128,7 @@ cdef extern from "channel.h":
         void setClkw(double)
         void setCl0(vector[Real])
         double getKCl(double, double)
+        double getSourceTerms(double, double)
     cdef cppclass Junction1:
         Junction1(Cpreiss, int, double, int)
         void setbVal(vector[Real])
@@ -216,8 +217,12 @@ cdef class PyPipe_ps:
 
     def pbar(self, double A, bool P):
         return self.thisptr.pbar(A, P)
+    
     def Omega(self, double Astar, double Ak):
         return self.thisptr.findOmega(Astar,Ak, False, False)
+    
+    def getSourceTerms(self, double A, double Q):
+        return self.thisptr.getSourceTerms(A,Q);
     # various properties we may want to access
     property N:
         def __get__(self): return self.thisptr.N
@@ -239,7 +244,12 @@ cdef class PyPipe_ps:
                 print "attempting to set q0 (size %d) with array of size %d" % (self.Nv, q0.size)
             for i in range(self.q0.size):
                 self.q0[i] = q0[i]
-
+    property Mr:
+        def __get__(self): return self.thisptr.Mr
+        def __set__(self,Mr_): self.thisptr.Mr = Mr_
+    property S0:
+        def __get__(self): return self.thisptr.S0
+        def __set__(self,S0_): self.thisptr.S0 = S0_
     property cmax:
         def __get__(self): return self.thisptr.cmax
     property Ts:
