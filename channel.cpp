@@ -1671,7 +1671,8 @@ void Junction2::boundaryFluxes(double dt)
     double nu0 = dt/dx0;
     double nu1 = dt/dx1;
     //attempt at incorporating valve opening coefficient
-	if(valveopen>0)
+//	printf("valveopen=%f\n",valveopen);
+    if(valveopen>0)
 	{
 		double h0f = ch1.HofA(q1p,pp)-offset;
 		double h1f = ch0.HofA(q1m,pm)+offset;
@@ -1769,7 +1770,8 @@ void Junction2::boundaryFluxes(double dt)
 	    ch0.q_hist[ch0.idx_t(0,Ns0,ch0.n)] =  q1m;
 		ch0.q_hist[ch0.idx_t(1,Ns0,ch0.n)] =  0.;
 		ch1.q_hist[ch1.idx_t(0,Ns1,ch1.n)] =  q1p;
-		ch1.q_hist[ch1.idx_t(1,Ns1,ch1.n)] =  0.;		
+		ch1.q_hist[ch1.idx_t(1,Ns1,ch1.n)] =  0.;
+      //  printf("yooooooo valveopen =0\n");        
 	}
 }
 

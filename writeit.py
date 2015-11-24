@@ -23,7 +23,7 @@ def rewritePipes(fn, oldinp, Ns, Ls, Mrs, Ds, jt, bt, bv, r, h0s, q0s, T, M, a,e
     with open(newconfig, 'w') as fw:
         fw.write(Ptitle)
         for j in range(len(Ns)):
-            fw.write("%d    %d   %2.2f   %2.2f\n" %
+            fw.write("%d    %d   %2.6f   %2.2f\n" %
                      (j, int(Ns[j]), h0s[j], q0s[j]))
         fw.write("\n")
         fw.write(Jtitle)

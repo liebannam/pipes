@@ -133,7 +133,10 @@ cdef extern from "channel.h":
         Junction1(Cpreiss, int, double, int)
         void setbVal(vector[Real])
         void setClbVal(vector[Real])
-
+    cdef cppclass Junction2:
+        Junction2(Cpreiss, Cpreiss, int, int ,double) 
+        double valveopen
+        void setValveTimes(vector[Real])
 cdef class PyPipe_ps:
     '''	
     Input Parameters:
@@ -266,6 +269,7 @@ cdef extern from "network.h":
         vector[int] conns
         vector[Cpreiss *] channels
         vector[Junction1 *] junction1s
+        vector[Junction2 *] junction2s
         # std::vector<Junction2*> junction2s;
         # std::vector<Junction3*> junction3s;
         int M
@@ -516,12 +520,20 @@ cdef class PyNetwork:
         def __get__(self): return [self.thisptr.channels[i].cmax for i in range(self.Nedges)]
     property solve_time:
         def __get__(self): return self.solve_t
+    property valves:
+        def __get__(self): return [self.thisptr.junction2s[i].valveopen for i in range(len(self.nodeTypes[self.nodeTypes==2]))]
+    
     def setbVal(self, i, x):
         '''set boundary value time series in ith junction1 x (length M vector)'''
         cdef vector[Real] xx
         for k in range(len(x)):
             xx.push_back(x[k])
         self.thisptr.junction1s[i].setbVal(xx)
+    def setValveTimes(self,i,x):
+        cdef vector[Real] xx
+        for k in range(len(x)):
+            xx.push_back(x[k])
+        self.thisptr.junction2s[i].setValveTimes(x)
     def setClbVal(self, i, x):
         '''set boundary value time series for Chlorine concentratin in ith junction1 to x (length M vector)'''
         cdef vector[Real] xx

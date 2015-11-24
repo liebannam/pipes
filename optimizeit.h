@@ -576,11 +576,11 @@ void bc_opt_dh::compute_J()
 }
 
 
-
+/*updating this to be less shitty! (11/13/2015)*/
 class opt_eq_outflow:public levmar{
 public:
 	//x = [x_0...x_n-1] values to describe curves for valves 	
-        int Nn;  //number of nodes where bcs are being varied
+    int Nn;  //number of nodes where bcs are being varied
 	int Ndof; //number of degrees of freedom per node
 	int No; //number of outflow nodes under consideration (Mm = No)
 	vector<Real> x0; //size is Ndof*Nnodes = Mm
