@@ -1,4 +1,7 @@
 
+##various utilities for dealing with .inp and .config files
+#rewrite file
+import numpy as np
 
 def rewritePipes(fn, oldinp, Ns, Ls, Mrs, Ds, jt, bt, bv, r, h0s, q0s, T, M, a,elevs):
     newconfig = fn + (".config")
@@ -62,6 +65,78 @@ def rewritePipes(fn, oldinp, Ns, Ls, Mrs, Ds, jt, bt, bv, r, h0s, q0s, T, M, a,e
     #print "new files are %s and %s" % (newinp, newconfig)
     return (newinp, newconfig)
 
+def plotNetworkLayout(xs,ys,conns,ls,Np):
+    from matplotlib import cm
+    import matplotlib.colors as colors 
+    from matplotlib import rc
+    import matplotlib.pyplot as plt
+    scales = [(np.sqrt(np.diff(xs[conns[k,:]])**2+ np.diff(ys[conns[k,:]])**2)/ls[k]) for k in range(Np)]
+    s = np.mean(scales)
+    dx  =100*s
+    x1 = 10
+    x2 = x1+dx
+    cNorm  = colors.Normalize(vmin=0, vmax=Np+1)
+    scalarMap = cm.ScalarMappable(norm=cNorm, cmap=cm.get_cmap('ocean'))
+    rc('font', family='serif',size= '16')
+    fig,ax = plt.subplots(figsize=(15,10))
+    for k in range(Np):
+        plt.plot(xs[conns[k,:]], ys[conns[k,:]], color=scalarMap.to_rgba(k), linestyle='-', linewidth=3)
+    eps = x1/100.
+    for j in range(len(xs)):
+        x = xs[j]
+        y = ys[j]
+        plt.annotate( "%d "%j, xy=(x,y), xycoords='data',
+        xytext=(x, y))
+
+    plt.tick_params(axis='both', which='both', bottom='off', top='off', labelbottom='off', right='off', left='off', labelleft='off')
+    y = 30
+    plt.annotate(
+        '', xy=(x1, y), xycoords='data',
+        xytext=(x2,y ), textcoords='data',
+        arrowprops={'arrowstyle': '|-|'})
+    plt.annotate(
+        "%.f m"%(dx/s), xy=(x1+1,y-1), xycoords='data',
+        xytext=(x1+1, y-1), textcoords='offset points')
+
+def getBasicConnectivity(finp):
+    nodes =[]
+    pipes = []
+    ct = []
+    xt = []
+    yt = []
+    ls = []
+    with open(finp, 'rb') as f:
+        count = 0
+        for line in f:
+            if '[' in line:
+                p = False
+            if '[COORDINATES]' in line:
+                p = True
+            if p:
+                count+=1
+                l = line.split()
+                if count>2 and len(l)==3:
+                    nodes.append(int(l[0]))
+                    xt.append(float(l[1]))
+                    yt.append(float(l[2]))
+    with open(finp, 'rb') as f:
+        count =0
+        for line in f:
+            if '[' in line:
+                p = False
+            if '[PIPES]' in line:
+                p  =True
+            if p:
+                count+=1
+                l = line.split()
+                if count>2 and len(line)>2:
+                    pipes.append(int(l[0]))
+                    ct.append([int(l[1]),int(l[2])])
+                    ls.append(float(l[3]))
+    conns = np.array(ct)
+    xs = np.array(xt)
+    ys = np.array(yt)
+    return (xs,ys,conns,ls)
 
 def main():
 

@@ -431,20 +431,42 @@ cdef class PyNetwork:
         cdef int Nn = (self.Ns[i]+2)*(self.thisptr.M+2)
         Clh = okArray(Nn, self.thisptr.channels[i].Cl_hist) 
         return Clh
-
+    def pressureTimeSeries(self, i,k):
+        '''return array of pressure head (units are meters) as a function of time in cell k of pipe i'''
+        warning  =0
+        if i>=self.Nedges:
+            warning = 1
+            print "pipe index %d out of bounds for network with %d pipes"%(i,self.Nedges)
+        else:
+            N = self.thisptr.channels[i].N
+            if k>N or k<0:
+                warning = 1
+                print "index k = % out of bounds for channel %d with %d cells "%(k,i,N)
+        if warning==0:
+            M = self.thisptr.M
+            pvals = np.zeros(M+1)
+            for n in range(M+1):
+                pvals[n] =self.thisptr.channels[i].pbar(self.thisptr.channels[i].q_hist[self.idx_t(0,k+1,n,i)],False) 
+        return pvals
+    def pressureSpaceSeries(self,i,n):
+        '''return array of pressure head (units are meters) as a function of x in pipe i at time step n'''
+        warning = 0
+        if i>=self.Nedges:
+            warning = 1
+            print "pipe index %d out of bounds for network with %d pipes"%(i,self.Nedges)
+        M = self.thisptr.M
+        if n>M+1:
+            warning =1
+            print "time step index %d out of bounds for network with %d time steps in history"%(n,M+1)
+        if warning==0:
+            N = self.thisptr.channels[i].N
+            pvals = np.zeros(N)
+            for k in range(N):
+                pvals[k] =self.thisptr.channels[i].pbar(self.thisptr.channels[i].q_hist[self.idx_t(0,k+1,n,i)],False) 
+        return pvals
+        
     def setIC(self, i, a0, q0):
         '''set IC for pipe i. a0 and q0 should be vectors of length N'''
-        #for j in range(self.Ns[i]):
-        #    self.thisptr.channels[i].q[j] = a0[j]
-        #    self.thisptr.channels[i].q0[j] = a0[j]
-        #    self.thisptr.channels[i].q[j + self.Ns[i]] = q0[j]
-        #    self.thisptr.channels[i].q0[j + self.Ns[i]] = q0[j]
-        #    self.thisptr.channels[i].q_hist[j+1] = a0[j]
-       #     self.thisptr.channels[i].q_hist[j +2+ self.Ns[i]] = q0[j]
-       # self.thisptr.channels[i].q_hist[0] = a0[0]
-        #self.thisptr.channels[i].q_hist[self.Ns[i]+1] = q0[0]
-        #self.thisptr.channels[i].q_hist[self.Ns[i]+2] = a0[self.Ns[i]-1]
-        #self.thisptr.channels[i].q_hist[2*self.Ns[i]+3] = a0[self.Ns[i]-1]
         cdef vector[Real] A
         cdef vector[Real] Q
         for j in range(self.Ns[i]):

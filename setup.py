@@ -12,26 +12,33 @@ BASICALLY ALL OF THIS IS BLACK MAGIC...
 export ARCHFLAGS=""           
 export CFLAGS="-arch i386 -arch x86_64" 
 '''
-
-
 import sys
 import os
-# on orinoco
-sys.path.append('/Users/lieba/anaconda/lib/python2.7/site-packages')
-# on my macbook air
-#sys.path.append('/Users/anna/anaconda/lib/python2.7/site-packages')
-#sys.path.append('/usr/local/Cellar/gcc49/4.9.2_1/lib/gcc/4.9/gcc/x86_64-apple-darwin12.6.0/4.9.2/include-fixed')
+
+##!!!!! below: you should specify path to anaconda distribution and gcc compiler.
+#I uncomment either the line below (1) or the lines below (2)
+
+# (1) on my desktop:
+#sys.path.append('/Users/lieba/anaconda/lib/python2.7/site-packages')
+# (2) on my macbook air
+sys.path.append('/Users/anna/anaconda/lib/python2.7/site-packages')
+sys.path.append('/usr/local/Cellar/gcc49/4.9.2_1/lib/gcc/4.9/gcc/x86_64-apple-darwin12.6.0/4.9.2/include-fixed')
+
+##!!!! below: you should specify compiler including path.
+# I uncomment either the lines below (3) or the lines below (4)
+#(3) on my desktop
+#os.environ["CC"] = "gcc-4.9"
+#os.environ["CXX"] = "g++-4.9"
+#(4) on my macbook air
+os.environ["CC"] = "/usr/local/bin/gcc-4.9"
+os.environ["CXX"] = "/usr/local/bin/gcc-4.9"
+
 
 from distutils.core import setup, Extension
 from Cython.Build import cythonize
 from Cython.Distutils import build_ext
 import numpy
-# on orinoco
-os.environ["CC"] = "gcc-4.9"
-os.environ["CXX"] = "g++-4.9"
-# on my macbook air
-#os.environ["CC"] = "/usr/local/bin/gcc-4.9"
-#os.environ["CXX"] = "/usr/local/bin/gcc-4.9"
+
 setup(ext_modules=cythonize(Extension(
     "allthethings",                                   # the extesion name
     sources=["allthethings.pyx", "setupandrun.cpp", "file_output.cc", "network.cpp", "levmar.cpp", "mp_mat.cpp",
