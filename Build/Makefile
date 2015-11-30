@@ -10,9 +10,6 @@ optimizeit:  optimizeit.o  setupandrun.o mp_mat.o levmar.o mp_mat_double.o str_d
 
 justrunit:  justrunit.o setupandrun.o  mp_mat.o levmar.o mp_mat_double.o str_double.o channel.o network.o file_output.o	libcla.o
 
-testCltracking: testCltracking.o setupandrun.o  mp_mat.o levmar.o mp_mat_double.o str_double.o channel.o network.o file_output.o libcla.o
-	$(CC) -o $@ $(CFLAGS) $^ $(LIBS)
-
 test_levmar : test_levmar.o levmar.o mp_mat.o mp_mat_double.o \
 	str_double.o libcla.o
 	$(CC) -o $@ $(CFLAGS) $^ $(LIBS)
