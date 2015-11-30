@@ -36,8 +36,8 @@ using std::min;
 
 /*\def flag for printing miscellaneous debug info. Set to false to supress printout.*/
 #define WTF false
-/*\def flag for tracking chlorine (for water quality sim). Set to false to not bother*/
-#define Clplease true
+/*\def flag for tracking chlorine (for water quality sim in development). Set to false to not bother*/
+#define Clplease false
 
 /*
  * \def horrifying macros for numerical flux routines
