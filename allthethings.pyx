@@ -133,6 +133,8 @@ cdef extern from "channel.h":
         Junction1(Cpreiss, int, double, int)
         void setbVal(vector[Real])
         void setClbVal(vector[Real])
+        int bvaltype
+        int reflect
     cdef cppclass Junction2:
         Junction2(Cpreiss, Cpreiss, int, int ,double) 
         double valveopen
@@ -491,6 +493,25 @@ cdef class PyNetwork:
             Ni = self.Ns[i]
             for j in range(Ni):
                 print "%f    %f" % (l[j], l[j + Ni])
+    def showExternalBoundaries(self):
+        j1 = np.arange(0,self.Nnodes)[self.nodeTypes==1]
+        print "Junction1s are %s" %str(j1)
+        for k in range(len(j1)):
+            r =self.thisptr.junction1s[k].reflect
+            bt = self.thisptr.junction1s[k].bvaltype
+            if r ==0:
+                if bt ==0:
+                    s = "A specified"
+                elif bt==1:
+                    s = "Q specified"
+                elif bt==2:
+                    s = "orifice outflow"
+            elif r==1:
+                s= "reflection boundary condition"
+            elif r==-1:
+                s= "extrapolation boundary condition"
+            print "junction %d has %s"%(j1[k],s)
+            
 
     def getAveGradH(self, i):
         return self.thisptr.getAveGradH(i)
@@ -528,6 +549,8 @@ cdef class PyNetwork:
         def __get__(self): return self.Ds
     property Ls:
         def __get__(self): return self.Ls
+    property Mrs:
+        def __get__(self): return [self.thisptr.channels[k].Mr for k in range(self.Nedges)]
     property M:
         def __get__(self): return self.thisptr.M
     property T:

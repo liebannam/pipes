@@ -28,6 +28,11 @@ def convert(x, units):
 
 def main(argv):
     f2m = 0.3048   #feet to meters
+    dx = 1. #default grid spacing is 1 m
+    a = 100#default pressure wave speed is 100 m/s
+    T  =10. #detault run time is 1 s
+    CFL = 0.8 #factor to make suggested value of M =number of time steps (hopefully) compliant with CFL
+    
     s= sys.argv[1]
     print "Opening file %s" %s
     with open(s,'rU') as f:
@@ -107,10 +112,13 @@ def main(argv):
     fc = open(s[0:q]+'2.0.config','w')
     fc.write('[PIPE_INFO]\n;-------------------------------------------\n;             initial  initial\n; ID    N       h       Q\n;-------------------------------------------\n')
     for i in range(len(pipes)):
-        fc.write('%d      %d	  %2.3f       %1.f\n'%(i,math.ceil(ls[i]/5.), ds[i], 0))
+        fc.write('%d      %d	  %2.3f       %1.f\n'%(i,math.ceil(ls[i]/dx), ds[i], 0))
     fc.write('[JUNCTION_INFO]\n;-------------------------------------------------------------------------------------\n;{-----for junction1s-----} | {--for junction2s--}             | {------for junction3s-------}|\n; ID   	jtype	bvaltype  bval   reflect   | offset   valveopen   | offset01   offset02   offset12 |\n;------------------------------------------------------------------------------------\n')
     for i in range(len(nodes)):       
         fc.write( '%2d        %s      1	     0       1	      0        1          0	     0		0    \n'%(i, nodetypes[i]))
+    fc.write('\n[TIME_INFO];---------------------------------------\n;T (s)           M        Mi     a  (m/s)\n')
+    M = int(a*T/(dx*CFL))
+    fc.write(';-----------------------------------------\n%f         %d       10        %.2f'%(T,M,a))
     fc.close()
     print es
 if __name__=="__main__":

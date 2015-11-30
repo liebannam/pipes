@@ -168,8 +168,20 @@ Section (2): Calling from Python
 	Sometimes it compiles but can't load or link libraries. Or something. Which is sad and
 	means...go back to beginning and figure out compiler issues. Sorry :(
 	(3) there are a lot of notebooks, many correspond to examples in the paper.
-	you can use them to see some of the calling syntax and possible uses. Partial
-	list of them:
+	you can use them to see some of the calling syntax and possible uses. 
+        Beginner:
+                --Pipe_tutorial.ipynb: START HERE! Intro to basic code setup and functionanlity.
+                --Intro_simulation_7deSeptiembre.ipynb: run a realistic
+                network from existing .inp and .config files.
+                --Intro_simulation_Alameda.ipynb: run a realistic network;
+                reset some network parameters by using writeit.py to rewrite
+                new .inp and .config files
+        Intermediate:
+                  --water_hammer.ipynb: simulate a water hammer in pressurized
+                pipe, check results against textbook waterhammer formula
+                --trajkovic_new.ipynb: simulate pressurization in a single pipe
+                and compare results with dataset
+        More advanced (/less commented):
 		--cythondemo.ipynb (just shows lots of stuff you can do with the wrapped code)
 		--Convergence.ipynb (do a convergence study)
 		--VaryLength.ipynb (vary length of one pipe and simulate new network.
@@ -180,17 +192,17 @@ Section (2): Calling from Python
 		node)
 	(4) You can run a notebook on your own machine just by starting one up:
 	ipython noteboook
-	(5) You can also run one remotely on Orinoco, which is really nice if you
-	are having trouble compiling the code on your own machine (or dont' want to
+	(5) You can also run one remotely, which is really nice if you
+	are having trouble compiling the code on a different machine (or dont' want to
 	run a big simulation there). To do this, you start one ssh pipe as follows:
 
-		ssh -N -f -L localhost:8889:localhost:8889 lieba@orinoco.dhcp.lbl.gov
+		ssh -N -f -L localhost:8889:localhost:8889  yourname@remote_server.org
 
 	Then you start a new terminal, and ssh in normally:
 	
-		ssh lieba@orinoco.dhcp.lbl.gov
+		ssh yourname@remote_server
 
-And once you're logged in to Orinoco, you start up a notebook with no browser,
+And once you're logged in to your remote server, you start up a notebook with no browser,
 which instead points to the pipe you already made:
 
 	ipython notebook --no-browser --port=8889
@@ -200,7 +212,7 @@ now go to your browser (on your machine!) and enter the address
 http://localhost:8889
 
 You should see the usual ipython notebook tree. You can run cells and make
-plots--Orinoco is doing the work. 
+plots--but the remote server is doing the work. 
 
 	***********************
 	After you run a simulation		
