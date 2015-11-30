@@ -130,12 +130,25 @@ Section (2): Calling from Python
 	***********************
 	Getting started
 	***********************
-	You will need to use Cython to compile the C++ code into a python module. To
-	do this, run
+	You will need to use Cython to compile the C++ code into a Python
+        module. I suggest using the Anaconda distribution of Python. I also
+        suggest using gcc-4.9. I make both of these suggestions not out of
+        deep wisdom but out of experience with them working. 
+        You will need to specify the path to the gcc
+        compiler you are using, and your Anaconda distribution, in the setup.py file.
+        Look in this file to see examples of how those locations are
+        referenced.
+        
+	To compile, first run
+                
+                source cython_flags.sh
+ 
+        to set compiler flags.
+        Then run
 
-	Python setup.py build_ext -i
+	        Python setup.py build_ext -i
 
-	There are a couple things that usually go wrong for me here:
+	To actually copmile the module. There are a couple things that usually go wrong for me here:
 		(i) Clang butts in and pretends to be GCC, which means that omp.h
 		can't be found. I force the compiler to be gcc-4.9 so this doesn't happen. 
 		(ii) The Cython bit gets confused and tries to pass Clang-specific flags
@@ -144,21 +157,24 @@ Section (2): Calling from Python
 
 			gcc-4.9: error: unrecognized command line option '-Wshorten-64-to-32'
 
-		then try running the following commands in your terminal:
+		then try running the following commands in your terminal
+                (these sould have been set by the cython_flags.sh script, but just in case...):
 		
 			export ARCHFLAGS="" 
 			export CFLAGS = "-arch i386 -arch x86_64" 
 
 		...Lots of other things can go wrong, dig in to the file setup.py to look
 	at compilation paths and flags. I have commented out (and labeled) the lines
-	that work on Orinoco so that it will compile on my macbook air. Just uncomment
-	the orinco lines and comment the macbook air ones, see if it works.
-	The file allthethings.pyx has all the actual wrapping for the C++ code. It's a
+	that work on my destkop and on my macbook air--you probably will need
+        to specify your own paths to gcc and Python for your own setup.
+        Stackoverflow.com is also your friend here.
+	
+        The file allthethings.pyx has all the actual wrapping for the C++ code. It's a
 	bit of a mess but I did try to document all the classes you would use in a
 	python call to do something interesting (e.g. run a simulation of a network or
 	run an optimization.)
 
-	once you compile
+	Once you compile
 	(1) give yourself a high-five!! (it's not easy)
 	(2) you can either use python scripts or notebooks to call the C++ code. I
 	personally like notebooks so all the examples are in .ipynb form. But there's
@@ -222,7 +238,10 @@ plots--but the remote server is doing the work.
 
 
 /\/\/\\/\/\/\\/\/\/\\/\/\/\\/\/\/\\/\/\/\/\\
-Section (4): Dealing with all the data!
+Section (4): Dealing with all the data! 
+(command line simulations--read on)
+(Python simulations--see examples/ folder for examples of how to extract and
+view data)
 /\/\/\\/\/\/\\/\/\/\\/\/\/\\/\/\/\\/\/\/\/\\
 After you run a command line simulation
 ./justrunit blah.inp blah.config

@@ -1,4 +1,6 @@
 
+
+
 /**
  * \file Channel.cpp
  * \brief Channel.cpp documentation
@@ -6,6 +8,24 @@
  * Definitions of functions for class Channel*
  * Definition of functions for classes Junction1, Junction2, and Junction3
  **/
+
+/*This file is part of Pipes.
+
+    Pipes is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Pipes is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Pipes.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+
 
 #include "channel.h"
 
