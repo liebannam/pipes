@@ -11,9 +11,11 @@ Notes for getting installation to work on a VM with 64 bit UBUNTU
 first (replace "[USERNAME]" with your actual username):
 
         $ export PATH="/home/[USERNAME]/anaconda/bin:$PATH"
-double check that this is where Anaconda ended up!
+double check that this is where Anaconda ended up:
+        $ which python2.7 
+this should return /home/[USERNAME]/anaconda/bin/python2.7
 
- --Now make sure that Anaconda and ipython are up to date
+--Now make sure that Anaconda and ipython are up to date
         $ conda update conda
         $ conda update ipython
 
@@ -36,12 +38,11 @@ double check that this is where Anaconda ended up!
 (6) set CFLAGS and ARCHFLAGS
         $ source cython_flags.sh
 
-(8) open up setup.py and change "[USERNAME]" to your username on line 45. 
+(8) open up setup.py. Verify that you have uncommented line 46 below option
+(1.3) and lines 58-59 below option (2.3) to set the environ and path
+variables. Change "[USERNAME]" to your username on line 46. 
 
-(9) open up allthethings.pyx and chance "[USERNAME]" to your username on line
-52.
-
-(10) compile!
+(9) compile!
         $ python setup.py build_ext -i
 
 Check to make sure the module loads by starting up an iypthon notebook
@@ -54,4 +55,4 @@ points first to the Anaconda distribution by typing
         $ echo $PATH
 
 Then check that setup.py and allthethings.pyx have the right locations.
-Still doesn't work? Then ask for help.
+Still doesn't work? Then ask for help: lieb@math.berkeley.edu.

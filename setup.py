@@ -5,14 +5,15 @@ Compile with command
 Use in python with command:
 	from allthethings import [stuff] (so far [stuff] can be: * or PyNetwork or PyBC_opt_dh or PyMystery_BC)
 
-Runs on my macbook air and also on orinoco (same dropbox folder...no bloody clue if that's legit...) I'm doing something kind of sketch with the lapack wrapper to get around segfaults that happen if I call the libcla.a library like in the pure C++ code in Build/. by kind of sketch I mean...I copied lapack.c and added it as a dependency, and wrapped the header.
+Runs on my macbook air, my desktop Mac, and on a linux VM. I'm doing something kind of sketch with the lapack wrapper to get around segfaults that happen if I call the libcla.a library like in the pure C++ code in Build/. by kind of sketch I mean...I copied lapack.c and added it as a dependency, and wrapped the header.
 BASICALLY ALL OF THIS IS BLACK MAGIC... 
 ...so if it doesn't compile for you, I'm terribly sorry for the hassle and I will try to help...but no guarantees :/
 !!!!!PS if it's yelling about w convert 64 to 32 not recognized by gcc4.9, try running these two commands in the shell before compiling
-export ARCHFLAGS=""           
-export CFLAGS="-arch i386 -arch x86_64" 
-'''
+(or just type "source cython_flags.sh" in your terminal):
 
+    $ export ARCHFLAGS=""           
+    $ export CFLAGS="-arch i386 -arch x86_64" 
+'''
 '''This file is part of Pipes.
 
     Pipes is free software: you can redistribute it and/or modify
@@ -34,26 +35,26 @@ import sys
 import os
 
 ##!!!!! below: you should specify path to anaconda distribution and gcc compiler.
-#I uncomment either the line below (1) or the lines below (2)
+#I uncomment either the line below (1.1), (1.2), or (1.3)
 
-# (1) on my desktop:
+# (1.1) on my desktop:
 #sys.path.append('/Users/lieba/anaconda/lib/python2.7/site-packages')
-# (2) on my macbook air
+# (1.2) on my macbook air
 #sys.path.append('/Users/anna/anaconda/lib/python2.7/site-packages')
 #sys.path.append('/usr/local/Cellar/gcc49/4.9.2_1/lib/gcc/4.9/gcc/x86_64-apple-darwin12.6.0/4.9.2/include-fixed')
-#(2.5)if on linux VM
+#(1.3)if on linux VM (replace [USERNAME] with your username. Verify this location with $ which python2.7)
 sys.path.append('/home/[USERNAME]/anaconda/lib/python2.7/site-packages')
 
 
 ##!!!! below: you should specify compiler including path.
-# I uncomment either the lines below (3),(4), or (5)
-#(3) on my desktop
+# I uncomment either the lines below (2.1),(2.2), or (2.3)
+#(2.1) on my desktop
 #os.environ["CC"] = "gcc-4.9"
 #os.environ["CXX"] = "g++-4.9"
-#(4) on my macbook air
+#(2.2) on my macbook air
 #os.environ["CC"] = "/usr/local/bin/gcc-4.9"
 #os.environ["CXX"] = "/usr/local/bin/gcc-4.9"
-#(5) on a linux VM
+#(2.3) on a linux VM
 os.environ["CC"] = "/usr/bin/gcc"
 os.environ["CXX"] = "/usr/bin/g++"
 
@@ -64,8 +65,8 @@ import numpy
 
 setup(ext_modules=cythonize(Extension(
     "allthethings",                                   # the extesion name
-    sources=["allthethings.pyx", "setupandrun.cpp", "file_output.cc", "network.cpp", "levmar.cpp", "mp_mat.cpp",
-             "str_double.cpp", "mp_mat_double.cpp", "libcla.c"],  # the Cython source and additional C++ source files
+    sources=["allthethings.pyx", "channel.cpp", "setupandrun.cpp", "file_output.cc", "network.cpp", "levmar.cpp", "mp_mat.cpp",
+             "str_double.cpp", "mp_mat_double.cpp", "libcla.c","setup.py"],  # the Cython source and additional C++ source files
     # sources=["allthethings.pyx", "setupandrun.cpp", "file_output.cc","network.cpp", "levmar.cpp","mp_mat.cpp","str_double.cpp", "mp_mat_double.cpp"], # the Cython source and additional C++ source files
     # libraries=["lapack","cblas", "qd", "fftw3","m"],      #libraries to link
     # against (I'm not sure if all are needed...but some are...)
