@@ -39,18 +39,23 @@ import os
 # (1) on my desktop:
 #sys.path.append('/Users/lieba/anaconda/lib/python2.7/site-packages')
 # (2) on my macbook air
-sys.path.append('/Users/anna/anaconda/lib/python2.7/site-packages')
-sys.path.append('/usr/local/Cellar/gcc49/4.9.2_1/lib/gcc/4.9/gcc/x86_64-apple-darwin12.6.0/4.9.2/include-fixed')
+#sys.path.append('/Users/anna/anaconda/lib/python2.7/site-packages')
+#sys.path.append('/usr/local/Cellar/gcc49/4.9.2_1/lib/gcc/4.9/gcc/x86_64-apple-darwin12.6.0/4.9.2/include-fixed')
+#(2.5)if on linux VM
+sys.path.append('/home/[USERNAME]/anaconda/lib/python2.7/site-packages')
+
 
 ##!!!! below: you should specify compiler including path.
-# I uncomment either the lines below (3) or the lines below (4)
+# I uncomment either the lines below (3),(4), or (5)
 #(3) on my desktop
 #os.environ["CC"] = "gcc-4.9"
 #os.environ["CXX"] = "g++-4.9"
 #(4) on my macbook air
-os.environ["CC"] = "/usr/local/bin/gcc-4.9"
-os.environ["CXX"] = "/usr/local/bin/gcc-4.9"
-
+#os.environ["CC"] = "/usr/local/bin/gcc-4.9"
+#os.environ["CXX"] = "/usr/local/bin/gcc-4.9"
+#(5) on a linux VM
+os.environ["CC"] = "/usr/bin/gcc"
+os.environ["CXX"] = "/usr/bin/g++"
 
 from distutils.core import setup, Extension
 from Cython.Build import cythonize

@@ -1,0 +1,57 @@
+Notes for getting installation to work on a VM with 64 bit UBUNTU
+"$" denotes a command to run in terminal (don't type the $, just what follows)
+
+(1) Install Anaconda: download installer from http://docs.continuum.io/anaconda/install#linux-install 
+
+--Then type: 
+
+        $ bash ~/Downloads/Anaconda3-2.4.0-Linux-x86_64.sh
+
+--Now  modify your PATH variable to look for the Anaconda distribution
+first (replace "[USERNAME]" with your actual username):
+
+        $ export PATH="/home/[USERNAME]/anaconda/bin:$PATH"
+double check that this is where Anaconda ended up!
+
+ --Now make sure that Anaconda and ipython are up to date
+        $ conda update conda
+        $ conda update ipython
+
+(2) Install fftw2:
+         $ sudo apt-get install libfftw3-dev libfftw3-doc
+
+(3) Install lapack, blas, and atlas
+        $ sudo apt-get install liblapack-dev
+        $ sudo apt-get install liblapack
+        $ sudo apt-get install liblas-dev
+        $ sudo apt-get install libatlas-base-dev
+
+(4) Install git:
+        $ sudo apt-get install git
+
+(5) clone the repo
+
+        $ git clone https://github.com/liebannam/pipes
+
+(6) set CFLAGS and ARCHFLAGS
+        $ source cython_flags.sh
+
+(8) open up setup.py and change "[USERNAME]" to your username on line 45. 
+
+(9) open up allthethings.pyx and chance "[USERNAME]" to your username on line
+52.
+
+(10) compile!
+        $ python setup.py build_ext -i
+
+Check to make sure the module loads by starting up an iypthon notebook
+
+        $ ipython --notebook
+And then opening one of the notebooks in the examples/ folder. If the module
+doesn't load, there is possibly a problem with the PATH variables or referencs
+to the location various python modules. Double check that your path variable
+points first to the Anaconda distribution by typing
+        $ echo $PATH
+
+Then check that setup.py and allthethings.pyx have the right locations.
+Still doesn't work? Then ask for help.
