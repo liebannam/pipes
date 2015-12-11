@@ -20,7 +20,29 @@
 
 import numpy as np
 
+def writePipes(fn,conns, xs,ys, Ns, Ls, Mrs, Ds, jt, bt, bv, r, h0s, q0s, T, M, a, elevs):
+    '''write .inp and .config files from scratch--be careful that the input parameter conns is actually a valid network structure!'''
+    #conns is an array of size Nx2; each row represents two junctions connecting a single edge
+    Np = np.shape(conns)[0]
+    #first write a fake .inp to get network connectivity
+    ftemp = '../indata/fakeinp.inp'
+    with open(ftemp, 'w') as ft:
+        ft.write('[TITLE]\n\n\n[JUNCTIONS]\n;ID              	Elev        	Demand      	Pattern\n')
+        for k in range(Np+1):
+            ft.write("%d %15s %2.3f %15s0 %30s ;\n"%(k," ",elevs[k]," "," "))
+        ft.write('\n[PIPES]\n;ID              	Node1           	Node2           	Length      	Diameter    	Roughness   	MinorLoss   	Status\n')
+        for k in range(Np):
+            ft.write("%s %15s %s %15s %s %15s %4.1d %15s %2.2f %15s %1.4f\n" % \
+                                (k," ",conns[k,0]," ", conns[k,1]," ", Ls[k]," ", Ds[k]," ", Mrs[k]))
+        ft.write('\n[COORDINATES]\n;Node            	X-Coord         	Y-Coord\n')
+        for k in range(Np+1):
+            ft.write('%d %15s  %.2f %15s %.2f\n'%(k,' ', xs[k], ' ', ys[k]))
+        print ftemp
+    (fi, fc) = rewritePipes(fn, ftemp, Ns, Ls, Mrs, Ds, jt, bt, bv, r, h0s, q0s, T, M, a, elevs)
+    return (fi, fc)
+
 def rewritePipes(fn, oldinp, Ns, Ls, Mrs, Ds, jt, bt, bv, r, h0s, q0s, T, M, a,elevs):
+    '''rewrite .inp and .config files for existing network configuration'''
     newconfig = fn + (".config")
     newinp = fn + ".inp"
     Mi = 10
@@ -43,13 +65,18 @@ def rewritePipes(fn, oldinp, Ns, Ls, Mrs, Ds, jt, bt, bv, r, h0s, q0s, T, M, a,e
     with open(newconfig, 'w') as fw:
         fw.write(Ptitle)
         for j in range(len(Ns)):
-            fw.write("%d    %d   %2.6f   %2.2f\n" %
+            fw.write("%d    %d   %2.6f   %2.6f\n" %
                      (j, int(Ns[j]), h0s[j], q0s[j]))
         fw.write("\n")
         fw.write(Jtitle)
         for k in range(len(jt)):
-            fw.write("%d     %d     %d     %d     %d     %d     %d     %d     %d     %d\n" % (
+            if jt[k]>1:
+                fw.write("%d     %d     %d     %d     %d     %d     %d     %d     %d     %d\n" % (
                 k, jt[k], bt[k], bv[k], r[k], 0, 1, 0, 0, 0))
+            else:
+                fw.write("%d     %d     %d     %.4f     %d     %d     %d     %d     %d     %d\n" % (
+                k, jt[k], bt[k], bv[k], r[k], 0, 1, 0, 0, 0))
+
         fw.write("\n")
         fw.write(Ttitle)
         fw.write("%3.3f       %d         %d        %.1f" % (T, M, Mi, a))
