@@ -212,13 +212,13 @@ Network::Network(const Network &N_old):Nnodes(N_old.Nnodes), Nedges(N_old.Nedges
 			//[0,1,1] case
 			if(idx1%2+idx2%2+idx3%2 ==2){
 				if (idx1%2 == 0){junction3s.push_back(new Junction3(*channels[idx1/2], *channels[idx2/2], *channels[idx3/2], idx1%2, idx2%2, idx3%2));
-				   printf("junction3! incoming channels= [%d %d %d]\n",idx1/2, idx2/2, idx3/2);
+			//	   printf("junction3! incoming channels= [%d %d %d]\n",idx1/2, idx2/2, idx3/2);
                 }
 				else if(idx2%2 == 0){junction3s.push_back(new Junction3(*channels[idx2/2], *channels[idx1/2], *channels[idx3/2], idx2%2, idx1%2, idx3%2));
-				   printf("junction3! incoming channels= [%d %d %d]\n",idx2/2, idx1/2, idx3/2);
+			//	   printf("junction3! incoming channels= [%d %d %d]\n",idx2/2, idx1/2, idx3/2);
                 }
 				else {junction3s.push_back(new Junction3(*channels[idx3/2], *channels[idx2/2], *channels[idx1/2], idx3%2, idx2%2, idx1%2));
-				printf("junction3! incoming channels= [%d %d %d]\n",idx3/2, idx2/2, idx1/2);
+				//printf("junction3! incoming channels= [%d %d %d]\n",idx3/2, idx2/2, idx1/2);
 
                 }
 
@@ -226,14 +226,14 @@ Network::Network(const Network &N_old):Nnodes(N_old.Nnodes), Nedges(N_old.Nedges
 			//[1,0,0] case
 			else if(idx1%2+idx2%2+idx3%2 ==1){
 				if(idx1%2 ==1){junction3s.push_back(new Junction3(*channels[idx1/2], *channels[idx2/2], *channels[idx3/2], idx1%2, idx2%2, idx3%2));
-								   printf("junction3! incoming channels= [%d %d %d]\n",idx1/2, idx2/2, idx3/2);
+			//					   printf("junction3! incoming channels= [%d %d %d]\n",idx1/2, idx2/2, idx3/2);
                 }
 				else if(idx2%2 ==1){junction3s.push_back(new Junction3(*channels[idx2/2], *channels[idx1/2], *channels[idx3/2], idx2%2, idx1%2, idx3%2));
-						   printf("junction3! incoming channels= [%d %d %d]\n",idx2/2, idx1/2, idx3/2);
+			//			   printf("junction3! incoming channels= [%d %d %d]\n",idx2/2, idx1/2, idx3/2);
 
                 }
 				else {junction3s.push_back(new Junction3(*channels[idx3/2], *channels[idx2/2], *channels[idx1/2], idx3%2, idx2%2, idx1%2));
-                    		printf("junction3! incoming channels= [%d %d %d]\n",idx3/2, idx2/2, idx1/2);
+              //      		printf("junction3! incoming channels= [%d %d %d]\n",idx3/2, idx2/2, idx1/2);
 				}
 			}
 			else {
