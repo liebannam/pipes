@@ -518,6 +518,7 @@ void Channel::setCl0(vector<double> Cl0_)
  **/
 int Channel::stepEuler(double dt)
 {
+    int retval = 0;
 	cmax = 0.;  //reset CFL;
 	double fplus[2] ={0};
 	double fminus[2] ={0};
@@ -549,16 +550,16 @@ int Channel::stepEuler(double dt)
 		}
         if(q[idx(0,i)]<0)
         {
-            /*
+            
             printf("Negative area! i=%d, A= %f, Q= %f, fplus= [%f,%f] and fminus = [%f %f]\n",i,q[i], q[idx(1,i)], fplus[0],fplus[1], fminus[0],fminus[1]);
-			printf("%d    %.16f   %.16f\n",-1, q_hist[idx_t(0,0,n)], q_hist[idx_t(1,0,n)]);  
-            for (int i=0; i<N; i++)
-            {
-                printf("%d    %.16f   %.16f  %.16f   %.16f\n",i, q0[idx(0,i)], q0[idx(1,i)],q[idx(0,i)], q[idx(1,i)]);  
-            }
-			printf("%d    %.16f   %.16f\n",N, q_hist[idx_t(0,N+1,n)], q_hist[idx_t(1,N+1,n)]);  
-            */
-            return 1;
+		//	printf("%d    %.16f   %.16f\n",-1, q_hist[idx_t(0,0,n)], q_hist[idx_t(1,0,n)]);  
+        //    for (int i=0; i<N; i++)
+         //   {
+          //      printf("%d    %.16f   %.16f  %.16f   %.16f\n",i, q0[idx(0,i)], q0[idx(1,i)],q[idx(0,i)], q[idx(1,i)]);  
+           // }
+		//	printf("%d    %.16f   %.16f\n",N, q_hist[idx_t(0,N+1,n)], q_hist[idx_t(1,N+1,n)]);  
+          //  if (q[idx(0,i)]<negtol) q[idx(0,i)]=0.;
+            retval= 1;
             //std::runtime_error("Oh damn. Negative area!\n");
 
             //
@@ -591,7 +592,8 @@ int Channel::stepEuler(double dt)
             printf("%d    %.16f   %.16f\n",i, q0[idx(0,i)], q0[idx(1,i)]);  
             }
 			printf("%d    %.16f   %.16f\n",-1, q_hist[idx_t(0,N+1,n)], q_hist[idx_t(1,N+1,n)]);  */
-            return 2;
+            //if (q[idx(0,i)]<negtol) q[idx(0,i)]=0.;
+            retval=2;
             //throw std::runtime_error("Oh damn. Negative area!\n");
 		}
         for(k = 0; k<2; k++)
@@ -604,7 +606,7 @@ int Channel::stepEuler(double dt)
 //		}
 	if (WTF)printf("cmax =%f and CFL=%f",cmax, dt/dx*cmax);
     }
-    return 0;
+    return retval;
 }
 
 /** Physical flux for Preissman slot*/

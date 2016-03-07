@@ -115,9 +115,9 @@ Network::Network(int Nnodes_, std::vector<int> conns_, int Nedges_, std::vector<
 			int idx1 =find_nth(conns, j, 1, 2*Nedges);
 			int idx2 =find_nth(conns, j, 2, 2*Nedges);
 			int idx3 =find_nth(conns, j, 3, 2*Nedges);
-			//printf("\njunction3!!!\n index1 is %d, row is %d, column is %d\n", idx1, idx1/2, idx1%2);
-			//printf(" index2 is %d, row is %d, column is %d\n", idx2, idx2/2, idx2%2);	
-			//printf(" index3 is %d, row is %d, column is %d\n", idx3, idx3/2, idx3%2);
+			printf("\njunction3!!!\n index1 is %d, row is %d, column is %d\n", idx1, idx1/2, idx1%2);
+			printf(" index2 is %d, row is %d, column is %d\n", idx2, idx2/2, idx2%2);	
+			printf(" index3 is %d, row is %d, column is %d\n", idx3, idx3/2, idx3%2);
 			//set it up so that either you have [end0, end1, end2] = [1,0,0] or = [0,1,1];
 			//[0,1,1] case
 			if(idx1%2+idx2%2+idx3%2 ==2){
@@ -410,7 +410,7 @@ void Network::EulerStep(double dt)
 
         int count = 0;
         int Mfake=1;
-        while (trouble !=0 &&dtfake>dtmin && count<10) //if negative cross sectional area problem, stepEuler returns 1 or 2
+      /*  while (trouble !=0 &&dtfake>dtmin && count<10) //if negative cross sectional area problem, stepEuler returns 1 or 2
         {
             count +=1;
             dtfake = dtfake/2.;
@@ -421,9 +421,9 @@ void Network::EulerStep(double dt)
             {
                 trouble = channels[k]->stepEuler(dtfake);
             }
-        }
-       /* if(trouble !=0)
-        {
+        }*/
+        if(trouble !=0) printf("trouble = %d in pipe %d\n",trouble,k);
+/*        {
            for (int l = 0; l<channels[k]->N; l++)
            {
                if(channels[k]->q[l]<0)
@@ -433,7 +433,6 @@ void Network::EulerStep(double dt)
                        channels[k]->q0[l]=0.;
            }}
         }*/
-        //printf("trouble = %d\n",trouble);
 
    }
 }
