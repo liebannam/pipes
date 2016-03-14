@@ -2,16 +2,17 @@
 import time
 import numpy as np
 import pickle
+import sys
+sys.path.append('/Users/anna/anaconda/lib/python2.7/site-packages/')
 import networkx as nx
 from scipy import stats
-from networkx import graphviz_layout
+#from networkx import graphviz_layout
 
 from matplotlib import rc
 from matplotlib.mlab import find
 from  matplotlib import pyplot as plt
 rc('font', family='serif',size= '16')
 
-import sys
 sys.path.append("..")
 from allthethings import PyNetwork, PyPipe_ps
 from allthethings import PyBC_opt_dh
@@ -27,7 +28,8 @@ def getCoordinates(conns, scale=100):
     G=nx.Graph()
     for k in range(Np):
         G.add_edge('%d'%conns[k,0],'%d'%conns[k,1])
-    pos=nx.graphviz_layout(G) # positions for all nodes
+    #pos=nx.graphviz_layout(G) # positions for all nodes
+    pos = nx.spring_layout(G)
     for k in range(len(G.nodes())):
         s = '%d'%k
         xs.append(scale*pos[s][0])
@@ -79,6 +81,27 @@ def writeFiles(case,fn):
         a = 10
         elevs = [0]*Nn
         descrip = "pipe-filling bore in sewer flow from Leon (2006) pg 805"
+    if case==1:
+        conns = np.array([[0,1],[1,2]])
+        nodeTypes = getNodeTypes(conns)
+        Np = shape(conns)[0]
+        Nn = len(unique(conns))
+        Ls = [10,10]
+        Ns = [Ls[k]*4 for k in range(Np)]
+        Mrs = [0.0]*Np
+        Ds = [0.1]*Np
+        jt = nodeTypes
+        bt = [1,1,1]
+        #reflect everything 
+        r = [1,1,1]
+        bv = [0,0]
+        h0s = [6,.01]
+        q0s = [0.01,0]
+        T = 30
+        a = 100
+        elevs = [0,0,0]# this gives weird crappy peak in spatial data
+        descrip = "dam-break problem in two pipes--unstable for linear evaluation of A*"
+    
     elif case ==3:
         conns = np.array([[0,1],[1,2],[1,3],[2,4], [3,4],[4,5]])
         nodeTypes = getNodeTypes(conns)
@@ -155,6 +178,46 @@ def writeSummaryInfo(case,place,n0,V0,Vf, simtime, descrip):
             f.write("At time T=%f s\n cell A  Q\n"%T)
             for k in range(N):
                 f.write("%d   %f   %f\n"%(k,A[k], Q[k]))
+    elif case ==1:
+        import matplotlib.colors as colors  
+        KK = 100
+        levels = range(0,KK+1,1)
+        CS3 = plt.contourf( [[0,0],[0,0]], levels, cmap=cm.get_cmap('ocean'))#fake contour plot to get colorbar
+        plt.clf()
+        cNorm  = colors.Normalize(vmin=0, vmax=KK+1)
+        fig, ax = plt.subplots(nrows=2, figsize = (16,8))
+        x = [np.linspace(0,Ls[0],Ns[0]),np.linspace(Ls[0],2*Ls[0],Ns[0])]
+        scalarMap = cm.ScalarMappable(norm=cNorm, cmap=cm.get_cmap('ocean'))
+        for i in range(2):
+            for k in range(0,KK):
+                ax[0].plot(x[i],n0.pressureSpaceSeries(i,k), c= scalarMap.to_rgba(k), label='t=%.2f'%(dt*10*k))
+                ax[1].plot(x[i],n0.pressureSpaceSeries(i,M-80*k), c= scalarMap.to_rgba(k), label='t=%.2f'%(dt*10*k))       
+                ax[i].set_ylabel('P (m)')
+
+        ax[0].set_title('%.3f to %.3f seconds'%(0,k*dt))
+        ax[1].set_title('%.3f to %.3f seconds'%((M-KK+1)*dt,M*dt))
+        ax[1].set_ylim(0,.05)    
+        ax[0].set_xticklabels([])
+        ax[1].set_xlabel('x (m)')
+        cbaxes = fig.add_axes([.91, 0.1, 0.03, 0.8])
+        plt.suptitle('pressure as a function of x, 100 snapshots in time')
+        cb=fig.colorbar(CS3,cax=cbaxes)
+        plt.savefig(place+'/results.eps')
+        print "unnacounted for volume V(T)-(Q(0,T)*T+V(0))= %e m^3"%(Vf-V0)
+        print "compute time is %f s"% (simtime)
+        N = n0.Ns[0]
+        A = np.concatenate(n0.q(0)[0:N],n0.q(1)[0:N])
+        Q = np.concatenate(n0.q(0)[N:2*N],n0.q(1)[N:2*N])
+        with open(place+"/info.txt",'wb') as f:
+            f.write("Case %d\n"%case)
+            f.write(descrip+'\n')
+            f.write("Code is at state...\n")
+            f.write("unnacounted for volume V(T)-V(0))= %e m^3\n"%(Vf-V0))
+            f.write("compute time is %f s\n"% (simtime))
+            f.write("At time T=%f s\n cell A  Q\n"%T)
+            for k in range(N):
+                f.write("%d   %f   %f\n"%(k,A[k], Q[k]))
+
     elif case==3:
         N = n0.Ns[0]
         dt = n0.T/float(n0.M)
@@ -203,6 +266,8 @@ def runSim(case,fn,place,descrip):
     V0 = n0.getTotalVolume()
     if case==0:
         n0.runForwardProblem(dt)
+    elif case==1:
+        n0.runForwardProblem(dt)
     elif case ==3:
         T = n0.T
         xx = np.linspace(0,T,n0.M+1)
@@ -215,9 +280,9 @@ def runSim(case,fn,place,descrip):
     writeSummaryInfo(case,place,n0,V0,Vf,simtime, descrip)
 
 def main():
-    #available cases: 0 (one pipe) and 3 (loop with 6 pipes).
+    #available cases: 0 (one pipe) 1 (2 pipes) and 3 (loop with 6 pipes).
     #pending cases: 1 (three pipes, diverging), 2 (three pipes, converging), 4 (branching tree) 
-    case = 3
+    case = 1
     fn = '../indata/sanity_check_case%d'%case
     #make place to store data if it doesn't exist yet
     if not os.path.exists("sanity_check/"):
