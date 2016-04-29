@@ -127,6 +127,8 @@ cdef extern from "<vector>" namespace "std":
         iterator end()
 
 cdef extern from "channel.h":
+    cdef bool linAstar
+    cdef bool L2yes
     cdef cppclass Cpreiss:
         Cpreiss(int, double, double, int, double)
         int channeltype, N, M, n
@@ -161,6 +163,10 @@ cdef extern from "channel.h":
         Junction2(Cpreiss, Cpreiss, int, int ,double) 
         double valveopen
         void setValveTimes(vector[Real])
+
+linAstar_flag =linAstar
+L2yes_flag=L2yes
+
 cdef class PyPipe_ps:
     '''	
     Input Parameters:
@@ -799,6 +805,7 @@ cdef class PyBC_opt_dh:
     cdef int ndof
     cdef double solve_t  # CPU solve time
     cdef double wsolve_t  # actual solve time
+
 
     def __cinit__(self, char * fi, char * fc, int ndof, np.ndarray x0, int whichnode, double Vin, int modetype):
         cdef int M = 1, Mi = 1, skip = 1

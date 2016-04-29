@@ -125,7 +125,11 @@ void bc_opt_dh_c::compute_r(vector<Real> &rr, vector <Real>&xx)
 	Ntwk0.runForwardProblem(dt);
 	for(int i=0; i<M+1; i++)
 	{
-		rr[i] = sqrt(Ntwk0.getAveGradH(i)/M);
+		
+        if(L2yes){
+            rr[i] = sqrt(T/M)*Ntwk0.getAveGradH(i);}
+        else{
+            rr[i] = sqrt(Ntwk0.getAveGradH(i)/M);}
 	}
 }
 
@@ -151,7 +155,7 @@ void bc_opt_dh_c::setBCTimeSeries(vector<Real>xx, vector <Real> &bvals)
 		sumQ -= xx[Ndof-2]/2.;
 //		xfake0 =  2*(Vin/Dt-sumQ-Dt/12.*(x[0]-x[Ndof-1]));
 		xfake0 =  2*(Vin/Dt-sumQ-Dt/12.*(xx[0]-xx[Ndof-1]));
-        printf("sumQ = %f, xx[0] = %f, Dt = %f, T = %f, Ndof = %d\n", sumQ, xfake0, Dt, T, Ndof);
+        //printf("sumQ = %f, xx[0] = %f, Dt = %f, T = %f, Ndof = %d\n", sumQ, xfake0, Dt, T, Ndof);
 	}
 	xfake[0] = xfake0;
 	getTimeSeries(bvals, xfake, Ndof+1,M,T,modetype);

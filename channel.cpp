@@ -235,7 +235,9 @@ double Eta(double A, double D, double At, double Ts, bool P)
 	{
 		double H = (A-(PI*D*D/4.))/Ts;
 		H = (A-At)/Ts;
-		Eta = PI/4.*G*D*D*(H+D/2.);
+		//Eta = PI/4.*G*D*D*(H+D/2.);
+        //compare with ``true'' preissman approach from integrating
+		Eta = PI/4.*G*D*D*(H+D/2.)+Ts/2.*H*H*G;
 	}
 	return Eta;
 }
@@ -879,13 +881,17 @@ double Channel::getAveGradH(int i)
 	double I = 0;
 	for (int k = 1; k<N+1; k++)
 	{
-		I+= abs(h2-h1);
-		h1 = h2;
+		
+		if (L2yes)
+            {I+= (h2-h1);}
+        else
+            {I+= abs(h2-h1);}
+        h1 = h2;
 		a1 = a2;
 		a2 = q_hist[idx_t(0,k+1,i)]; 
 		h2 = pbar(a2,p);
 	}
-	return I;
+	return I/sqrt(dx);
 }
 
 
@@ -1157,12 +1163,12 @@ void Cpreiss::speedsHLL(double q1m, double q1p, double q2m, double q2p, double *
 		//this verstion uses depth positivity condition
 		//Astar = (q1m+q1p)/2.*(1+(um-up)/(PhiofA(q1p,Pp)+PhiofA(q1m,Pm))); 
 		//this is linearized version
-		Astar = (q1m+q1p)/2.*(1+( (cbar>1e-6)? (um-up)/(2.*cbar): 0));
-        //if (Astar<0)
-        //{
-           // printf("using depth positivity condition\n");
-        // Astar = (q1m+q1p)/2.*(1+(um-up)/(PhiofA(q1p,Pp)+PhiofA(q1m,Pm))); 
-        //}  
+		//use linearized estimate for Astar
+        if(linAstar)
+            Astar = (q1m+q1p)/2.*(1+( (cbar>1e-6)? (um-up)/(2.*cbar): 0));
+        //else use depth-positivity preserving (ostensibly!) estimate
+        else
+            Astar = (q1m+q1p)/2.*(1+(um-up)/(PhiofA(q1p,Pp)+PhiofA(q1m,Pm))); 
 		bool Ps = (Pm && Pp);
 		s[0] = um - findOmega(Astar, q1m, Ps, Pm);
 		s[1] = up + findOmega(Astar, q1p, Ps, Pp);
@@ -1807,7 +1813,7 @@ Junction3::Junction3(Channel &ch0, Channel &ch1, Channel &ch2, int which0, int w
 	whichend[0] = which0;
 	whichend[1] = which1;
 	whichend[2] = which2;
-    printf("*******whichends = [%d,%d,%d]\n", which0, which1, which2, which2);
+    if(WTF) printf("*******whichends = [%d,%d,%d]\n", which0, which1, which2, which2);
 
 }
 /**

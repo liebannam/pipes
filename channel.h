@@ -54,6 +54,10 @@ using std::min;
 #define WTF false
 /*\def flag for tracking chlorine (for water quality sim in development). Set to false to not bother*/
 #define Clplease false
+/*\def flag for using L2 objective function in optimization. Set to false for version in paper*/
+#define L2yes true
+/*\def flag for using linear estimate for Astar. if this flag is false, (ostensibly) depth-positivity preserving condition is used*/
+#define linAstar true
 
 /*
  * \def horrifying macros for numerical flux routines
