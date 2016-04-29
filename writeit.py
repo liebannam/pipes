@@ -24,18 +24,19 @@ def writePipes(fn,conns, xs,ys, Ns, Ls, Mrs, Ds, jt, bt, bv, r, h0s, q0s, T, M, 
     '''write .inp and .config files from scratch--be careful that the input parameter conns is actually a valid network structure!'''
     #conns is an array of size Nx2; each row represents two junctions connecting a single edge
     Np = np.shape(conns)[0]
+    Nn = len(jt)
     #first write a fake .inp to get network connectivity
     ftemp = '../indata/fakeinp.inp'
     with open(ftemp, 'w') as ft:
         ft.write('[TITLE]\n\n\n[JUNCTIONS]\n;ID              	Elev        	Demand      	Pattern\n')
-        for k in range(Np+1):
+        for k in range(Nn):
             ft.write("%d %15s %2.3f %15s0 %30s ;\n"%(k," ",elevs[k]," "," "))
         ft.write('\n[PIPES]\n;ID              	Node1           	Node2           	Length      	Diameter    	Roughness   	MinorLoss   	Status\n')
         for k in range(Np):
             ft.write("%s %15s %s %15s %s %15s %4.1d %15s %2.2f %15s %1.4f\n" % \
                                 (k," ",conns[k,0]," ", conns[k,1]," ", Ls[k]," ", Ds[k]," ", Mrs[k]))
         ft.write('\n[COORDINATES]\n;Node            	X-Coord         	Y-Coord\n')
-        for k in range(Np+1):
+        for k in range(Nn):
             ft.write('%d %15s  %.2f %15s %.2f\n'%(k,' ', xs[k], ' ', ys[k]))
         print ftemp
     (fi, fc) = rewritePipes(fn, ftemp, Ns, Ls, Mrs, Ds, jt, bt, bv, r, h0s, q0s, T, M, a, elevs)
